@@ -1,0 +1,25 @@
+# Python (backend)
+backend/.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Node (frontend/pdf-editor — also has its own nested .gitignore)
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Claude Code local settings (machine-specific, not for version control)
+.claude/
+
+# Editor/OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.swp
+
+# Logs
+*.log
+npm-debug.log*

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Doc Toolkit — Foto → PDF</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 480px; margin: 60px auto; padding: 0 20px; text-align: center; }
+  h1 { font-size: 1.4rem; }
+  #drop { border: 2px dashed #999; border-radius: 12px; padding: 40px 20px; cursor: pointer; color: #666; }
+  #drop.hover { border-color: #333; color: #333; }
+  input[type=file] { display: none; }
+  #status { margin-top: 16px; min-height: 24px; }
+  #preview { max-width: 100%; margin-top: 16px; border-radius: 8px; display: none; }
+  button { margin-top: 16px; padding: 10px 20px; font-size: 1rem; cursor: pointer; }
+</style>
+</head>
+<body>
+  <h1>Fotoğrafı Temiz PDF'e Çevir</h1>
+  <label id="drop" for="file-input">Fotoğraf seç ya da sürükle bırak</label>
+  <input id="file-input" type="file" accept="image/*" />
+  <img id="preview" />
+  <div id="status"></div>
+
+  <script>
+    const dropEl = document.getElementById("drop");
+    const fileInput = document.getElementById("file-input");
+    const statusEl = document.getElementById("status");
+    const previewEl = document.getElementById("preview");
+
+    ["dragover", "dragleave", "drop"].forEach((evt) =>
+      dropEl.addEventListener(evt, (e) => {
+        e.preventDefault();
+        dropEl.classList.toggle("hover", evt === "dragover");
+      })
+    );
+
+    dropEl.addEventListener("drop", (e) => {
+      const file = e.dataTransfer.files[0];
+      if (file) handleFile(file);
+    });
+
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files[0]) handleFile(fileInput.files[0]);
+    });
+
+    async function handleFile(file) {
+      previewEl.src = URL.createObjectURL(file);
+      previewEl.style.display = "block";
+      statusEl.textContent = "İşleniyor...";
+
+      const formData = new FormData();
+      formData.append("image", file);
+
+      try {
+        const res = await fetch("/api/scan", { method: "POST", body: formData });
+        if (!res.ok) {
+          const err = await res.json();
+          statusEl.textContent = "Hata: " + (err.detail || "bilinmeyen hata");
+          return;
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        statusEl.innerHTML = `<a href="${url}" download="scan.pdf">PDF'i indir</a>`;
+      } catch (e) {
+        statusEl.textContent = "Bağlantı hatası: " + e.message;
+      }
+    }
+  </script>
+</body>
+</html>

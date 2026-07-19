@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Doc Toolkit — CV Oluştur</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 30px auto; padding: 0 20px; }
+  h1 { font-size: 1.4rem; }
+  h2 { font-size: 1.05rem; margin-top: 28px; border-bottom: 1px solid #ddd; padding-bottom: 6px; }
+  label { display: block; font-size: 0.85rem; color: #444; margin-top: 10px; margin-bottom: 3px; }
+  input[type=text], input[type=email], textarea {
+    width: 100%; padding: 8px; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;
+  }
+  textarea { resize: vertical; min-height: 50px; }
+  .row { display: flex; gap: 10px; }
+  .row > div { flex: 1; }
+  .entry-card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin-top: 10px; position: relative; }
+  .entry-card button.remove { position: absolute; top: 8px; right: 8px; background: none; border: none; color: #a00; cursor: pointer; font-size: 0.85rem; }
+  button.add { margin-top: 10px; padding: 6px 12px; cursor: pointer; }
+  #submit-btn { margin-top: 24px; padding: 10px 20px; font-size: 1rem; cursor: pointer; }
+  #status { margin: 14px 0; min-height: 20px; }
+</style>
+</head>
+<body>
+  <h1>CV Oluştur</h1>
+
+  <label>Ad Soyad *</label>
+  <input type="text" id="full_name" />
+
+  <label>Unvan / Hedef pozisyon</label>
+  <input type="text" id="headline" placeholder="ör. Bilgisayar Mühendisliği Öğrencisi" />
+
+  <div class="row">
+    <div>
+      <label>E-posta</label>
+      <input type="email" id="email" />
+    </div>
+    <div>
+      <label>Telefon</label>
+      <input type="text" id="phone" />
+    </div>
+  </div>
+  <div class="row">
+    <div>
+      <label>Konum</label>
+      <input type="text" id="location" />
+    </div>
+    <div>
+      <label>LinkedIn</label>
+      <input type="text" id="linkedin" />
+    </div>
+  </div>
+
+  <label>Hakkında (kısa özet)</label>
+  <textarea id="summary"></textarea>
+
+  <h2>Deneyim</h2>
+  <div id="experience-list"></div>
+  <button type="button" class="add" id="add-experience">+ Deneyim ekle</button>
+
+  <h2>Eğitim</h2>
+  <div id="education-list"></div>
+  <button type="button" class="add" id="add-education">+ Eğitim ekle</button>
+
+  <h2>Yetenekler</h2>
+  <label>Virgülle ayırarak yaz (ör. Python, FastAPI, React)</label>
+  <input type="text" id="skills" />
+
+  <div>
+    <button id="submit-btn">CV'yi Oluştur ve İndir</button>
+  </div>
+  <div id="status"></div>
+
+  <script>
+    function addExperienceRow(data = {}) {
+      const div = document.createElement("div");
+      div.className = "entry-card experience-entry";
+      div.innerHTML = `
+        <button type="button" class="remove">Kaldır</button>
+        <label>Pozisyon</label>
+        <input type="text" class="role" value="${data.role || ""}" />
+        <label>Şirket</label>
+        <input type="text" class="company" value="${data.company || ""}" />
+        <label>Tarih aralığı</label>
+        <input type="text" class="dates" placeholder="ör. Haz 2025 - Ağu 2025" value="${data.dates || ""}" />
+        <label>Açıklama</label>
+        <textarea class="description">${data.description || ""}</textarea>
+      `;
+      div.querySelector(".remove").onclick = () => div.remove();
+      document.getElementById("experience-list").appendChild(div);
+    }
+
+    function addEducationRow(data = {}) {
+      const div = document.createElement("div");
+      div.className = "entry-card education-entry";
+      div.innerHTML = `
+        <button type="button" class="remove">Kaldır</button>
+        <label>Okul</label>
+        <input type="text" class="school" value="${data.school || ""}" />
+        <label>Bölüm / Derece</label>
+        <input type="text" class="degree" value="${data.degree || ""}" />
+        <label>Tarih aralığı</label>
+        <input type="text" class="dates" placeholder="ör. 2022 - 2026" value="${data.dates || ""}" />
+      `;
+      div.querySelector(".remove").onclick = () => div.remove();
+      document.getElementById("education-list").appendChild(div);
+    }
+
+    document.getElementById("add-experience").onclick = () => addExperienceRow();
+    document.getElementById("add-education").onclick = () => addEducationRow();
+
+    addExperienceRow();
+    addEducationRow();
+
+    document.getElementById("submit-btn").onclick = async () => {
+      const statusEl = document.getElementById("status");
+      const fullName = document.getElementById("full_name").value.trim();
+      if (!fullName) { statusEl.textContent = "Ad Soyad zorunlu."; return; }
+
+      const experience = [...document.querySelectorAll(".experience-entry")]
+        .map((el) => ({
+          role: el.querySelector(".role").value,
+          company: el.querySelector(".company").value,
+          dates: el.querySelector(".dates").value,
+          description: el.querySelector(".description").value,
+        }))
+        .filter((e) => e.role || e.company);
+
+      const education = [...document.querySelectorAll(".education-entry")]
+        .map((el) => ({
+          school: el.querySelector(".school").value,
+          degree: el.querySelector(".degree").value,
+          dates: el.querySelector(".dates").value,
+        }))
+        .filter((e) => e.school);
+
+      const skills = document.getElementById("skills").value
+        .split(",").map((s) => s.trim()).filter(Boolean);
+
+      const payload = {
+        full_name: fullName,
+        headline: document.getElementById("headline").value,
+        email: document.getElementById("email").value,
+        phone: document.getElementById("phone").value,
+        location: document.getElementById("location").value,
+        linkedin: document.getElementById("linkedin").value,
+        summary: document.getElementById("summary").value,
+        experience, education, skills,
+      };
+
+      statusEl.textContent = "Oluşturuluyor...";
+      try {
+        const res = await fetch("/api/cv", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          statusEl.textContent = "Hata: " + (err.detail || "bilinmeyen hata");
+          return;
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        statusEl.innerHTML = `Hazır: <a href="${url}" download="cv.pdf">CV'ni indir</a>`;
+      } catch (e) {
+        statusEl.textContent = "Bağlantı hatası: " + e.message;
+      }
+    };
+  </script>
+</body>
+</html>

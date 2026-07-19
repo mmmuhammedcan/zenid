@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Doc Toolkit — PDF Doldur / İmzala</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 900px; margin: 30px auto; padding: 0 20px; }
+  h1 { font-size: 1.4rem; }
+  .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 16px 0; padding: 12px; background: #f4f4f4; border-radius: 8px; }
+  .toolbar button { padding: 8px 14px; cursor: pointer; }
+  .toolbar button.active { background: #333; color: #fff; }
+  #pages { display: flex; flex-direction: column; gap: 20px; align-items: center; }
+  .page-wrap { position: relative; display: inline-block; border: 1px solid #ccc; cursor: crosshair; }
+  .page-wrap img { display: block; max-width: 100%; }
+  .marker { position: absolute; border: 1px dashed #d00; background: rgba(255,0,0,0.08); pointer-events: none; font-size: 12px; color: #a00; padding: 1px 3px; white-space: nowrap; }
+  #status { margin: 10px 0; min-height: 20px; }
+  dialog { border: none; border-radius: 8px; padding: 20px; }
+  #sigCanvas { border: 1px solid #999; touch-action: none; cursor: crosshair; }
+  .dialog-actions { margin-top: 10px; display: flex; gap: 8px; }
+</style>
+</head>
+<body>
+  <h1>PDF Doldur / İmzala / Fotoğraf Yerleştir</h1>
+
+  <input id="pdf-input" type="file" accept="application/pdf" />
+
+  <div class="toolbar">
+    <button id="mode-text" class="active">Metin ekle</button>
+    <button id="mode-signature">İmza ekle</button>
+    <button id="mode-photo">Fotoğraf ekle</button>
+    <button id="edit-signature">İmzamı düzenle</button>
+    <span style="flex:1"></span>
+    <button id="save-btn">İndir</button>
+  </div>
+
+  <div id="status"></div>
+  <div id="pages"></div>
+
+  <dialog id="sig-dialog">
+    <p>İmzanı çiz:</p>
+    <canvas id="sigCanvas" width="400" height="160"></canvas>
+    <div class="dialog-actions">
+      <button id="sig-clear">Temizle</button>
+      <button id="sig-save">Kaydet</button>
+      <button id="sig-cancel">Vazgeç</button>
+    </div>
+  </dialog>
+
+  <script>
+    let currentMode = "text";
+    let pdfFile = null;
+    let pageSizes = []; // {width, height} PDF pt cinsinden
+    let items = []; // {page, x, y, kind, content, font_size, width, height}
+
+    const statusEl = document.getElementById("status");
+    const pagesEl = document.getElementById("pages");
+    const pdfInput = document.getElementById("pdf-input");
+
+    document.getElementById("mode-text").onclick = () => setMode("text");
+    document.getElementById("mode-signature").onclick = () => setMode("signature");
+    document.getElementById("mode-photo").onclick = () => setMode("photo");
+    document.getElementById("edit-signature").onclick = () => openSignaturePad();
+
+    function setMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll(".toolbar button").forEach((b) => b.classList.remove("active"));
+      document.getElementById("mode-" + mode).classList.add("active");
+    }
+
+    pdfInput.addEventListener("change", async () => {
+      if (!pdfInput.files[0]) return;
+      pdfFile = pdfInput.files[0];
+      items = [];
+      statusEl.textContent = "Yükleniyor...";
+      pagesEl.innerHTML = "";
+
+      const formData = new FormData();
+      formData.append("pdf", pdfFile);
+
+      try {
+        const res = await fetch("/api/pdf/preview", { method: "POST", body: formData });
+        if (!res.ok) {
+          const err = await res.json();
+          statusEl.textContent = "Hata: " + (err.detail || "bilinmeyen hata");
+          return;
+        }
+        const data = await res.json();
+        pageSizes = data.pages.map((p) => ({ width: p.width, height: p.height }));
+        data.pages.forEach((p, idx) => renderPage(p, idx));
+        statusEl.textContent = "Belge üzerinde bir yere tıkla.";
+      } catch (e) {
+        statusEl.textContent = "Bağlantı hatası: " + e.message;
+      }
+    });
+
+    function renderPage(page, pageIndex) {
+      const wrap = document.createElement("div");
+      wrap.className = "page-wrap";
+      wrap.dataset.page = pageIndex;
+
+      const img = document.createElement("img");
+      img.src = "data:image/png;base64," + page.image_base64;
+      wrap.appendChild(img);
+      pagesEl.appendChild(wrap);
+
+      wrap.addEventListener("click", (e) => handlePageClick(e, wrap, pageIndex));
+    }
+
+    function pixelToPdfCoords(e, wrap, pageIndex) {
+      const rect = wrap.getBoundingClientRect();
+      const px = e.clientX - rect.left;
+      const py = e.clientY - rect.top;
+      const size = pageSizes[pageIndex];
+      const scaleX = size.width / rect.width;
+      const scaleY = size.height / rect.height;
+      return { x: px * scaleX, y: py * scaleY, pxLeft: px, pxTop: py, rect };
+    }
+
+    function addMarker(wrap, pxLeft, pxTop, label, widthPx, heightPx) {
+      const marker = document.createElement("div");
+      marker.className = "marker";
+      marker.style.left = pxLeft + "px";
+      marker.style.top = (pxTop - 14) + "px";
+      if (widthPx) marker.style.width = widthPx + "px";
+      if (heightPx) marker.style.height = heightPx + "px";
+      marker.textContent = label;
+      wrap.appendChild(marker);
+    }
+
+    function handlePageClick(e, wrap, pageIndex) {
+      const coords = pixelToPdfCoords(e, wrap, pageIndex);
+
+      if (currentMode === "text") {
+        const text = prompt("Eklenecek metin:");
+        if (!text) return;
+        items.push({ page: pageIndex, x: coords.x, y: coords.y + 12, kind: "text", content: text, font_size: 12 });
+        addMarker(wrap, coords.pxLeft, coords.pxTop, text);
+      } else if (currentMode === "signature") {
+        const sig = localStorage.getItem("doctoolkit_signature");
+        if (!sig) {
+          statusEl.textContent = "Önce imzanı çizmen gerekiyor.";
+          openSignaturePad();
+          return;
+        }
+        const w = 120, h = 45;
+        items.push({ page: pageIndex, x: coords.x, y: coords.y, kind: "image", content: sig, width: w, height: h });
+        const rect = wrap.getBoundingClientRect();
+        const pxW = (w / pageSizes[pageIndex].width) * rect.width;
+        const pxH = (h / pageSizes[pageIndex].height) * rect.height;
+        addMarker(wrap, coords.pxLeft, coords.pxTop, "imza", pxW, pxH);
+      } else if (currentMode === "photo") {
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = "image/*";
+        fileInput.onchange = () => {
+          const file = fileInput.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = () => {
+            const w = 90, h = 120; // vesikalık oranı
+            items.push({ page: pageIndex, x: coords.x, y: coords.y, kind: "image", content: reader.result, width: w, height: h });
+            const rect = wrap.getBoundingClientRect();
+            const pxW = (w / pageSizes[pageIndex].width) * rect.width;
+            const pxH = (h / pageSizes[pageIndex].height) * rect.height;
+            addMarker(wrap, coords.pxLeft, coords.pxTop, "foto", pxW, pxH);
+          };
+          reader.readAsDataURL(file);
+        };
+        fileInput.click();
+      }
+    }
+
+    // --- İmza çizim paneli ---
+    const sigDialog = document.getElementById("sig-dialog");
+    const sigCanvas = document.getElementById("sigCanvas");
+    const sigCtx = sigCanvas.getContext("2d");
+    let drawing = false;
+
+    function openSignaturePad() {
+      sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+      sigDialog.showModal();
+    }
+
+    function getPos(e) {
+      const rect = sigCanvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    function startDraw(e) {
+      drawing = true;
+      const p = getPos(e);
+      sigCtx.beginPath();
+      sigCtx.moveTo(p.x, p.y);
+    }
+    function moveDraw(e) {
+      if (!drawing) return;
+      const p = getPos(e);
+      sigCtx.lineTo(p.x, p.y);
+      sigCtx.strokeStyle = "#000";
+      sigCtx.lineWidth = 2;
+      sigCtx.stroke();
+      e.preventDefault();
+    }
+    function endDraw() { drawing = false; }
+
+    sigCanvas.addEventListener("mousedown", startDraw);
+    sigCanvas.addEventListener("mousemove", moveDraw);
+    window.addEventListener("mouseup", endDraw);
+    sigCanvas.addEventListener("touchstart", startDraw);
+    sigCanvas.addEventListener("touchmove", moveDraw);
+    sigCanvas.addEventListener("touchend", endDraw);
+
+    document.getElementById("sig-clear").onclick = () => sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+    document.getElementById("sig-cancel").onclick = () => sigDialog.close();
+    document.getElementById("sig-save").onclick = () => {
+      localStorage.setItem("doctoolkit_signature", sigCanvas.toDataURL("image/png"));
+      sigDialog.close();
+      statusEl.textContent = "İmza kaydedildi, artık 'İmza ekle' ile yerleştirebilirsin.";
+    };
+
+    document.getElementById("save-btn").onclick = async () => {
+      if (!pdfFile) { statusEl.textContent = "Önce bir PDF yükle."; return; }
+      if (items.length === 0) { statusEl.textContent = "Hiç öğe eklenmedi."; return; }
+
+      statusEl.textContent = "Kaydediliyor...";
+      const formData = new FormData();
+      formData.append("pdf", pdfFile);
+      formData.append("items", JSON.stringify(items));
+
+      try {
+        const res = await fetch("/api/pdf/overlay", { method: "POST", body: formData });
+        if (!res.ok) {
+          const err = await res.json();
+          statusEl.textContent = "Hata: " + (err.detail || "bilinmeyen hata");
+          return;
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        statusEl.innerHTML = `Hazır: <a href="${url}" download="duzenlenmis.pdf">PDF'i indir</a>`;
+      } catch (e) {
+        statusEl.textContent = "Bağlantı hatası: " + e.message;
+      }
+    };
+  </script>
+</body>
+</html>

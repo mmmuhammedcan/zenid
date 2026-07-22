@@ -52,6 +52,56 @@ export async function renderSavedPageToDataUrl(pdfDoc, pageNum, savedJson, rende
   return dataUrl;
 }
 
+export function overlayToPngDataUrl(fCanvas) {
+  return fCanvas.getObjects().length > 0 ? fCanvas.toDataURL({ format: "png", multiplier: 1 }) : null;
+}
+
+export async function renderSavedOverlayToPngDataUrl(pdfDoc, pageNum, savedJson, renderScale) {
+  if (!savedJson?.objects?.length) return null;
+
+  const page = await pdfDoc.getPage(pageNum);
+  const viewport = page.getViewport({ scale: renderScale });
+  const staticCanvas = new StaticCanvas(document.createElement("canvas"), {
+    width: viewport.width,
+    height: viewport.height,
+  });
+  await staticCanvas.loadFromJSON(savedJson);
+  staticCanvas.renderAll();
+  const dataUrl = overlayToPngDataUrl(staticCanvas);
+  staticCanvas.dispose();
+  return dataUrl;
+}
+
+// Keep the original PDF as the document and draw only ZenPDF's transparent
+// overlay on each page. Unlike the legacy JPEG-flattening path, this retains
+// the source page dimensions, selectable text, links, and existing form data.
+export async function applyOverlaysToOriginalPdf(originalPdfBytes, overlayDataUrls) {
+  const { PDFDocument, degrees } = await import("pdf-lib");
+  const pdfDoc = await PDFDocument.load(originalPdfBytes);
+  const pages = pdfDoc.getPages();
+
+  for (let index = 0; index < pages.length; index += 1) {
+    const overlayDataUrl = overlayDataUrls[index];
+    if (!overlayDataUrl) continue;
+    const overlay = await pdfDoc.embedPng(overlayDataUrl);
+    const page = pages[index];
+    const { x, y, width, height } = page.getCropBox();
+    const rotation = ((page.getRotation().angle % 360) + 360) % 360;
+
+    if (rotation === 90) {
+      page.drawImage(overlay, { x, y: y + height, width: height, height: width, rotate: degrees(-90) });
+    } else if (rotation === 180) {
+      page.drawImage(overlay, { x: x + width, y: y + height, width, height, rotate: degrees(180) });
+    } else if (rotation === 270) {
+      page.drawImage(overlay, { x: x + width, y, width: height, height: width, rotate: degrees(90) });
+    } else {
+      page.drawImage(overlay, { x, y, width, height });
+    }
+  }
+
+  return pdfDoc.save();
+}
+
 export function buildPdfFromPages(pageDataUrls) {
   const doc = new jsPDF({ unit: "pt", format: [A4_WIDTH_PT, A4_HEIGHT_PT] });
   pageDataUrls.forEach((dataUrl, i) => {

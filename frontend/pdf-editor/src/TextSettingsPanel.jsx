@@ -94,7 +94,7 @@ export default function TextSettingsPanel({ visible, textObject, position, fabri
         aria-pressed={bold}
         title="Bold"
         className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all ${
-          bold ? "bg-indigo-500 text-white" : "text-neutral-300 hover:bg-white/10"
+          bold ? "bg-amber-600 text-white" : "text-neutral-300 hover:bg-white/10"
         }`}
       >
         <Bold size={16} />
@@ -105,7 +105,7 @@ export default function TextSettingsPanel({ visible, textObject, position, fabri
         aria-pressed={italic}
         title="Italic"
         className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all ${
-          italic ? "bg-indigo-500 text-white" : "text-neutral-300 hover:bg-white/10"
+          italic ? "bg-amber-600 text-white" : "text-neutral-300 hover:bg-white/10"
         }`}
       >
         <Italic size={16} />
@@ -116,7 +116,7 @@ export default function TextSettingsPanel({ visible, textObject, position, fabri
         aria-pressed={underline}
         title="Underline"
         className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all ${
-          underline ? "bg-indigo-500 text-white" : "text-neutral-300 hover:bg-white/10"
+          underline ? "bg-amber-600 text-white" : "text-neutral-300 hover:bg-white/10"
         }`}
       >
         <Underline size={16} />

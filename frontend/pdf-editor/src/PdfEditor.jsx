@@ -8,14 +8,26 @@ import TextSettingsPanel from "./TextSettingsPanel";
 import SignaturePad from "./SignaturePad";
 import Dropzone from "./Dropzone";
 import DrawPopover from "./DrawPopover";
+import FillToolsPopover from "./FillToolsPopover";
 import BottomBar from "./BottomBar";
 import useHistory from "./useHistory";
-import { A4_HEIGHT_PT, A4_WIDTH_PT, buildPdfFromPages, flattenToDataUrl, renderSavedPageToDataUrl } from "./pdfExport";
+import {
+  A4_HEIGHT_PT,
+  A4_WIDTH_PT,
+  applyOverlaysToOriginalPdf,
+  buildPdfFromPages,
+  flattenToDataUrl,
+  overlayToPngDataUrl,
+  renderSavedOverlayToPngDataUrl,
+  renderSavedPageToDataUrl,
+} from "./pdfExport";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 const SIGNATURE_STORAGE_KEY = "pdfEditorSignature";
+const INITIALS_STORAGE_KEY = "pdfEditorInitials";
 const RENDER_SCALE = 1.5; // PDF.js render scale — independent of the CSS zoom applied on top
+const MAX_SOURCE_FILE_BYTES = 50 * 1024 * 1024;
 
 // The floating text toolbar renders *above* its anchor point (translateY of
 // -100% - 12px), and the bottom nav/zoom bar is pinned near the bottom of the
@@ -48,6 +60,17 @@ export default function PdfEditor() {
   const [pdfLoaded, setPdfLoaded] = useState(false); // controls Dropzone vs. Canvas view
   const [sourceType, setSourceType] = useState(null); // 'pdf' | 'image' — which export path to use
   const [showSignaturePad, setShowSignaturePad] = useState(false);
+  const [sourceFileName, setSourceFileName] = useState("document.pdf");
+  const [fillToolsOpen, setFillToolsOpen] = useState(false);
+  const [placementTool, setPlacementTool] = useState(null);
+  const [signatureMode, setSignatureMode] = useState("signature");
+  const [interactiveFieldCount, setInteractiveFieldCount] = useState(0);
+  const [hasSavedSignature, setHasSavedSignature] = useState(
+    () => typeof window !== "undefined" && Boolean(window.localStorage.getItem(SIGNATURE_STORAGE_KEY))
+  );
+  const [hasSavedInitials, setHasSavedInitials] = useState(
+    () => typeof window !== "undefined" && Boolean(window.localStorage.getItem(INITIALS_STORAGE_KEY))
+  );
 
   // Floating text toolbar
   const [activeText, setActiveText] = useState(null);
@@ -83,7 +106,9 @@ export default function PdfEditor() {
   const fabricCanvasElRef = useRef(null); // the <canvas> element Fabric mounts on
   const fabricRef = useRef(null); // the fabric.Canvas instance
   const pdfDocRef = useRef(null); // the pdf.js document proxy (all pages)
+  const originalPdfBytesRef = useRef(null); // source bytes retained for non-destructive export
   const pagesDataRef = useRef({}); // pageNumber -> fabric.toJSON(), so annotations survive page switches
+  const placementToolRef = useRef(null);
 
   // Clean up the fabric instance on unmount
   useEffect(() => {
@@ -102,6 +127,13 @@ export default function PdfEditor() {
       const fCanvas = fabricRef.current;
       if (!fCanvas) return;
       const obj = fCanvas.getActiveObject();
+
+      if (e.key === "Escape" && placementToolRef.current) {
+        placementToolRef.current = null;
+        setPlacementTool(null);
+        setStatus("Placement cancelled.");
+        return;
+      }
 
       if ((e.key === "Delete" || e.key === "Backspace") && obj && !obj.isEditing) {
         fCanvas.remove(obj);
@@ -159,6 +191,10 @@ export default function PdfEditor() {
   // background of a single new A4-proportioned fabric canvas.
   const loadFile = async (file) => {
     if (!file) return;
+    if (file.size > MAX_SOURCE_FILE_BYTES) {
+      setStatus("This file is larger than ZenPDF's current 50 MB safety limit.");
+      return;
+    }
     if (file.type === "application/pdf") {
       await loadPdfFile(file);
     } else if (file.type.startsWith("image/")) {
@@ -172,14 +208,31 @@ export default function PdfEditor() {
     setStatus("Loading...");
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const originalBytes = new Uint8Array(arrayBuffer.slice(0));
+      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
       pdfDocRef.current = pdf;
+      originalPdfBytesRef.current = originalBytes;
       pagesDataRef.current = {};
       setSourceType("pdf");
+      setSourceFileName(file.name || "document.pdf");
       setNumPages(pdf.numPages);
       setCurrentPage(1);
       await renderPage(1);
-      setStatus("Document ready.");
+      const annotationsByPage = await Promise.all(
+        Array.from({ length: pdf.numPages }, async (_unused, index) => {
+          const page = await pdf.getPage(index + 1);
+          return page.getAnnotations({ intent: "display" });
+        })
+      );
+      const fieldCount = annotationsByPage
+        .flat()
+        .filter((annotation) => annotation.subtype === "Widget" || annotation.fieldType).length;
+      setInteractiveFieldCount(fieldCount);
+      setStatus(
+        fieldCount > 0
+          ? `${fieldCount} interactive form field${fieldCount === 1 ? "" : "s"} detected. Quick Fill can place content over any field.`
+          : "Document ready."
+      );
       setPdfLoaded(true);
     } catch (err) {
       setStatus("Error: " + err.message);
@@ -197,9 +250,12 @@ export default function PdfEditor() {
       });
 
       pdfDocRef.current = null;
+      originalPdfBytesRef.current = null;
       pagesDataRef.current = {};
       setSourceType("image");
+      setSourceFileName(file.name ? file.name.replace(/\.[^.]+$/, ".pdf") : "document.pdf");
       setNumPages(1);
+      setInteractiveFieldCount(0);
       setCurrentPage(1);
 
       const width = A4_WIDTH_PT * RENDER_SCALE;
@@ -243,25 +299,37 @@ export default function PdfEditor() {
   };
 
   const handleChangePdf = () => {
+    const currentHasObjects = (fabricRef.current?.getObjects().length || 0) > 0;
+    const anotherPageHasObjects = Object.values(pagesDataRef.current).some((page) => page?.objects?.length);
+    if (
+      (currentHasObjects || anotherPageHasObjects) &&
+      !window.confirm("Change the file? Unsaved text, marks, drawings, and signatures in this document will be lost.")
+    ) {
+      return;
+    }
     fabricRef.current?.dispose();
     fabricRef.current = null;
     pdfDocRef.current = null;
+    originalPdfBytesRef.current = null;
     pagesDataRef.current = {};
     setActiveText(null);
     setShowTextToolbar(false);
     setDrawMode(false);
+    placementToolRef.current = null;
+    setPlacementTool(null);
+    setFillToolsOpen(false);
     setCurrentPage(1);
     setNumPages(1);
+    setInteractiveFieldCount(0);
     setZoom(100);
     setSourceType(null);
     setPdfLoaded(false);
     setStatus("Choose a PDF or image.");
   };
 
-  // --- Export — flattens every page (PDF raster + fabric objects, or just
-  // the fabric layer for an image-sourced document) into one PDF via jsPDF.
-  // The current page is flattened live; other pages are rebuilt offscreen
-  // from their saved JSON (see pagesDataRef) so nothing on screen is disturbed. ---
+  // --- Export — normal PDF files keep their original page content and receive
+  // transparent ZenPDF overlays. Image sources use the A4 raster composition
+  // path because they intentionally create a new document layout. ---
   const handleExportPdf = async () => {
     if (!pdfLoaded || !fabricRef.current) return;
     setStatus("Exporting...");
@@ -278,23 +346,89 @@ export default function PdfEditor() {
 
       pagesDataRef.current[currentPage] = fabricRef.current.toJSON();
 
-      const pageDataUrls = [];
-      for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-        if (pageNum === currentPage) {
-          pageDataUrls.push(
-            flattenToDataUrl(sourceType === "pdf" ? pdfCanvasRef.current : null, fabricRef.current)
-          );
-        } else {
-          pageDataUrls.push(
-            await renderSavedPageToDataUrl(pdfDocRef.current, pageNum, pagesDataRef.current[pageNum], RENDER_SCALE)
+      const outputName = `${sourceFileName.replace(/\.pdf$/i, "")}_filled.pdf`;
+      if (sourceType === "pdf" && originalPdfBytesRef.current) {
+        const overlayDataUrls = [];
+        for (let pageNum = 1; pageNum <= numPages; pageNum += 1) {
+          overlayDataUrls.push(
+            pageNum === currentPage
+              ? overlayToPngDataUrl(fabricRef.current)
+              : await renderSavedOverlayToPngDataUrl(
+                  pdfDocRef.current,
+                  pageNum,
+                  pagesDataRef.current[pageNum],
+                  RENDER_SCALE
+                )
           );
         }
+        const bytes = await applyOverlaysToOriginalPdf(originalPdfBytesRef.current, overlayDataUrls);
+        const blobUrl = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+        const anchor = document.createElement("a");
+        anchor.href = blobUrl;
+        anchor.download = outputName;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        URL.revokeObjectURL(blobUrl);
+      } else {
+        const pageDataUrls = [];
+        for (let pageNum = 1; pageNum <= numPages; pageNum += 1) {
+          if (pageNum === currentPage) {
+            pageDataUrls.push(
+              flattenToDataUrl(sourceType === "pdf" ? pdfCanvasRef.current : null, fabricRef.current)
+            );
+          } else {
+            pageDataUrls.push(
+              await renderSavedPageToDataUrl(pdfDocRef.current, pageNum, pagesDataRef.current[pageNum], RENDER_SCALE)
+            );
+          }
+        }
+        buildPdfFromPages(pageDataUrls).save(outputName);
       }
-
-      buildPdfFromPages(pageDataUrls).save("document.pdf");
       setStatus("Document ready.");
     } catch (err) {
       setStatus("Export failed: " + err.message);
+    }
+  };
+
+  const clearPlacementTool = () => {
+    placementToolRef.current = null;
+    setPlacementTool(null);
+  };
+
+  const placeArmedTool = async (fCanvas, tool, point) => {
+    clearPlacementTool();
+    setFillToolsOpen(false);
+
+    if (tool.kind === "image") {
+      const image = await FabricImage.fromURL(tool.dataUrl);
+      image.set({ left: point.x, top: point.y, originX: "center", originY: "center" });
+      image.scaleToWidth(tool.targetWidth);
+      fCanvas.add(image);
+      fCanvas.setActiveObject(image);
+      fCanvas.requestRenderAll();
+      setStatus("Placed. Drag or resize it if needed.");
+      return;
+    }
+
+    const text = new IText(tool.content, {
+      left: point.x,
+      top: point.y,
+      originX: "center",
+      originY: "center",
+      fontSize: tool.fontSize || 24,
+      fontFamily: "Arial, Helvetica, sans-serif",
+      fill: "#000000",
+    });
+    fCanvas.add(text);
+    fCanvas.setActiveObject(text);
+    fCanvas.requestRenderAll();
+    setStatus("Placed. Drag, resize, or double-click to edit.");
+
+    if (tool.editImmediately) {
+      text.enterEditing();
+      text.selectAll();
+      fCanvas.requestRenderAll();
     }
   };
 
@@ -378,7 +512,15 @@ export default function PdfEditor() {
         fCanvas.requestRenderAll();
       }
     };
-    fCanvas.on("mouse:down", eraseIfPath);
+    fCanvas.on("mouse:down", (opt) => {
+      const tool = placementToolRef.current;
+      if (tool) {
+        const point = fCanvas.getScenePoint(opt.e);
+        placeArmedTool(fCanvas, tool, point).catch((error) => setStatus(`Placement failed: ${error.message}`));
+        return;
+      }
+      eraseIfPath(opt);
+    });
     fCanvas.on("mouse:move", (opt) => {
       if (opt.e.buttons) eraseIfPath(opt); // only while a button is held (dragging)
     });
@@ -450,6 +592,14 @@ export default function PdfEditor() {
     setEraseMode(false);
   };
 
+  const armPlacementTool = (tool, instruction) => {
+    exitDrawMode();
+    placementToolRef.current = tool;
+    setPlacementTool(tool);
+    setFillToolsOpen(false);
+    setStatus(`${instruction} Press Esc to cancel.`);
+  };
+
   const handleToggleDraw = () => {
     const fCanvas = fabricRef.current;
     if (!fCanvas) {
@@ -461,6 +611,8 @@ export default function PdfEditor() {
     // class of bug as the Bold/Italic drift: computing "next" from a stale
     // closure instead of ground truth can desync after enough rapid clicks.
     const next = !drawModeRef.current;
+    clearPlacementTool();
+    setFillToolsOpen(false);
     setDrawMode(next);
     if (!next) setEraseMode(false); // leaving draw mode always resets the eraser sub-tool
     fCanvas.isDrawingMode = next && !eraseModeRef.current;
@@ -547,28 +699,16 @@ export default function PdfEditor() {
     setShowTextToolbar(false);
   };
 
-  // --- "Add Text" — spawn a new IText object in the center ---
+  // --- Form items are armed first, then placed exactly where the user clicks. ---
   const handleAddText = () => {
-    const fCanvas = fabricRef.current;
-    if (!fCanvas) {
+    if (!fabricRef.current) {
       setStatus("Load a PDF first.");
       return;
     }
-    exitDrawMode();
-
-    const text = new IText("Double-click to edit", {
-      left: fCanvas.getWidth() / 2,
-      top: fCanvas.getHeight() / 2,
-      originX: "center",
-      originY: "center",
-      fontSize: 24,
-      fontFamily: "Arial, Helvetica, sans-serif",
-      fill: "#000000",
-    });
-
-    fCanvas.add(text);
-    fCanvas.setActiveObject(text);
-    fCanvas.requestRenderAll();
+    armPlacementTool(
+      { kind: "text", source: "text", content: "Type here", fontSize: 24, editImmediately: true },
+      "Click where you want to type."
+    );
   };
 
   const handleDeleteText = () => {
@@ -579,25 +719,8 @@ export default function PdfEditor() {
     setShowTextToolbar(false);
   };
 
-  // Shared by "Add Signature" and "Add Image" — both are just a picture
-  // dropped centered onto the canvas, draggable/resizable like everything else.
-  const placeImageOnCanvas = async (dataUrl, targetWidth) => {
-    const fCanvas = fabricRef.current;
-    if (!fCanvas) return;
-    exitDrawMode();
-
-    const img = await FabricImage.fromURL(dataUrl);
-    img.set({
-      left: fCanvas.getWidth() / 2,
-      top: fCanvas.getHeight() / 2,
-      originX: "center",
-      originY: "center",
-    });
-    img.scaleToWidth(targetWidth);
-
-    fCanvas.add(img);
-    fCanvas.setActiveObject(img);
-    fCanvas.requestRenderAll();
+  const armImagePlacement = (dataUrl, targetWidth, label, source = label) => {
+    armPlacementTool({ kind: "image", source, dataUrl, targetWidth }, `Click where you want to place the ${label}.`);
   };
 
   // --- "Add Signature" — draw once, place (and reuse) many times ---
@@ -608,16 +731,74 @@ export default function PdfEditor() {
     }
     const saved = localStorage.getItem(SIGNATURE_STORAGE_KEY);
     if (saved) {
-      placeImageOnCanvas(saved, 160);
+      armImagePlacement(saved, 160, "signature", "signature");
     } else {
+      setSignatureMode("signature");
       setShowSignaturePad(true);
     }
   };
 
+  const handleAddInitials = () => {
+    if (!fabricRef.current) {
+      setStatus("Load a PDF first.");
+      return;
+    }
+    setFillToolsOpen(false);
+    const saved = localStorage.getItem(INITIALS_STORAGE_KEY);
+    if (saved) {
+      armImagePlacement(saved, 90, "initials", "initials");
+    } else {
+      setSignatureMode("initials");
+      setShowSignaturePad(true);
+    }
+  };
+
+  const handleEditInitials = () => {
+    setFillToolsOpen(false);
+    clearPlacementTool();
+    setSignatureMode("initials");
+    setShowSignaturePad(true);
+  };
+
   const handleSignatureSave = (dataUrl) => {
-    localStorage.setItem(SIGNATURE_STORAGE_KEY, dataUrl);
+    const isInitials = signatureMode === "initials";
+    localStorage.setItem(isInitials ? INITIALS_STORAGE_KEY : SIGNATURE_STORAGE_KEY, dataUrl);
+    if (isInitials) {
+      setHasSavedInitials(true);
+    } else {
+      setHasSavedSignature(true);
+    }
     setShowSignaturePad(false);
-    placeImageOnCanvas(dataUrl, 160);
+    armImagePlacement(
+      dataUrl,
+      isInitials ? 90 : 160,
+      isInitials ? "initials" : "signature",
+      isInitials ? "initials" : "signature"
+    );
+  };
+
+  const handleToggleFillTools = () => {
+    if (!fabricRef.current) {
+      setStatus("Load a PDF first.");
+      return;
+    }
+    exitDrawMode();
+    clearPlacementTool();
+    setFillToolsOpen((open) => !open);
+  };
+
+  const handleSelectMark = (content) => {
+    const isSymbol = ["✓", "✕", "●"].includes(content);
+    armPlacementTool(
+      {
+        kind: "text",
+        source: isSymbol ? "mark" : "date",
+        content,
+        fontSize: isSymbol ? 28 : 20,
+        editImmediately: false,
+      },
+      `Click where you want to place ${isSymbol ? "the mark" : "the date"}.`
+    );
   };
 
   // --- "Add Image" — pick any picture from disk, place it once ---
@@ -637,19 +818,26 @@ export default function PdfEditor() {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = () => placeImageOnCanvas(reader.result, 200);
+    reader.onload = () => armImagePlacement(reader.result, 200, "image", "image");
     reader.readAsDataURL(file);
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-neutral-950 text-neutral-100">
-      <header className="flex items-center justify-between border-b border-neutral-800 bg-neutral-950/80 px-6 py-4 backdrop-blur">
-        <h1 className="text-lg font-semibold tracking-tight">ZenPDF</h1>
+    <div className="flex flex-col text-stone-100">
+      <header className="flex items-center justify-end gap-4 border-b border-stone-800/50 bg-stone-900/40 px-6 py-4 backdrop-blur-sm">
+        {interactiveFieldCount > 0 && (
+          <span
+            className="mr-auto rounded-full border border-sky-900/60 bg-sky-950/40 px-3 py-1.5 text-xs text-sky-300"
+            title="Interactive fields are preserved in the exported PDF; use Quick Fill to place visible answers over them."
+          >
+            {interactiveFieldCount} form field{interactiveFieldCount === 1 ? "" : "s"} detected
+          </span>
+        )}
         <button
           type="button"
           onClick={handleExportPdf}
           disabled={!pdfLoaded}
-          className="flex items-center gap-2 rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-indigo-500/20 transition-all hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-amber-600/20 transition-all hover:bg-amber-500 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Download size={16} />
           Export PDF
@@ -661,6 +849,9 @@ export default function PdfEditor() {
         onAddText={handleAddText}
         onAddSignature={handleAddSignature}
         onAddImage={handleAddImageClick}
+        fillToolsOpen={fillToolsOpen}
+        onToggleFillTools={handleToggleFillTools}
+        placementSource={placementTool?.source}
         drawMode={drawMode}
         onToggleDraw={handleToggleDraw}
         onUndo={handleUndo}
@@ -678,6 +869,14 @@ export default function PdfEditor() {
         strokeColor={strokeColor}
         onChangeWidth={setStrokeWidth}
         onChangeColor={setStrokeColor}
+      />
+
+      <FillToolsPopover
+        visible={fillToolsOpen}
+        onSelectMark={handleSelectMark}
+        onAddInitials={handleAddInitials}
+        onEditInitials={handleEditInitials}
+        hasSavedInitials={hasSavedInitials}
       />
 
       <TextSettingsPanel
@@ -704,8 +903,14 @@ export default function PdfEditor() {
       <div className="flex min-h-full flex-col items-center justify-center gap-6 px-4 py-16">
         {!pdfLoaded && (
           <>
+            <div className="max-w-2xl text-center">
+              <h1 className="text-2xl font-semibold tracking-tight text-stone-100">Fill and sign application forms privately</h1>
+              <p className="mt-2 text-sm leading-relaxed text-stone-400">
+                Add text, dates, checkmarks, initials, and a visual signature. Your document stays in this browser.
+              </p>
+            </div>
             <Dropzone onFileSelected={loadFile} />
-            {status !== "Choose a PDF or image." && <p className="text-sm text-neutral-400">{status}</p>}
+            {status !== "Choose a PDF or image." && <p className="text-sm text-stone-400">{status}</p>}
           </>
         )}
 
@@ -713,18 +918,29 @@ export default function PdfEditor() {
           <div className="flex flex-wrap items-center justify-center gap-4">
             <button
               onClick={handleChangePdf}
-              className="text-sm text-neutral-400 underline decoration-neutral-600 underline-offset-2 transition-all hover:text-neutral-200"
+              className="text-sm text-stone-400 underline decoration-zinc-600 underline-offset-2 transition-all hover:text-stone-200"
             >
               Change file
             </button>
-            <span className="text-sm text-neutral-400">{status}</span>
+            <span className="text-sm text-stone-400" role="status" aria-live="polite">{status}</span>
 
-            {localStorage.getItem(SIGNATURE_STORAGE_KEY) && (
+            {hasSavedSignature && (
               <button
-                onClick={() => setShowSignaturePad(true)}
-                className="text-sm text-neutral-400 underline decoration-neutral-600 underline-offset-2 transition-all hover:text-neutral-200"
+                onClick={() => {
+                  setSignatureMode("signature");
+                  setShowSignaturePad(true);
+                }}
+                className="text-sm text-stone-400 underline decoration-zinc-600 underline-offset-2 transition-all hover:text-stone-200"
               >
                 Redraw signature
+              </button>
+            )}
+            {hasSavedInitials && (
+              <button
+                onClick={handleEditInitials}
+                className="text-sm text-stone-400 underline decoration-zinc-600 underline-offset-2 transition-all hover:text-stone-200"
+              >
+                Redraw initials
               </button>
             )}
           </div>
@@ -742,7 +958,7 @@ export default function PdfEditor() {
             resting on the dark desk. Kept mounted at all times (just visually hidden pre-load) so
             the refs are always valid when a file is dropped/selected — no mount-timing races. */}
         <div
-          className={`relative overflow-hidden rounded-xl border border-neutral-800 bg-gray-50 shadow-2xl shadow-black/60 ${
+          className={`relative overflow-hidden rounded-xl border border-stone-800 bg-gray-50 shadow-2xl shadow-black/60 ${
             pdfLoaded ? "inline-block" : "hidden"
           }`}
           style={{ transform: `scale(${zoom / 100})`, transformOrigin: "top center" }}
@@ -753,7 +969,11 @@ export default function PdfEditor() {
       </div>
 
       {showSignaturePad && (
-        <SignaturePad onSave={handleSignatureSave} onCancel={() => setShowSignaturePad(false)} />
+        <SignaturePad
+          mode={signatureMode}
+          onSave={handleSignatureSave}
+          onCancel={() => setShowSignaturePad(false)}
+        />
       )}
       </div>
     </div>

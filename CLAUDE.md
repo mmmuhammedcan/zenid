@@ -1,4 +1,4 @@
-# Doc Toolkit — Project Plan
+# ZenID — Project Plan
 
 ## Vision
 A combination of iLovePDF + CamScanner/Microsoft Lens + a simple e-signature tool. Goal: bring
@@ -32,8 +32,9 @@ A single backend API (FastAPI), in front of which as many "clients" as needed ca
 being used under the hood — it only calls the functions the Facade exposes.
 
 ```
-Frontend(s): Web App (index.html, cv-builder.html) / ZenPDF (frontend/pdf-editor) /
-             (later) Extension / Mobile
+Frontend(s): Web App (index.html, cv-builder.html, legacy/standalone) /
+             Doc Toolkit Hub (frontend/pdf-editor — Dashboard + ZenPDF + Resume Builder,
+             react-router-dom) / (later) Extension / Mobile
                          │
                     FACADE LAYER (DocFacade)
      scan_to_pdf() / render_pdf_pages() / apply_overlay() / generate_cv()
@@ -49,6 +50,11 @@ img2pdf)     enough" as-is) placement — ONE     fully reliable)
                             signature + photo)
 ```
 
+Note: the React hub (`frontend/pdf-editor`) is entirely client-side right now — routing ties its
+own tools (ZenPDF, Resume Builder) together, but neither one calls the FastAPI backend yet. The
+old vanilla-JS pages (`index.html`, `editor.html`, `cv-builder.html`) are the ones actually wired
+to the Facade/backend today; see "Long-term Note" and the ZenPDF/Resume Builder sections below.
+
 Key insight: real-world documents (internship/job forms) are usually **flat/scanned PDFs with no
 AcroForm fields**. "Filling a form" really means "click anywhere on the PDF, place
 text/signature/photo" — exactly the same mechanism as placing a signature or a photo. That's why
@@ -58,14 +64,35 @@ the three were merged into **one Overlay module**; there's no separate AcroForm 
 Signature storage: instead of a user account system, **browser localStorage** is used — zero
 backend complexity. Could move to real accounts later alongside the payment system.
 
-## ZenPDF — the main PDF editor (current focus)
+## Doc Toolkit Hub — central React app (frontend/pdf-editor)
+
+`frontend/pdf-editor/` is no longer just ZenPDF's own Vite project — it's now the single React app
+that hosts the whole in-browser tool suite, tied together with `react-router-dom`:
+- `/` — **Dashboard** (`src/Dashboard.jsx`): premium dark-mode hub, two cards ("Edit PDF" →
+  ZenPDF, "Build Resume" → Resume Builder), each with a Lucide icon, subtitle, description, and
+  hover affordance.
+- `/editor` — ZenPDF (`src/PdfEditor.jsx`)
+- `/resume` — Resume Builder (`src/resume/ResumeApp.jsx`)
+
+Both tools have a Home icon in their header (`<Link to="/">`) that returns to the Dashboard. This
+is the "Integration" work from the priority queue below — ZenPDF and Resume Builder are no longer
+isolated islands, they're routes in one app. What integration does **not** yet mean: neither tool
+talks to the FastAPI backend, and the legacy vanilla-JS pages (`index.html`, `editor.html`,
+`cv-builder.html`) are still separate, unlinked from this hub — that remains future work.
+
+The standalone `frontend/resume-builder/` Vite project that Resume Builder was originally
+prototyped in has been deleted — its source was migrated into `frontend/pdf-editor/src/resume/`
+so both tools share one dependency tree, one dev server, and one router.
+
+## ZenPDF — the PDF editor tool
 
 **ZenPDF is not a prototype.** It is meant to become *the* editor and will fully replace the old
-vanilla-JS `frontend/editor.html`. It lives at `frontend/pdf-editor/` as its own Vite project.
+vanilla-JS `frontend/editor.html`. It lives at `frontend/pdf-editor/src/PdfEditor.jsx`, mounted at
+the `/editor` route of the Doc Toolkit Hub described above.
 
 **Stack:** React + Vite + Tailwind CSS v4 + Fabric.js (canvas/object manipulation) + PDF.js
-(rendering) + jsPDF (export) + Lucide React (icons). Entirely client-side right now — no calls to
-the FastAPI backend.
+(rendering) + jsPDF (export) + Lucide React (icons) + react-router-dom (hub navigation). Entirely
+client-side right now — no calls to the FastAPI backend.
 
 **Built so far:**
 - PDF.js rendering + a Fabric.js overlay canvas mounted exactly on top of it
@@ -131,17 +158,56 @@ the FastAPI backend.
   (`isRestoringRef` guard) and push one atomic snapshot after clearing instead.
 - New npm dependencies added while the Vite dev server is already running can cause a stale
   dependency-cache "duplicate React instance" error — clear `node_modules/.vite` and restart.
+- Running two Vite dev servers (or any two projects with large `node_modules`) at once on this
+  machine can exhaust the OS file-watcher limit (`ENOSPC`, `fs.inotify.max_user_watches`) — kill
+  the unused dev server rather than raising the system limit.
 
 **Current priority queue (in this exact order):**
 1. ~~Quick fixes~~ — ✅ **Done**: z-index overlap between the floating text toolbar and the bottom
    nav/zoom bar fixed (position clamping + z-index); ZenPDF brand favicon in place.
-2. **Integration (next up)** — break ZenPDF out of its standalone "island": connect/route it into
-   the rest of the project properly (currently it doesn't talk to the backend and isn't linked
-   from `index.html`/`editor.html`/`cv-builder.html` at all).
+2. ~~Integration~~ — ✅ **Partially done**: ZenPDF and Resume Builder are now routed together under
+   one Dashboard hub via react-router-dom (see "Doc Toolkit Hub" above). Still open: neither tool
+   calls the FastAPI backend, and the legacy vanilla-JS pages (`index.html`/`editor.html`/
+   `cv-builder.html`) remain unlinked from the hub.
 3. **Later phase (deliberately deferred, not now):** mobile/touch responsiveness (never tested on
    a narrow viewport — the floating sidebar + bottom bar layout likely needs rework), and backend
    persistence (right now everything lives only in the browser tab; refreshing loses all work
    except the saved signature).
+
+## Resume Builder — the resume-creation tool
+
+A separate, new front-end-only tool, mounted at the `/resume` route of the Doc Toolkit Hub
+(`src/resume/`). Structurally referenced (not cloned) from a reference resume-builder UI: same
+split-screen shape, entirely restyled to a premium, minimalist, "Apple-style" aesthetic — light
+theme (not ZenPDF's dark theme), ample whitespace, quiet typography. Deliberately simple: a flat
+`resumeData` state (`{ personalInfo, experience[] }`) passed via props, no context/store library,
+no backend calls, no over-built abstraction.
+
+**Flow:**
+- `TemplateSelector.jsx` — pick between two templates (Minimal: single column; Modern: accent
+  sidebar for contact info), plus a 4-swatch **Theme Color Picker** (see below). Selecting a
+  template and continuing moves to the builder; going back preserves both the entered data and the
+  chosen template/color.
+- `BuilderView.jsx` — split-screen: collapsible accordion form on the left (`AccordionSection.jsx`
+  wrapping `PersonalInfoForm.jsx` and `ExperienceForm.jsx`, the latter supporting add/remove
+  entries), sticky live preview on the right (`ResumePreview.jsx`) rendered at real A4 point
+  dimensions (595×842 — the same `A4_WIDTH_PT`/`A4_HEIGHT_PT` values ZenPDF's `pdfExport.js` uses).
+- `ResumeApp.jsx` — top-level state owner: `template`, `accentColor`, `resumeData`.
+
+**Theming:** the default dark accent was originally flat `neutral-900` (looked harsh, "wireframe").
+Replaced with a curated, **non-free-form** picker — exactly 4 premium colors defined in
+`src/resume/themes.js` (Soft Slate — default, Deep Navy, Sage Green, Muted Burgundy), applied via
+inline `style` (Tailwind's JIT scanner can't pick up dynamically-built class names like
+`` `bg-${color}-900` ``, so the accent is a literal hex value, not a Tailwind class). The Modern
+template's sidebar uses the accent as its background; the Minimal template uses it for the name
+heading, a small underline rule, and section-heading labels, so "accent color" reads consistently
+across both layouts.
+
+**Reliability and guidance:** the builder saves its full draft in browser `localStorage`, exposes
+the downloadable 5-page ZenID Resume Architecture Playbook, and surfaces export errors in the UI.
+PDF export embeds Noto Sans so Turkish characters remain intact while the text stays selectable for
+ATS parsing. Export filenames are sanitized, short certification sections are kept together across
+page breaks, and resume utilities/PDF creation have Node test coverage (`npm test`).
 
 ## Folder Structure (current)
 
@@ -160,11 +226,22 @@ doc-toolkit/
 │   │   └── cv_classic.html        # CV template (HTML/CSS)
 │   └── requirements.txt
 ├── frontend/
-│   ├── index.html                 # Photo → PDF scanner
+│   ├── index.html                 # Photo → PDF scanner (legacy, not linked to the hub)
 │   ├── editor.html                 # PDF fill/sign/photo — OLD, being replaced by ZenPDF
-│   ├── cv-builder.html             # CV builder form
-│   └── pdf-editor/                 # ZenPDF — React/Vite/Tailwind/Fabric.js/PDF.js/jsPDF,
-│                                   #   the main editor going forward (see "ZenPDF" section)
+│   ├── cv-builder.html             # CV builder form (legacy, not linked to the hub)
+│   └── pdf-editor/                 # Doc Toolkit Hub — React/Vite/Tailwind/react-router-dom,
+│       ├── src/
+│       │   ├── App.jsx             #   BrowserRouter + Routes: / , /editor , /resume
+│       │   ├── Dashboard.jsx       #   central hub — two cards linking to the tools below
+│       │   ├── PdfEditor.jsx       #   ZenPDF (Fabric.js/PDF.js/jsPDF) — see "ZenPDF" section
+│       │   └── resume/             #   Resume Builder — see "Resume Builder" section
+│       │       ├── ResumeApp.jsx
+│       │       ├── TemplateSelector.jsx
+│       │       ├── BuilderView.jsx
+│       │       ├── ResumePreview.jsx
+│       │       ├── themes.js       #   4 curated accent colors
+│       │       └── ...
+│       └── (Fabric.js/PDF.js/jsPDF/Lucide/react-router-dom all live here)
 └── README.md
 ```
 
@@ -198,7 +275,8 @@ was deemed acceptable. If the engine ever needs to change (Tesseract → EasyOCR
 | 1 | Photo → clean + searchable PDF (incl. OCR) | ✅ Done |
 | A | Overlay Editor (old, vanilla JS) — click-to-place text/signature/photo on a PDF, signature saved in localStorage | ✅ Done, being replaced by ZenPDF |
 | B | CV Builder — fill a form → professional PDF via WeasyPrint | ✅ Done |
-| **ZenPDF (current)** | **Main PDF editor** — React/Fabric.js/PDF.js rewrite of the Overlay Editor, plus multi-page, drawing, image-to-PDF, real export | ✅ Feature-complete, 🔄 quick fixes + integration in progress |
+| **ZenPDF** | **Main PDF editor** — React/Fabric.js/PDF.js rewrite of the Overlay Editor, plus multi-page, drawing, image-to-PDF, real export | ✅ Feature-complete, routed into the Doc Toolkit Hub |
+| **Resume Builder (current)** | Template selection + split-screen form/live-preview resume builder, 4-color curated theming | ✅ Feature-complete, routed into the Doc Toolkit Hub |
 | C | Merge/split/rotate/watermark (pypdf) | Planned |
 | D | PDF ↔ DOCX/JPG format conversion | Planned |
 | 7 | Payment integration — pay-as-you-go + monthly subscription option (evaluate iyzico/PayTR for Turkey) | Planned |

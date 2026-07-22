@@ -1,9 +1,12 @@
-import { Eraser as ClearIcon, ImagePlus, PenTool, Pencil, Redo2, Type, Undo2 } from "lucide-react";
+import { Eraser as ClearIcon, ImagePlus, ListChecks, PenTool, Pencil, Redo2, Type, Undo2 } from "lucide-react";
 
 export default function Toolbar({
   onAddText,
   onAddSignature,
   onAddImage,
+  fillToolsOpen,
+  onToggleFillTools,
+  placementSource,
   drawMode,
   onToggleDraw,
   onUndo,
@@ -13,9 +16,16 @@ export default function Toolbar({
   onClearPage,
 }) {
   const creationItems = [
-    { key: "text", label: "Add Text", Icon: Type, onClick: onAddText, active: false },
-    { key: "signature", label: "Add Signature", Icon: PenTool, onClick: onAddSignature, active: false },
-    { key: "image", label: "Add Image", Icon: ImagePlus, onClick: onAddImage, active: false },
+    { key: "text", label: "Add Text", Icon: Type, onClick: onAddText, active: placementSource === "text" },
+    { key: "signature", label: "Add Visual Signature", Icon: PenTool, onClick: onAddSignature, active: placementSource === "signature" },
+    {
+      key: "fill",
+      label: "Quick Fill",
+      Icon: ListChecks,
+      onClick: onToggleFillTools,
+      active: fillToolsOpen || ["mark", "date", "initials"].includes(placementSource),
+    },
+    { key: "image", label: "Add Image", Icon: ImagePlus, onClick: onAddImage, active: placementSource === "image" },
     { key: "draw", label: "Draw", Icon: Pencil, onClick: onToggleDraw, active: drawMode },
   ];
 
@@ -35,7 +45,7 @@ export default function Toolbar({
       aria-pressed={active}
       className={`flex h-11 w-11 items-center justify-center rounded-xl transition-all hover:scale-105 active:scale-95 disabled:pointer-events-none disabled:opacity-30 disabled:hover:scale-100 ${
         active
-          ? "bg-indigo-500 text-white"
+          ? "bg-amber-600 text-white"
           : danger
             ? "text-red-400 hover:bg-red-500/10 hover:text-red-300"
             : "text-neutral-300 hover:bg-neutral-800 hover:text-white active:bg-neutral-700"
@@ -46,11 +56,11 @@ export default function Toolbar({
   );
 
   return (
-    <div className="fixed left-6 top-1/2 z-30 flex -translate-y-1/2 flex-col gap-1 rounded-2xl border border-neutral-800 bg-neutral-900/90 p-2 shadow-2xl shadow-black/40 backdrop-blur">
+    <div className="fixed bottom-20 left-1/2 z-30 flex max-w-[calc(100vw-1rem)] -translate-x-1/2 flex-row gap-1 overflow-x-auto rounded-2xl border border-neutral-800 bg-neutral-900/90 p-2 shadow-2xl shadow-black/40 backdrop-blur md:bottom-auto md:left-6 md:top-1/2 md:max-w-none md:translate-x-0 md:-translate-y-1/2 md:flex-col md:overflow-visible">
       {creationItems.map(renderButton)}
-      <div className="my-1 h-px bg-neutral-800" />
+      <div className="mx-1 h-11 w-px shrink-0 bg-neutral-800 md:mx-0 md:my-1 md:h-px md:w-auto" />
       {historyItems.map(renderButton)}
-      <div className="my-1 h-px bg-neutral-800" />
+      <div className="mx-1 h-11 w-px shrink-0 bg-neutral-800 md:mx-0 md:my-1 md:h-px md:w-auto" />
       {renderButton({ key: "clear", label: "Clear page (Ctrl+Z to undo)", Icon: ClearIcon, onClick: onClearPage, danger: true })}
     </div>
   );

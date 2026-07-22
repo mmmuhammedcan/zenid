@@ -17,8 +17,8 @@ export default function DrawPopover({
 
   return (
     <div
-      className={`fixed left-24 top-1/2 z-30 flex -translate-y-1/2 flex-col gap-3 rounded-2xl border border-white/10 bg-neutral-900/70 px-4 py-3 shadow-2xl shadow-black/50 backdrop-blur-xl transition-all duration-200 ${
-        visible ? "translate-x-0 opacity-100" : "-translate-x-2 opacity-0"
+      className={`fixed bottom-40 left-1/2 z-30 flex -translate-x-1/2 flex-col gap-3 rounded-2xl border border-white/10 bg-neutral-900/90 px-4 py-3 shadow-2xl shadow-black/50 backdrop-blur-xl transition-all duration-200 md:bottom-auto md:left-24 md:top-1/2 md:translate-x-0 md:-translate-y-1/2 ${
+        visible ? "opacity-100" : "translate-y-2 opacity-0 md:-translate-x-2 md:translate-y-0"
       }`}
     >
       <div className="flex items-center gap-1.5 rounded-lg bg-white/5 p-1">
@@ -28,7 +28,7 @@ export default function DrawPopover({
           title="Brush"
           aria-pressed={!eraseMode}
           className={`flex h-8 flex-1 items-center justify-center gap-1.5 rounded-md text-xs transition-all ${
-            !eraseMode ? "bg-indigo-500 text-white" : "text-neutral-300 hover:bg-white/10"
+            !eraseMode ? "bg-amber-600 text-white" : "text-neutral-300 hover:bg-white/10"
           }`}
         >
           <Pencil size={14} /> Brush
@@ -39,7 +39,7 @@ export default function DrawPopover({
           title="Eraser — click or drag over a stroke to remove it"
           aria-pressed={eraseMode}
           className={`flex h-8 flex-1 items-center justify-center gap-1.5 rounded-md text-xs transition-all ${
-            eraseMode ? "bg-indigo-500 text-white" : "text-neutral-300 hover:bg-white/10"
+            eraseMode ? "bg-amber-600 text-white" : "text-neutral-300 hover:bg-white/10"
           }`}
         >
           <Eraser size={14} /> Eraser
@@ -60,7 +60,7 @@ export default function DrawPopover({
                   onClick={() => onChangeWidth(w)}
                   title={`${w}px`}
                   className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all ${
-                    strokeWidth === w ? "bg-indigo-500" : "bg-white/5 hover:bg-white/10"
+                    strokeWidth === w ? "bg-amber-600" : "bg-white/5 hover:bg-white/10"
                   }`}
                 >
                   <span

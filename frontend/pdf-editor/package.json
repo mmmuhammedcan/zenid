@@ -7,16 +7,20 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
+    "test": "node --test src/*.test.js src/resume/*.test.js src/portfolio/*.test.js",
     "preview": "vite preview"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "fabric": "^7.4.0",
+    "fflate": "^0.8.3",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.25.0",
+    "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^4.10.38",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "react-router-dom": "^7.18.1",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {

@@ -22,24 +22,32 @@ export default function Dropzone({ onFileSelected }) {
     if (file) onFileSelected(file);
   };
 
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      inputRef.current?.click();
+    }
+  };
+
   return (
     <div
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       onClick={() => inputRef.current.click()}
+      onKeyDown={handleKeyDown}
       role="button"
       tabIndex={0}
       className={`flex w-full max-w-xl cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-10 py-16 text-center transition-all ${
         isDragActive
-          ? "border-indigo-400 bg-indigo-500/10"
-          : "border-neutral-700 bg-neutral-900/40 hover:border-neutral-600 hover:bg-neutral-900/70"
+          ? "border-amber-500 bg-amber-600/15"
+          : "border-stone-700 bg-stone-900/40 hover:border-stone-600 hover:bg-stone-900/60"
       }`}
     >
-      <FileUp size={36} className={isDragActive ? "text-indigo-400" : "text-neutral-500"} />
+      <FileUp size={36} className={isDragActive ? "text-amber-500" : "text-stone-500"} />
       <div>
-        <p className="text-base font-medium text-neutral-200">Drag & drop a PDF or image here</p>
-        <p className="mt-1 text-sm text-neutral-500">PDF, JPG, or PNG — or click to browse</p>
+        <p className="text-base font-medium text-stone-200">Drag & drop a PDF or image here</p>
+        <p className="mt-1 text-sm text-stone-500">PDF, JPG, or PNG — or click to browse</p>
       </div>
       <input
         ref={inputRef}

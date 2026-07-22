@@ -1,11 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { strFromU8, unzipSync } from "fflate";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { createEmptyProject } from "../resume/projectSchema.js";
 import {
   buildPublicationReview,
   getPublicPortfolioAssetIds,
   serializePortfolioSite,
+  validatePortfolioSiteArchive,
 } from "./portfolioSiteExport.js";
 
 function fixture() {
@@ -104,4 +105,46 @@ test("hidden About content is not leaked and published text is HTML escaped", ()
 
   assert.doesNotMatch(html, /PRIVATE ABOUT|PRIVATE LOCATION|<script>alert/);
   assert.match(html, /&lt;script&gt;alert\(&quot;unsafe&quot;\)&lt;\/script&gt;/);
+});
+
+test("every offline resource exists and resolves under root and subpath static hosting", () => {
+  const archive = serializePortfolioSite(fixture(), { assets });
+  const report = validatePortfolioSiteArchive(archive);
+
+  assert.deepEqual(report.localReferences.sort(), [
+    "assets/profile.png",
+    "certificates/public-certificate.webp",
+    "projects/public-project-1.jpg",
+    "resume.pdf",
+  ]);
+
+  for (const base of ["https://portfolio.example/", "https://example.github.io/zenid-portfolio/"]) {
+    const basePath = new URL(base).pathname;
+    report.localReferences.forEach((reference) => {
+      const resolved = new URL(reference, base);
+      assert.equal(resolved.origin, new URL(base).origin);
+      assert.equal(resolved.pathname.startsWith(basePath), true);
+    });
+  }
+});
+
+test("archive verification rejects missing files and external runtime dependencies", () => {
+  const archive = serializePortfolioSite(fixture(), { assets });
+  const missingFilePackage = unzipSync(archive);
+  delete missingFilePackage["assets/profile.png"];
+  assert.throws(
+    () => validatePortfolioSiteArchive(zipSync(missingFilePackage)),
+    /missing or unsafe file/
+  );
+
+  const networkPackage = unzipSync(archive);
+  const html = strFromU8(networkPackage["index.html"]).replace(
+    "</head>",
+    '<script src="https://cdn.example/app.js"></script></head>'
+  );
+  networkPackage["index.html"] = strToU8(html);
+  assert.throws(
+    () => validatePortfolioSiteArchive(zipSync(networkPackage)),
+    /network-dependent runtime resource/
+  );
 });

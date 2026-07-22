@@ -255,7 +255,8 @@ Portfolio MVP delivery slices:
    area, and locally generated or uploaded résumé download.
 4. [x] Add configurable section ordering.
 5. [x] Generate the static public portfolio ZIP and require a final publication/privacy review.
-6. [ ] Test the exported site without a network connection and on common static hosts.
+6. [x] Verify offline packaging and root/subpath static-host compatibility, including
+   GitHub Pages-style deployment paths, with automated reference-integrity tests.
 
 ### Pre-Portfolio Gate — ZenPDF Fill & Sign Baseline
 

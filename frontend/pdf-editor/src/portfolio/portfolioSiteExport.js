@@ -1,4 +1,4 @@
-import { strToU8, zipSync } from "fflate";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { DEFAULT_PORTFOLIO_SECTION_ORDER, normalizeProject } from "../resume/projectSchema.js";
 
 export const PORTFOLIO_ZIP_MIME = "application/zip";
@@ -175,6 +175,59 @@ function isPdf(bytes) {
   return bytes?.length >= 5 && String.fromCharCode(...bytes.subarray(0, 5)) === "%PDF-";
 }
 
+function siteReferences(html) {
+  return [...html.matchAll(/<([a-z][a-z0-9]*)\b[^>]*?\b(src|href)=(["'])(.*?)\3/gi)].map((match) => ({
+    tag: match[1].toLowerCase(),
+    attribute: match[2].toLowerCase(),
+    value: match[4],
+  }));
+}
+
+function validatePortfolioFiles(files) {
+  if (!files["index.html"]) throw new Error("The public portfolio package is missing index.html.");
+  const html = strFromU8(files["index.html"]);
+  if (/<script\b[^>]*\bsrc=|<link\b[^>]*\brel=["']?stylesheet|@import\s|url\(\s*["']?https?:/i.test(html)) {
+    throw new Error("The public portfolio contains a network-dependent runtime resource.");
+  }
+
+  const localReferences = [];
+  const externalLinks = [];
+  siteReferences(html).forEach(({ tag, attribute, value }) => {
+    if (value.startsWith("#") || value.startsWith("mailto:") || value.startsWith("tel:")) return;
+    if (/^https?:\/\//i.test(value)) {
+      if (tag !== "a" || attribute !== "href") {
+        throw new Error("The public portfolio contains an external runtime dependency.");
+      }
+      externalLinks.push(value);
+      return;
+    }
+    if (/^[a-z][a-z0-9+.-]*:/i.test(value) || value.startsWith("/") || value.startsWith("\\")) {
+      throw new Error(`The public portfolio contains a static-host-incompatible reference: ${value}`);
+    }
+    const path = value.split(/[?#]/, 1)[0];
+    if (!path || path.split("/").includes("..") || !files[path]) {
+      throw new Error(`The public portfolio references a missing or unsafe file: ${value}`);
+    }
+    localReferences.push(path);
+  });
+
+  return {
+    filePaths: Object.keys(files),
+    localReferences: [...new Set(localReferences)],
+    externalLinks: [...new Set(externalLinks)],
+  };
+}
+
+export function validatePortfolioSiteArchive(input) {
+  let files;
+  try {
+    files = unzipSync(input instanceof Uint8Array ? input : new Uint8Array(input));
+  } catch {
+    throw new Error("The public portfolio ZIP could not be opened for verification.");
+  }
+  return validatePortfolioFiles(files);
+}
+
 function createPublicFiles(project, assets, resumePdfBytes) {
   const files = {};
   const paths = { projects: {}, certificates: {} };
@@ -311,6 +364,7 @@ export function serializePortfolioSite(input, options = {}) {
   const project = normalizeProject(input);
   const { files, paths } = createPublicFiles(project, options.assets || [], options.resumePdfBytes);
   files["index.html"] = strToU8(renderPortfolioHtml(project, paths));
+  validatePortfolioFiles(files);
   const archive = zipSync(files, { level: 6 });
   if (archive.byteLength > MAX_PORTFOLIO_ZIP_BYTES) {
     throw new Error("The public portfolio ZIP is larger than 25 MB. Remove or resize some published images.");

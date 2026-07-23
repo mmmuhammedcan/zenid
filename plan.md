@@ -24,6 +24,21 @@ The central promise is:
 The current frontend design should be preserved. The work below changes and stabilizes the data
 and export foundations behind the interface; it does not require a visual rewrite.
 
+ZenPDF is a supporting form fill-and-sign tool. The Python OCR/backend and vanilla HTML pages are
+legacy experiments, not part of the current React product architecture or active delivery plan.
+Expanding either area requires a recorded product decision.
+
+## Delivery Status Language
+
+Roadmap status is evidence-based:
+
+- **[I] Implemented:** the code exists.
+- **[A] Automatically verified:** repeatable automated evidence exists.
+- **[M] Manually accepted:** a dated manual/user acceptance record exists.
+
+No item is considered fully accepted until the evidence required by its spec is present. Current
+evidence is summarized in `docs/verification-matrix.md`.
+
 ## Core Privacy Model
 
 - Resume and portfolio editing happens in the browser.
@@ -246,16 +261,16 @@ Preserve the existing interface and complete the Resume Builder before expanding
 
 Portfolio MVP delivery slices:
 
-1. [x] Add the route/dashboard entry, canonical portfolio defaults, five-step editor shell, local
+1. [I] Add the route/dashboard entry, canonical portfolio defaults, five-step editor shell, local
    autosave, contact privacy controls, and a responsive live preview using existing profile facts.
-2. [x] Add IndexedDB-backed profile, project, and certificate media and package those assets inside
+2. [I] Add IndexedDB-backed profile, project, and certificate media and package those assets inside
    `.zenid` projects without storing large data URLs in localStorage.
-3. [x] Add per-item publish controls, rich project case studies, per-screenshot captions and
+3. [I] Add per-item publish controls, rich project case studies, per-screenshot captions and
    galleries, certificate details and images, introduction video, a single non-duplicated contact
    area, and locally generated or uploaded résumé download.
-4. [x] Add configurable section ordering.
-5. [x] Generate the static public portfolio ZIP and require a final publication/privacy review.
-6. [x] Verify offline packaging and root/subpath static-host compatibility, including
+4. [I] Add configurable section ordering.
+5. [I][A] Generate the static public portfolio ZIP and require a final publication/privacy review.
+6. [I][A] Verify offline packaging and root/subpath static-host compatibility, including
    GitHub Pages-style deployment paths, with automated reference-integrity tests.
 
 ### Pre-Portfolio Gate — ZenPDF Fill & Sign Baseline
@@ -263,15 +278,15 @@ Portfolio MVP delivery slices:
 ZenPDF is a focused supporting tool for job, internship, university, and onboarding forms. It is
 not intended to become a complete Acrobat replacement before the Portfolio Builder begins.
 
-- [x] Keep document processing local in the browser.
-- [x] Place text, signatures, initials, images, dates, checkmarks, crossmarks, and filled dots.
-- [x] Use click-to-place behavior so form items start at the intended field rather than page center.
-- [x] Preserve the original PDF, selectable source text, existing form data, and original page
+- [I] Keep document processing local in the browser.
+- [I] Place text, signatures, initials, images, dates, checkmarks, crossmarks, and filled dots.
+- [I] Use click-to-place behavior so form items start at the intended field rather than page center.
+- [I][A] Preserve the original PDF, selectable source text, existing form data, and original page
   dimensions when exporting normal PDFs.
-- [x] Detect existing interactive form fields and explain that Quick Fill can overlay them.
-- [x] Warn before replacing a document containing unfinished annotations.
-- [x] Make the core toolbar keyboard-labelled and usable in a narrow viewport.
-- [x] Clearly describe drawn signatures as visual marks, not certificate-backed secure digital
+- [I] Detect existing interactive form fields and explain that Quick Fill can overlay them.
+- [I] Warn before replacing a document containing unfinished annotations.
+- [I] Make the core toolbar keyboard-labelled and usable in a narrow viewport.
+- [I] Clearly describe drawn signatures as visual marks, not certificate-backed secure digital
   signatures.
 
 Deferred until real usage proves they are needed:
@@ -304,19 +319,20 @@ Deferred until real usage proves they are needed:
 
 The next engineering work should be completed in this order:
 
-1. [x] Write the canonical schema and compatibility rules as code-level validation.
-2. [x] Add stable UUID generation and migrate the current resume state into `profile` plus
+1. [I][A] Write the canonical schema and compatibility rules as code-level validation.
+2. [I][A] Add stable UUID generation and migrate the current resume state into `profile` plus
    `resumes[]`.
-3. [x] Add migration tests using realistic copies of the current localStorage v1 draft.
-4. [x] Add Save ZenID Project and Open ZenID Project, read entirely in the browser.
-5. [x] Use the documented ZIP-based `.zenid` format for the current Resume Builder data. Asset
+3. [I][A] Add migration tests using synthetic copies of the current localStorage v1 draft.
+4. [I][A] Add Save ZenID Project and Open ZenID Project, read entirely in the browser.
+5. [I][A] Use the documented ZIP-based `.zenid` format for the current Resume Builder data. Asset
    entries will be added when profile and portfolio media are introduced.
-6. [x] Add multiple named resume versions without duplicating the shared profile.
-7. [x] Add an exact multi-page ATS PDF preview generated by the same code as the downloaded PDF,
+6. [I][A] Add multiple named resume presentation versions without duplicating the shared profile.
+   Per-version item selection and content overrides remain unimplemented.
+7. [I][A] Add an exact multi-page ATS PDF preview generated by the same code as the downloaded PDF,
    while preserving the existing visual design preview. Complete manual mobile and assistive-
    technology testing before release.
-8. [x] Begin the Portfolio Builder only after the remaining Resume Builder reliability work is
-   complete.
+8. [I] Begin the Portfolio Builder. Remaining Resume Builder reliability work is tracked in the
+   verification matrix rather than described as complete.
 
 ## Important Product Principles
 

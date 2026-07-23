@@ -26,3 +26,7 @@ npm-debug.log*
 
 # Locally generated project/PDF round-trip outputs
 artifacts/
+
+# Creator-owned acceptance fixtures and real portfolio/CV review material
+# (may contain personal data; never commit)
+creator_docs/

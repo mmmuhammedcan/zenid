@@ -1,0 +1,51 @@
+# ZenID Decision Log
+
+Decisions are append-only. Superseded decisions stay here and point to their
+replacement so historical context remains explainable.
+
+## D-001 — ZenID workspace is the primary product
+
+- Date: 2026-07-23
+- Status: Accepted
+- Decision owner: Creator
+- Context: The repository contained two conflicting visions: a general PDF SaaS
+  and a local professional identity workspace.
+- Decision: The local professional identity workspace is authoritative. Resume,
+  portfolio, and the private `.zenid` project form the primary journey. ZenPDF
+  is a supporting fill-and-sign tool.
+- Consequence: The Python OCR/backend and vanilla pages are legacy experiments.
+  New work there requires a separate product decision.
+
+## D-002 — Real creator data is valid manual acceptance material
+
+- Date: 2026-07-23
+- Status: Accepted
+- Decision owner: Creator
+- Context: Synthetic fixtures prove repeatability but cannot replace the
+  creator's visual review of a real CV and portfolio.
+- Decision: Real creator data is kept under ignored `creator_docs/`. Tracked
+  automated tests and shared scripts use synthetic identities.
+- Consequence: Personal acceptance remains possible without publishing personal
+  data in repository history.
+
+## D-003 — Completion status must name its evidence level
+
+- Date: 2026-07-23
+- Status: Accepted
+- Decision owner: Creator
+- Decision: Roadmap items use Implemented, Automatically verified, and Manually
+  accepted as separate states.
+- Consequence: A passing build or existing code is not by itself product
+  acceptance.
+
+## D-004 — Saved ZenPDF pages must finish restoring before use
+
+- Date: 2026-07-23
+- Status: Accepted
+- Decision owner: Engineering
+- Context: Fabric `loadFromJSON` is asynchronous. Page navigation previously
+  reported readiness before the saved annotations had finished loading.
+- Decision: Page rendering awaits annotation restoration. Concurrent page
+  transitions and export are guarded as document-busy operations.
+- Consequence: Users cannot export or start another page transition against a
+  partially restored canvas.

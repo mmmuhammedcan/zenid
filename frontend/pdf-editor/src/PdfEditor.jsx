@@ -11,6 +11,7 @@ import DrawPopover from "./DrawPopover";
 import FillToolsPopover from "./FillToolsPopover";
 import BottomBar from "./BottomBar";
 import useHistory from "./useHistory";
+import { restoreCanvasSnapshot } from "./canvasRestore";
 import {
   A4_HEIGHT_PT,
   A4_WIDTH_PT,
@@ -65,6 +66,8 @@ export default function PdfEditor() {
   const [placementTool, setPlacementTool] = useState(null);
   const [signatureMode, setSignatureMode] = useState("signature");
   const [interactiveFieldCount, setInteractiveFieldCount] = useState(0);
+  const [documentBusy, setDocumentBusy] = useState(false);
+  const [documentReady, setDocumentReady] = useState(false);
   const [hasSavedSignature, setHasSavedSignature] = useState(
     () => typeof window !== "undefined" && Boolean(window.localStorage.getItem(SIGNATURE_STORAGE_KEY))
   );
@@ -109,6 +112,7 @@ export default function PdfEditor() {
   const originalPdfBytesRef = useRef(null); // source bytes retained for non-destructive export
   const pagesDataRef = useRef({}); // pageNumber -> fabric.toJSON(), so annotations survive page switches
   const placementToolRef = useRef(null);
+  const documentOperationRef = useRef(false);
 
   // Clean up the fabric instance on unmount
   useEffect(() => {
@@ -205,6 +209,7 @@ export default function PdfEditor() {
   };
 
   const loadPdfFile = async (file) => {
+    setDocumentReady(false);
     setStatus("Loading...");
     try {
       const arrayBuffer = await file.arrayBuffer();
@@ -233,6 +238,7 @@ export default function PdfEditor() {
           ? `${fieldCount} interactive form field${fieldCount === 1 ? "" : "s"} detected. Quick Fill can place content over any field.`
           : "Document ready."
       );
+      setDocumentReady(true);
       setPdfLoaded(true);
     } catch (err) {
       setStatus("Error: " + err.message);
@@ -240,6 +246,7 @@ export default function PdfEditor() {
   };
 
   const loadImageFile = async (file) => {
+    setDocumentReady(false);
     setStatus("Loading...");
     try {
       const dataUrl = await new Promise((resolve, reject) => {
@@ -272,7 +279,7 @@ export default function PdfEditor() {
       bgCtx.fillStyle = "#ffffff";
       bgCtx.fillRect(0, 0, width, height);
 
-      setupFabricOverlay(width, height, 1);
+      await setupFabricOverlay(width, height, 1);
 
       const fCanvas = fabricRef.current;
       const img = await FabricImage.fromURL(dataUrl);
@@ -292,6 +299,7 @@ export default function PdfEditor() {
       fCanvas.requestRenderAll();
 
       setStatus("Document ready.");
+      setDocumentReady(true);
       setPdfLoaded(true);
     } catch (err) {
       setStatus("Error: " + err.message);
@@ -299,6 +307,7 @@ export default function PdfEditor() {
   };
 
   const handleChangePdf = () => {
+    if (documentOperationRef.current) return;
     const currentHasObjects = (fabricRef.current?.getObjects().length || 0) > 0;
     const anotherPageHasObjects = Object.values(pagesDataRef.current).some((page) => page?.objects?.length);
     if (
@@ -323,6 +332,7 @@ export default function PdfEditor() {
     setInteractiveFieldCount(0);
     setZoom(100);
     setSourceType(null);
+    setDocumentReady(false);
     setPdfLoaded(false);
     setStatus("Choose a PDF or image.");
   };
@@ -331,7 +341,9 @@ export default function PdfEditor() {
   // transparent ZenPDF overlays. Image sources use the A4 raster composition
   // path because they intentionally create a new document layout. ---
   const handleExportPdf = async () => {
-    if (!pdfLoaded || !fabricRef.current) return;
+    if (!pdfLoaded || !documentReady || !fabricRef.current || documentOperationRef.current) return;
+    documentOperationRef.current = true;
+    setDocumentBusy(true);
     setStatus("Exporting...");
     try {
       // Selection handles/borders render onto the same canvas layer we flatten
@@ -388,6 +400,9 @@ export default function PdfEditor() {
       setStatus("Document ready.");
     } catch (err) {
       setStatus("Export failed: " + err.message);
+    } finally {
+      documentOperationRef.current = false;
+      setDocumentBusy(false);
     }
   };
 
@@ -445,10 +460,10 @@ export default function PdfEditor() {
     const ctx = pdfCanvas.getContext("2d");
     await page.render({ canvasContext: ctx, viewport }).promise;
 
-    setupFabricOverlay(viewport.width, viewport.height, pageNum);
+    await setupFabricOverlay(viewport.width, viewport.height, pageNum);
   };
 
-  const setupFabricOverlay = (width, height, pageNum) => {
+  const setupFabricOverlay = async (width, height, pageNum) => {
     // Dispose the previous fabric instance when a new page/PDF is loaded
     fabricRef.current?.dispose();
 
@@ -492,8 +507,9 @@ export default function PdfEditor() {
     // object:modified covers move/resize/rotate end and finished text edits;
     // path:created covers a freshly finished freehand stroke. Guarded by
     // isRestoringRef so undo/redo/page-restore don't record themselves.
+    let isLoadingPageSnapshot = false;
     const pushHistory = () => {
-      if (history.isRestoringRef.current) return;
+      if (history.isRestoringRef.current || isLoadingPageSnapshot) return;
       history.push(fCanvas.toJSON());
     };
     fCanvas.on("object:added", pushHistory);
@@ -540,12 +556,15 @@ export default function PdfEditor() {
       // callback. Using it as one (as an earlier version of this code did)
       // meant renderAll() ran mid-restore instead of after, so the canvas
       // never actually showed the restored objects despite them being added.
-      history.isRestoringRef.current = true;
-      fCanvas.loadFromJSON(saved).then(() => {
-        fCanvas.requestRenderAll();
-        history.isRestoringRef.current = false;
-        history.reset(fCanvas.toJSON());
+      const restoredState = await restoreCanvasSnapshot(fCanvas, saved, {
+        onBeforeLoad: () => {
+          isLoadingPageSnapshot = true;
+        },
+        onAfterLoad: () => {
+          isLoadingPageSnapshot = false;
+        },
       });
+      history.reset(restoredState);
     } else {
       history.reset(fCanvas.toJSON());
     }
@@ -554,6 +573,10 @@ export default function PdfEditor() {
   // --- Page navigation — snapshot the outgoing page's objects before
   // switching, so they're restored if the user comes back to it ---
   const goToPage = async (pageNum) => {
+    if (documentOperationRef.current || pageNum === currentPage) return;
+    documentOperationRef.current = true;
+    setDocumentBusy(true);
+    setDocumentReady(false);
     const fCanvas = fabricRef.current;
     if (fCanvas) {
       pagesDataRef.current[currentPage] = fCanvas.toJSON();
@@ -563,8 +586,12 @@ export default function PdfEditor() {
       await renderPage(pageNum);
       setCurrentPage(pageNum);
       setStatus("Document ready.");
+      setDocumentReady(true);
     } catch (err) {
       setStatus("Error: " + err.message);
+    } finally {
+      documentOperationRef.current = false;
+      setDocumentBusy(false);
     }
   };
 
@@ -641,22 +668,34 @@ export default function PdfEditor() {
   // --- Undo/Redo — restore a previous canvas snapshot. isRestoringRef stops
   // the resulting object:added/removed events from being recorded as new
   // history entries (which would otherwise make undo un-doable). ---
-  const restoreSnapshot = (state) => {
+  const restoreSnapshot = async (state) => {
     const fCanvas = fabricRef.current;
-    if (!fCanvas || !state) return;
+    if (!fCanvas || !state || documentOperationRef.current) return;
+    documentOperationRef.current = true;
+    setDocumentBusy(true);
     history.isRestoringRef.current = true;
-    fCanvas.loadFromJSON(state).then(() => {
-      fCanvas.renderAll();
+    try {
+      await restoreCanvasSnapshot(fCanvas, state);
+    } catch (error) {
+      setStatus(`Undo/redo failed: ${error.message}`);
+      setDocumentReady(false);
+    } finally {
       history.isRestoringRef.current = false;
-    });
+      documentOperationRef.current = false;
+      setDocumentBusy(false);
+    }
     // The restored objects are new instances — any reference to the old
     // active object (and its floating toolbar) is now stale.
     setActiveText(null);
     setShowTextToolbar(false);
   };
 
-  const handleUndo = () => restoreSnapshot(history.undo());
-  const handleRedo = () => restoreSnapshot(history.redo());
+  const handleUndo = () => {
+    if (!documentOperationRef.current) void restoreSnapshot(history.undo());
+  };
+  const handleRedo = () => {
+    if (!documentOperationRef.current) void restoreSnapshot(history.redo());
+  };
 
   // --- Duplicate the selected object (any type — text, signature, image) ---
   const handleDuplicate = async () => {
@@ -836,7 +875,7 @@ export default function PdfEditor() {
         <button
           type="button"
           onClick={handleExportPdf}
-          disabled={!pdfLoaded}
+          disabled={!pdfLoaded || !documentReady || documentBusy}
           className="flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-amber-600/20 transition-all hover:bg-amber-500 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Download size={16} />
@@ -897,6 +936,7 @@ export default function PdfEditor() {
           zoom={zoom}
           onZoomOut={handleZoomOut}
           onZoomIn={handleZoomIn}
+          navigationDisabled={documentBusy}
         />
       )}
 
@@ -918,7 +958,8 @@ export default function PdfEditor() {
           <div className="flex flex-wrap items-center justify-center gap-4">
             <button
               onClick={handleChangePdf}
-              className="text-sm text-stone-400 underline decoration-zinc-600 underline-offset-2 transition-all hover:text-stone-200"
+              disabled={documentBusy}
+              className="text-sm text-stone-400 underline decoration-zinc-600 underline-offset-2 transition-all hover:text-stone-200 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Change file
             </button>

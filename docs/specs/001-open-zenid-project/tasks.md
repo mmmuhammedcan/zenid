@@ -44,7 +44,7 @@ present; acceptance still depends on `evidence.md`.
 
 - [x] T040 Record small, typical, and near-limit import timings and main-thread
   blocking on a named environment.
-- [ ] T041 Map relevant controls to OWASP ASVS 5.0.0 without claiming full
+- [x] T041 Map relevant controls to OWASP ASVS 5.0.0 without claiming full
   compliance.
 - [x] T042 Run the complete verification command set and update `evidence.md`.
 - [ ] T043 Perform an independent spec/security/test review.

@@ -61,6 +61,13 @@ unavailable for corroboration rather than evidence of no blocking. The
 machine-readable report includes nullable browser device-memory information;
 this run reported it as unavailable/nonstandard.
 
+T041 records a scoped, version-pinned control map in
+[`asvs-5.0.0-mapping.md`](asvs-5.0.0-mapping.md). It maps only evidenced or
+partial `.zenid` local-import controls to OWASP ASVS 5.0.0 and explicitly marks
+unrelated authentication, server transport, operational logging, dependency,
+and deployment areas as not assessed. It is not an ASVS certification or a
+product-wide compliance claim.
+
 A read-only Claude Sonnet security review of T013–T014 reported one confirmed
 Medium issue: duplicate ZIP names could be decompressed and silently overwrite
 an earlier materialized entry. Commit `c5e0201` adds a real duplicate-entry

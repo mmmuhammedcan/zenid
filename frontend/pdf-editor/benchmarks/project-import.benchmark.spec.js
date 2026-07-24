@@ -10,9 +10,10 @@ import {
 } from "../src/resume/projectFile.js";
 
 const BUDGETS = {
-  small: { totalImportMs: 200, maxBlockingMs: 50 },
-  typical: { totalImportMs: 500, maxBlockingMs: 100 },
+  small: { totalImportMs: 200, schedulerDelayProxyMs: 50 },
+  typical: { totalImportMs: 500, schedulerDelayProxyMs: 100 },
 };
+const SCHEDULER_PULSE_MS = 10;
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0];
 const PROFILE_COLLECTIONS = [
   "domains",
@@ -114,6 +115,11 @@ function round(value) {
   return Math.round(value * 100) / 100;
 }
 
+function schedulerDelayBucket(value) {
+  if (value <= 0) return 0;
+  return Math.ceil(value / SCHEDULER_PULSE_MS) * SCHEDULER_PULSE_MS;
+}
+
 async function measureScenario(page, scenario) {
   const measurements = await page.evaluate(
     async ({ archive, iterations }) => {
@@ -153,12 +159,14 @@ async function measureScenario(page, scenario) {
         const overlappingTasks = longTasks.filter(
           (entry) => entry.startTime <= end && entry.startTime + entry.duration >= start
         );
-        const longestTaskMs = Math.max(0, ...overlappingTasks.map((entry) => entry.duration));
+        const longestTaskMs = overlappingTasks.length
+          ? Math.max(...overlappingTasks.map((entry) => entry.duration))
+          : null;
 
         results.push({
           totalImportMs: end - start,
           longestTaskMs,
-          maxBlockingMs: Math.max(0, maxSchedulerDelayMs),
+          rawSchedulerDelayMs: Math.max(0, maxSchedulerDelayMs),
           restoredAssets: bundle.assets.length,
           restoredResumes: bundle.project.resumes.length,
         });
@@ -169,21 +177,34 @@ async function measureScenario(page, scenario) {
   );
 
   const totalImportValues = measurements.map((measurement) => measurement.totalImportMs);
-  const maxBlockingValues = measurements.map((measurement) => measurement.maxBlockingMs);
-  const longestTaskValues = measurements.map((measurement) => measurement.longestTaskMs);
+  const schedulerDelayProxyValues = measurements.map((measurement) =>
+    schedulerDelayBucket(measurement.rawSchedulerDelayMs)
+  );
+  const longestTaskValues = measurements
+    .map((measurement) => measurement.longestTaskMs)
+    .filter((value) => value !== null);
   const budget = BUDGETS[scenario.name] || null;
+  const maxSchedulerDelayProxyMs = Math.max(...schedulerDelayProxyValues);
   const metrics = {
     totalImportMs: {
       median: round(percentile(totalImportValues, 0.5)),
       p95: round(percentile(totalImportValues, 0.95)),
       max: round(Math.max(...totalImportValues)),
     },
-    mainThread: {
-      maxBlockingMs: round(Math.max(...maxBlockingValues)),
-      longestTaskMs: round(Math.max(...longestTaskValues)),
-      schedulerPulseMs: 10,
-      definition: "maximum delay beyond a 10 ms browser main-thread scheduler pulse during import",
-      longestTaskDefinition: "maximum overlapping browser Long Task entry; diagnostic only",
+    mainThreadResponsiveness: {
+      maxSchedulerDelayProxyMs,
+      schedulerPulseIntervalMs: SCHEDULER_PULSE_MS,
+      reportingResolutionMs: SCHEDULER_PULSE_MS,
+      reportingRule: "each observed delay is rounded up to the next 10 ms bucket",
+      interpretation:
+        "responsiveness proxy, not a precise blocking duration; pulse boundaries can under- or over-represent where an import stalls the main thread",
+      longTaskDiagnostic: {
+        status: longestTaskValues.length ? "observed" : "unavailable-for-corroboration",
+        maxOverlappingDurationMs: longestTaskValues.length ? round(Math.max(...longestTaskValues)) : null,
+        interpretation: longestTaskValues.length
+          ? "diagnostic overlapping Long Task observation"
+          : "no overlapping entries were delivered; this does not establish that no blocking occurred",
+      },
     },
   };
   const thresholds = budget
@@ -194,16 +215,23 @@ async function measureScenario(page, scenario) {
           measuredP95: metrics.totalImportMs.p95,
           pass: metrics.totalImportMs.p95 <= budget.totalImportMs,
         },
-        maxBlockingMs: {
-          budget: budget.maxBlockingMs,
-          measuredMax: metrics.mainThread.maxBlockingMs,
-          pass: metrics.mainThread.maxBlockingMs <= budget.maxBlockingMs,
+        schedulerDelayProxyMs: {
+          budget: budget.schedulerDelayProxyMs,
+          measuredMax: metrics.mainThreadResponsiveness.maxSchedulerDelayProxyMs,
+          pass: metrics.mainThreadResponsiveness.maxSchedulerDelayProxyMs <= budget.schedulerDelayProxyMs,
         },
       }
     : { mode: "measurement-only" };
+  const passFail = budget
+    ? thresholds.totalImportMs.pass && thresholds.schedulerDelayProxyMs.pass
+      ? "pass"
+      : "fail"
+    : "measurement-only";
 
   return {
     scenario: scenario.name,
+    measurementMode: budget ? "multi-sample-p95-gate" : "single-sample",
+    passFail,
     fixture: {
       archiveBytes: scenario.archive.byteLength,
       expandedMediaBytes: scenario.expandedBytes,
@@ -215,8 +243,8 @@ async function measureScenario(page, scenario) {
     iterations: scenario.iterations,
     samples: measurements.map((measurement) => ({
       totalImportMs: round(measurement.totalImportMs),
-      maxBlockingMs: round(measurement.maxBlockingMs),
-      longestTaskMs: round(measurement.longestTaskMs),
+      schedulerDelayProxyMs: schedulerDelayBucket(measurement.rawSchedulerDelayMs),
+      longestTaskMs: measurement.longestTaskMs === null ? null : round(measurement.longestTaskMs),
     })),
     metrics,
     thresholds,
@@ -258,13 +286,19 @@ test("records local ZenID import performance and enforces approved budgets", asy
     await readProjectBundleFile(new File([], "warmup.zenid")).catch(() => {});
   });
 
-  const environment = await page.evaluate(() => ({
-    userAgent: navigator.userAgent,
-    hardwareConcurrency: navigator.hardwareConcurrency,
-    deviceMemoryGiB: navigator.deviceMemory ?? null,
-    crossOriginIsolated,
-    longTaskApiSupported: PerformanceObserver.supportedEntryTypes.includes("longtask"),
-  }));
+  const environment = await page.evaluate(() => {
+    const reportedDeviceMemory = navigator.deviceMemory;
+    const hasStandardDeviceMemoryValue =
+      typeof reportedDeviceMemory === "number" && reportedDeviceMemory >= 0.25 && reportedDeviceMemory <= 8;
+    return {
+      userAgent: navigator.userAgent,
+      hardwareConcurrency: navigator.hardwareConcurrency,
+      browserDeviceMemoryGiB: hasStandardDeviceMemoryValue ? reportedDeviceMemory : null,
+      browserDeviceMemoryStatus: hasStandardDeviceMemoryValue ? "reported" : "unavailable-or-nonstandard",
+      crossOriginIsolated,
+      longTaskApiSupported: PerformanceObserver.supportedEntryTypes.includes("longtask"),
+    };
+  });
   expect(environment.longTaskApiSupported, "Chromium must expose the Long Tasks API").toBe(true);
 
   const results = [];
@@ -274,7 +308,7 @@ test("records local ZenID import performance and enforces approved budgets", asy
 
   const report = {
     benchmark: "zenid-project-import",
-    formatVersion: 1,
+    formatVersion: 2,
     generatedAt: new Date().toISOString(),
     importApi: "readProjectBundleFile",
     environment: {
@@ -307,8 +341,8 @@ test("records local ZenID import performance and enforces approved budgets", asy
       `${result.scenario} p95 import ${result.thresholds.totalImportMs.measuredP95} ms exceeds ${result.thresholds.totalImportMs.budget} ms`
     ).toBe(true);
     expect(
-      result.thresholds.maxBlockingMs.pass,
-      `${result.scenario} max blocking ${result.thresholds.maxBlockingMs.measuredMax} ms exceeds ${result.thresholds.maxBlockingMs.budget} ms`
+      result.thresholds.schedulerDelayProxyMs.pass,
+      `${result.scenario} scheduler-delay proxy ${result.thresholds.schedulerDelayProxyMs.measuredMax} ms exceeds ${result.thresholds.schedulerDelayProxyMs.budget} ms`
     ).toBe(true);
   }
 });

@@ -75,6 +75,13 @@ does not close the explicitly recorded future-schema messaging,
 representative-device Q-002, or creator-acceptance gaps, and does not establish
 product-wide security assurance.
 
+Creator acceptance recorded 2026-07-24 (browser name not recorded): a valid
+downloaded ZenID project reopened successfully; a deliberately invalid project
+left the visible current workspace unchanged; and the user found the messages
+understandable. A PDF selected through the Open Project flow was rejected while
+a `.zenid` resume/project file opened successfully, with no observed behavior
+issue.
+
 A read-only Claude Sonnet security review of T013–T014 reported one confirmed
 Medium issue: duplicate ZIP names could be decompressed and silently overwrite
 an earlier materialized entry. Commit `c5e0201` adds a real duplicate-entry
@@ -92,14 +99,13 @@ fail the build, but route-level code splitting remains a performance follow-up.
 - Browser-level unsupported-future-schema message.
 - Near-limit responsiveness on representative supported devices and the
   resulting Web Worker decision for Q-002.
-- Dated manual creator acceptance.
 
 ## Acceptance status
 
 - Implemented: Yes for the current atomic-import, bounded archive-extraction,
   and named-environment performance-baseline contract.
 - Automatically verified: No.
-- Manually accepted: No.
+- Manually accepted: Yes — 2026-07-24 creator acceptance recorded above.
 
 This file must be updated with exact commands, environment, tested commit, and
 results before either verification status changes.

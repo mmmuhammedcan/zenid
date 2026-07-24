@@ -48,4 +48,4 @@ present; acceptance still depends on `evidence.md`.
   compliance.
 - [x] T042 Run the complete verification command set and update `evidence.md`.
 - [x] T043 Perform an independent spec/security/test review.
-- [ ] T044 Complete dated creator acceptance.
+- [x] T044 Complete dated creator acceptance.

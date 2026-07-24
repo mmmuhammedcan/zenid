@@ -64,7 +64,17 @@ buffer is allocated. T040 established a named-machine baseline. The remaining
 decision is whether the current 75 MB budget gives acceptable import duration
 and responsiveness on supported devices, especially after the near-limit
 measurement; resolve Q-002 with more representative device measurements before
-introducing a Web Worker.
+introducing a Web Worker. If those measurements show user-visible near-limit
+responsiveness problems, ZIP extraction and validation move to a Web Worker;
+the worker is a responsiveness boundary, not a replacement for archive limits.
+
+## Schema lifecycle policy
+
+Each released reader supports its current schema plus the previous three schema
+versions for at least 18 months after each schema release. A version is retired
+only when it is both outside that four-version window and older than 18 months.
+An older reader never partially recovers a newer schema; it rejects it and
+directs the user to update.
 
 ## Delivery gates
 

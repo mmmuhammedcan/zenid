@@ -64,12 +64,19 @@ then no HTTP request contains project bytes, profile data, or media.
 
 - Q-001: A project with a missing or invalid referenced media item fails
   atomically. The current workspace remains unchanged. See D-005.
+- D-006: A released ZenID reader supports its current schema plus the previous
+  three schema versions for at least 18 months after each schema's release. A
+  schema leaves support only after both conditions are true. Older readers
+  reject newer schemas without partial recovery and direct the user to update.
 
 ## Open questions
 
 - Q-002: Is the current 75 MB pre-materialization browser memory budget
   appropriate on supported devices? Owner: Engineering. Resolve with T040
-  measurements rather than implementation intuition.
+  measurements rather than implementation intuition. If representative-device
+  measurements show user-visible near-limit responsiveness problems, move ZIP
+  extraction and validation to a Web Worker while retaining every resource and
+  validation limit.
 
 ## Verification mapping
 

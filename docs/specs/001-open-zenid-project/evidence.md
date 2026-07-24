@@ -72,8 +72,8 @@ T043 used an independent, read-only Claude Sonnet review of the complete
 SPEC-001 contract and its curated security, test, performance, and evidence
 packet. The final structured report returned no concrete findings. The review
 does not close the explicitly recorded future-schema messaging,
-representative-device Q-002, or creator-acceptance gaps, and does not establish
-product-wide security assurance.
+representative-device Q-002 gap, and does not establish product-wide security
+assurance.
 
 Creator acceptance recorded 2026-07-24 (browser name not recorded): a valid
 downloaded ZenID project reopened successfully; a deliberately invalid project

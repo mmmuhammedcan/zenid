@@ -592,20 +592,12 @@ Exit evidence:
 - Produce sanitized release evidence.
 - Define the first supportable release baseline.
 
-## 14. Immediate Next Decision When Work Resumes
+## 14. Resolved Import Decision
 
-Before coding SPEC-001, decide:
-
-> If a `.zenid` project is structurally valid but one referenced media asset is
-> missing or invalid, should ZenID reject the entire import atomically, or open
-> a documented recovery mode?
-
-Recommended initial decision:
-
-> Reject atomically and preserve the current workspace. Add recovery mode only
-> after real user evidence shows that partial recovery is necessary.
-
-This keeps the first compatibility contract simple, safe, and testable.
+D-005 resolves the initial SPEC-001 compatibility behavior: if a `.zenid`
+project references a missing or invalid media asset, ZenID rejects the entire
+import and preserves the current workspace. Recovery mode remains a possible
+future feature only if supported by real user evidence.
 
 ## 15. Non-Goals
 

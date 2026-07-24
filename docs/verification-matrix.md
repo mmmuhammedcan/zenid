@@ -1,11 +1,11 @@
 # ZenID Verification Matrix
 
-Last verified: 2026-07-23
+Last verified: 2026-07-24
 
 | Capability | Implemented | Automated evidence | Manual acceptance | Main gap |
 |---|---:|---:|---:|---|
 | Project schema and legacy migration | Yes | Yes | No | Invalid-storage recovery UX |
-| `.zenid` ZIP round trip | Yes | Yes | Creator-only | Negative/resource/atomicity cases |
+| `.zenid` ZIP round trip | Yes | Yes | Creator-only | Resource-limit and browser atomicity cases |
 | Resume PDF generation | Yes | Yes | Creator-only | Browser and assistive-tech checks |
 | Resume presentation variants | Yes | Yes | No | Item selection/content overrides |
 | Portfolio privacy/static ZIP | Yes | Yes | Creator-only | Review-dialog E2E |

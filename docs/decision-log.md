@@ -49,3 +49,16 @@ replacement so historical context remains explainable.
   transitions and export are guarded as document-busy operations.
 - Consequence: Users cannot export or start another page transition against a
   partially restored canvas.
+
+## D-005 — ZenID project imports are atomic
+
+- Date: 2026-07-24
+- Status: Accepted
+- Decision owner: Creator
+- Context: A structurally valid `.zenid` archive may still reference a missing,
+  invalid, or unsupported media asset.
+- Decision: Reject the entire import when any referenced project file or media
+  asset is missing or invalid. Keep the current browser workspace unchanged.
+- Consequence: Partial recovery is not part of the initial compatibility
+  contract. A documented recovery mode may be considered later if real user
+  evidence demonstrates the need.

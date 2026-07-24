@@ -64,6 +64,17 @@ function hasMediaSignature(bytes, mimeType) {
   return false;
 }
 
+function referencedMediaAssetIds(project) {
+  const media = project?.portfolio?.media || {};
+  return [
+    media.profileImageId,
+    project?.portfolio?.resume?.uploadedAssetId,
+    ...Object.values(media.projectImageIds || {}),
+    ...Object.values(media.projectGalleryIds || {}).flatMap((ids) => (Array.isArray(ids) ? ids : [])),
+    ...Object.values(media.certificateImageIds || {}),
+  ].filter(Boolean);
+}
+
 export function serializeProjectArchive(project, options = {}) {
   const normalized = normalizeProject(project);
   const resumeFiles = normalized.resumes.map((resume) => ({
@@ -230,13 +241,23 @@ function parseArchiveBundle(bytes) {
     );
   }
 
+  const project = migrateProject({
+    schemaVersion: manifest.schemaVersion,
+    profile: parseJson(files[manifest.profile], manifest.profile),
+    resumes: manifest.resumes.map((entry) => parseJson(files[entry.path], entry.path)),
+    portfolio: parseJson(files[manifest.portfolio], manifest.portfolio),
+  });
+  const importedAssetIds = new Set(assetEntries.map((entry) => entry.id));
+  const missingReferencedAsset = referencedMediaAssetIds(project).find((id) => !importedAssetIds.has(id));
+  if (missingReferencedAsset) {
+    throw new ProjectCompatibilityError(
+      "The project references a media asset that is missing from the archive.",
+      "MISSING_MEDIA_ASSET"
+    );
+  }
+
   return {
-    project: migrateProject({
-      schemaVersion: manifest.schemaVersion,
-      profile: parseJson(files[manifest.profile], manifest.profile),
-      resumes: manifest.resumes.map((entry) => parseJson(files[entry.path], entry.path)),
-      portfolio: parseJson(files[manifest.portfolio], manifest.portfolio),
-    }),
+    project,
     assets: assetEntries.map((entry) => ({
       id: entry.id,
       kind: typeof entry.kind === "string" ? entry.kind : "portfolio-media",

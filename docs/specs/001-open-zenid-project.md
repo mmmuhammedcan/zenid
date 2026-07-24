@@ -56,10 +56,13 @@ then no HTTP request contains project bytes, profile data, or media.
   materializing an unbounded archive.
 - Error messages must be actionable and must not expose stack traces.
 
+## Resolved decisions
+
+- Q-001: A project with a missing or invalid referenced media item fails
+  atomically. The current workspace remains unchanged. See D-005.
+
 ## Open questions
 
-- Q-001: Should a project with one missing media item fail atomically or open in
-  a documented recovery mode? Owner: Product.
 - Q-002: What browser memory budget should replace the current post-unzip
   75 MB check? Owner: Engineering.
 
@@ -67,5 +70,6 @@ then no HTTP request contains project bytes, profile data, or media.
 
 - AC-001: `projectFile.test.js`, `projectSchema.test.js`, future browser E2E.
 - AC-002: `projectSchema.test.js`, future import atomicity test.
-- AC-003: missing negative archive/resource tests.
+- AC-003: `projectFile.test.js` covers missing/invalid media and unsafe paths;
+  expanded-data resource-limit coverage remains missing.
 - AC-004: missing browser network-observation test.

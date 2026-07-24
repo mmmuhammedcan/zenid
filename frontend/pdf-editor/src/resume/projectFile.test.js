@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { strToU8, unzipSync } from "fflate";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { createEmptyProject, migrateLegacyResumeDraft } from "./projectSchema.js";
 import {
   getProjectFileName,
@@ -62,6 +62,50 @@ test("portfolio media survives a private project archive round trip", () => {
   assert.equal(restored.assets.length, 1);
   assert.equal(restored.assets[0].name, "portrait.png");
   assert.deepEqual(restored.assets[0].bytes, PNG_FIXTURE);
+});
+
+test("an archive is rejected atomically when project data references missing media", () => {
+  const project = createEmptyProject();
+  const bytes = serializeProjectArchive(project);
+  const files = unzipSync(bytes);
+  const portfolio = JSON.parse(strFromU8(files["portfolio/configuration.json"]));
+  portfolio.media.profileImageId = "missing-profile-photo";
+  files["portfolio/configuration.json"] = strToU8(JSON.stringify(portfolio));
+
+  assert.throws(
+    () => parseProjectBundleBytes(zipSync(files)),
+    (error) => error?.code === "MISSING_MEDIA_ASSET" && /missing from the archive/.test(error.message)
+  );
+});
+
+test("an archive with an unsafe path is rejected", () => {
+  const files = unzipSync(serializeProjectArchive(createEmptyProject()));
+  files["../outside.json"] = strToU8("{}");
+
+  assert.throws(
+    () => parseProjectBundleBytes(zipSync(files)),
+    (error) => error?.code === "UNSAFE_ARCHIVE_PATH"
+  );
+});
+
+test("an archive with invalid referenced media is rejected", () => {
+  const project = createEmptyProject();
+  project.portfolio.media.profileImageId = "profile-photo";
+  const files = unzipSync(serializeProjectArchive(project, {
+    assets: [{
+      id: "profile-photo",
+      kind: "profile-image",
+      name: "portrait.png",
+      mimeType: "image/png",
+      bytes: PNG_FIXTURE,
+    }],
+  }));
+  files["assets/profile-photo.png"] = strToU8("not a png");
+
+  assert.throws(
+    () => parseProjectBundleBytes(zipSync(files)),
+    (error) => error?.code === "INVALID_MEDIA_ASSET"
+  );
 });
 
 test("an uploaded portfolio resume PDF survives the private project archive", () => {

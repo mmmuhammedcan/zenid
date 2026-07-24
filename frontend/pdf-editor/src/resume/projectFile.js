@@ -6,6 +6,11 @@ export const PROJECT_FILE_MIME = "application/vnd.zenid.project+zip";
 export const MAX_PROJECT_FILE_BYTES = 25 * 1024 * 1024;
 export const MAX_UNCOMPRESSED_BYTES = 75 * 1024 * 1024;
 export const MAX_MEDIA_ASSET_BYTES = 8 * 1024 * 1024;
+// A valid project normally has only a handful of metadata files plus explicitly
+// referenced resumes and assets. 256 leaves ample room for large workspaces
+// while bounding central-directory parsing and per-entry decompressor setup.
+export const MAX_ARCHIVE_ENTRIES = 256;
+export const MAX_ARCHIVE_ENTRY_BYTES = 8 * 1024 * 1024;
 
 const MEDIA_EXTENSIONS = {
   "image/jpeg": "jpg",
@@ -73,6 +78,72 @@ function referencedMediaAssetIds(project) {
     ...Object.values(media.projectGalleryIds || {}).flatMap((ids) => (Array.isArray(ids) ? ids : [])),
     ...Object.values(media.certificateImageIds || {}),
   ].filter(Boolean);
+}
+
+function createArchiveResourceFilter() {
+  let entryCount = 0;
+  let expandedSize = 0;
+
+  return (entry) => {
+    entryCount += 1;
+    if (entryCount > MAX_ARCHIVE_ENTRIES) {
+      throw new ProjectCompatibilityError(
+        `The ZenID project contains more than ${MAX_ARCHIVE_ENTRIES} entries. Remove unneeded files and try again.`,
+        "ARCHIVE_ENTRY_COUNT_LIMIT"
+      );
+    }
+    if (!isSafeArchivePath(entry.name)) {
+      throw new ProjectCompatibilityError("The project contains an unsafe archive path.", "UNSAFE_ARCHIVE_PATH");
+    }
+
+    // Stored entries materialize their compressed byte range directly. Requiring
+    // matching sizes prevents forged metadata from understating that allocation.
+    if (entry.compression === 0 && entry.size !== entry.originalSize) {
+      throw new ProjectCompatibilityError(
+        "The project archive contains inconsistent file-size metadata.",
+        "INVALID_ARCHIVE"
+      );
+    }
+
+    const materializedSize = entry.compression === 0 ? entry.size : entry.originalSize;
+    if (materializedSize > MAX_ARCHIVE_ENTRY_BYTES) {
+      throw new ProjectCompatibilityError(
+        "A project archive entry exceeds the 8 MB safety limit. Remove or resize that file and try again.",
+        "ARCHIVE_ENTRY_SIZE_LIMIT"
+      );
+    }
+    expandedSize += materializedSize;
+    if (expandedSize > MAX_UNCOMPRESSED_BYTES) {
+      throw new ProjectCompatibilityError(
+        "The project's expanded data exceeds 75 MB. Remove or resize files and try again.",
+        "PROJECT_EXPANDED_SIZE_LIMIT"
+      );
+    }
+    return true;
+  };
+}
+
+function assertSerializableArchiveLimits(files) {
+  const entries = Object.values(files);
+  if (entries.length > MAX_ARCHIVE_ENTRIES) {
+    throw new ProjectCompatibilityError(
+      `The ZenID project contains more than ${MAX_ARCHIVE_ENTRIES} entries. Remove unneeded files before saving it.`,
+      "ARCHIVE_ENTRY_COUNT_LIMIT"
+    );
+  }
+  if (entries.some((bytes) => bytes.byteLength > MAX_ARCHIVE_ENTRY_BYTES)) {
+    throw new ProjectCompatibilityError(
+      "A project file exceeds the 8 MB archive-entry limit. Remove or resize it before saving.",
+      "ARCHIVE_ENTRY_SIZE_LIMIT"
+    );
+  }
+  const expandedSize = entries.reduce((total, bytes) => total + bytes.byteLength, 0);
+  if (expandedSize > MAX_UNCOMPRESSED_BYTES) {
+    throw new ProjectCompatibilityError(
+      "The project's expanded data exceeds 75 MB. Remove or resize files before saving.",
+      "PROJECT_EXPANDED_SIZE_LIMIT"
+    );
+  }
 }
 
 export function serializeProjectArchive(project, options = {}) {
@@ -144,6 +215,7 @@ export function serializeProjectArchive(project, options = {}) {
     files[path] = bytes;
   });
 
+  assertSerializableArchiveLimits(files);
   const archive = zipSync(files, { level: 6 });
   if (archive.byteLength > MAX_PROJECT_FILE_BYTES) {
     throw new ProjectCompatibilityError(
@@ -157,19 +229,18 @@ export function serializeProjectArchive(project, options = {}) {
 function parseArchiveBundle(bytes) {
   let files;
   try {
-    files = unzipSync(bytes);
-  } catch {
+    // fflate invokes this filter from central-directory metadata before it
+    // allocates output for an entry, so every materialized entry and the total
+    // output budget are bounded before decompression begins.
+    files = unzipSync(bytes, { filter: createArchiveResourceFilter() });
+  } catch (error) {
+    if (error instanceof ProjectCompatibilityError) throw error;
     throw new ProjectCompatibilityError("The selected file is not a readable ZenID project archive.", "INVALID_ARCHIVE");
   }
 
   const paths = Object.keys(files);
   if (paths.some((path) => !isSafeArchivePath(path))) {
     throw new ProjectCompatibilityError("The project contains an unsafe archive path.", "UNSAFE_ARCHIVE_PATH");
-  }
-
-  const uncompressedSize = Object.values(files).reduce((total, value) => total + value.byteLength, 0);
-  if (uncompressedSize > MAX_UNCOMPRESSED_BYTES) {
-    throw new ProjectCompatibilityError("The expanded ZenID project is too large to open safely.", "PROJECT_TOO_LARGE");
   }
 
   if (!files["manifest.json"]) {

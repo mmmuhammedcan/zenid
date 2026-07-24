@@ -4,12 +4,31 @@ import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { createEmptyProject, migrateLegacyResumeDraft } from "./projectSchema.js";
 import {
   getProjectFileName,
+  MAX_ARCHIVE_ENTRIES,
+  MAX_ARCHIVE_ENTRY_BYTES,
+  MAX_PROJECT_FILE_BYTES,
+  MAX_UNCOMPRESSED_BYTES,
   parseProjectBundleBytes,
   parseProjectFileBytes,
   serializeProjectArchive,
 } from "./projectFile.js";
 
 const PNG_FIXTURE = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
+
+function setCentralDirectoryExpandedSizes(archive, sizes) {
+  const patched = archive.slice();
+  const view = new DataView(patched.buffer, patched.byteOffset, patched.byteLength);
+  let entryIndex = 0;
+
+  for (let offset = 0; offset <= patched.byteLength - 46 && entryIndex < sizes.length; offset += 1) {
+    if (view.getUint32(offset, true) !== 0x02014b50) continue;
+    view.setUint32(offset + 24, sizes[entryIndex], true);
+    entryIndex += 1;
+  }
+
+  assert.equal(entryIndex, sizes.length, "fixture should contain the expected central-directory entries");
+  return patched;
+}
 
 test("a ZIP-based .zenid project survives an export/import round trip", () => {
   const project = createEmptyProject();
@@ -105,6 +124,64 @@ test("an archive with invalid referenced media is rejected", () => {
   assert.throws(
     () => parseProjectBundleBytes(zipSync(files)),
     (error) => error?.code === "INVALID_MEDIA_ASSET"
+  );
+});
+
+test("a project exceeding the compressed input limit is rejected before archive parsing", () => {
+  assert.throws(
+    () => parseProjectBundleBytes(new Uint8Array(MAX_PROJECT_FILE_BYTES + 1)),
+    (error) => error?.code === "PROJECT_TOO_LARGE" && /too large to open safely/.test(error.message)
+  );
+});
+
+test("an archive exceeding the expanded-data limit is rejected within the extraction budget", () => {
+  const entryNames = Array.from({ length: Math.ceil(MAX_UNCOMPRESSED_BYTES / MAX_ARCHIVE_ENTRY_BYTES) }, (_, index) => (
+    `entry-${index}.bin`
+  ));
+  const files = Object.fromEntries(entryNames.map((name) => [name, new Uint8Array(0)]));
+  const archive = setCentralDirectoryExpandedSizes(
+    zipSync(files),
+    entryNames.map(() => MAX_ARCHIVE_ENTRY_BYTES)
+  );
+
+  assert.throws(
+    () => parseProjectBundleBytes(archive),
+    (error) => error?.code === "PROJECT_EXPANDED_SIZE_LIMIT" && /expanded data exceeds 75 MB/.test(error.message)
+  );
+});
+
+test("an archive exceeding the entry-count limit is rejected at the configured limit", () => {
+  const files = Object.fromEntries(
+    Array.from({ length: MAX_ARCHIVE_ENTRIES + 1 }, (_, index) => [`entry-${index}.json`, strToU8("{}")])
+  );
+
+  assert.throws(
+    () => parseProjectBundleBytes(zipSync(files)),
+    (error) => error?.code === "ARCHIVE_ENTRY_COUNT_LIMIT" && /more than 256 entries/.test(error.message)
+  );
+});
+
+test("an oversized archive entry is rejected before extraction", () => {
+  const archive = setCentralDirectoryExpandedSizes(
+    zipSync({ "manifest.json": strToU8("{}") }),
+    [MAX_ARCHIVE_ENTRY_BYTES + 1]
+  );
+
+  assert.throws(
+    () => parseProjectBundleBytes(archive),
+    (error) => error?.code === "ARCHIVE_ENTRY_SIZE_LIMIT" && /archive entry exceeds the 8 MB/.test(error.message)
+  );
+});
+
+test("a stored entry cannot understate its materialized size", () => {
+  const archive = setCentralDirectoryExpandedSizes(
+    zipSync({ "manifest.json": strToU8("{}") }, { level: 0 }),
+    [0]
+  );
+
+  assert.throws(
+    () => parseProjectBundleBytes(archive),
+    (error) => error?.code === "INVALID_ARCHIVE" && /inconsistent file-size metadata/.test(error.message)
   );
 });
 

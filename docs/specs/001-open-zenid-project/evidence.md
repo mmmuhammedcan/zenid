@@ -68,6 +68,13 @@ unrelated authentication, server transport, operational logging, dependency,
 and deployment areas as not assessed. It is not an ASVS certification or a
 product-wide compliance claim.
 
+T043 used an independent, read-only Claude Sonnet review of the complete
+SPEC-001 contract and its curated security, test, performance, and evidence
+packet. The final structured report returned no concrete findings. The review
+does not close the explicitly recorded future-schema messaging,
+representative-device Q-002, or creator-acceptance gaps, and does not establish
+product-wide security assurance.
+
 A read-only Claude Sonnet security review of T013–T014 reported one confirmed
 Medium issue: duplicate ZIP names could be decompressed and silently overwrite
 an earlier materialized entry. Commit `c5e0201` adds a real duplicate-entry
@@ -86,7 +93,6 @@ fail the build, but route-level code splitting remains a performance follow-up.
 - Near-limit responsiveness on representative supported devices and the
   resulting Web Worker decision for Q-002.
 - Dated manual creator acceptance.
-- Independent reviewer sign-off.
 
 ## Acceptance status
 

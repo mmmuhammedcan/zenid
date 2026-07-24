@@ -1,6 +1,6 @@
 # SPEC-001 Implementation Plan
 
-Status: In progress  
+Status: In progress
 Updated: 2026-07-24
 
 ## Technical context

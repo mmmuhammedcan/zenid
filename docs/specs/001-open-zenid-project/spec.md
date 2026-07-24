@@ -1,7 +1,7 @@
 # SPEC-001 — Open ZenID Project Locally
 
-Status: In progress  
-Owner: Creator  
+Status: In progress
+Owner: Creator
 Last clarified: 2026-07-24
 
 ## Problem and user

@@ -1,6 +1,6 @@
 # SPEC-001 Evidence
 
-Status: Partial — browser atomicity verified; feature gate remains open  
+Status: Partial — browser atomicity verified; feature gate remains open
 Last updated: 2026-07-24
 
 ## Evidence recorded

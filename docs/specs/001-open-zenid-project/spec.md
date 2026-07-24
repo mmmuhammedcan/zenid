@@ -82,8 +82,9 @@ then no HTTP request contains project bytes, profile data, or media.
 
 - AC-001: `projectFile.test.js`, `projectSchema.test.js`, and
   `e2e/spec001-open-project.spec.js`.
-- AC-002: `projectSchema.test.js`; future-schema browser messaging remains
-  missing.
+- AC-002: `projectSchema.test.js` and
+  `e2e/spec001-open-project.spec.js` verify strict rejection, update guidance,
+  and workspace preservation for a newer schema.
 - AC-003: `projectFile.test.js` covers missing/invalid media, unsafe and
   duplicate paths, compressed/expanded limits, entry count, per-entry size, and
   inconsistent stored-entry metadata.

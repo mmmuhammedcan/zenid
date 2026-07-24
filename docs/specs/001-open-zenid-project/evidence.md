@@ -34,6 +34,8 @@ Automated cases currently cover:
 - forged stored-entry size metadata and duplicate archive-path rejection;
 - schema migration and unsupported-version behavior;
 - visible valid import in Chromium;
+- visible newer-schema rejection with update guidance and preservation of the
+  current workspace and media in Chromium;
 - no project-data request body during import;
 - IndexedDB transaction abort after an injected second-write failure;
 - preservation of the prior media record and visible current project after
@@ -96,7 +98,6 @@ fail the build, but route-level code splitting remains a performance follow-up.
 
 ## Missing evidence
 
-- Browser-level unsupported-future-schema message.
 - Near-limit responsiveness on representative supported devices and the
   resulting Web Worker decision for Q-002.
 

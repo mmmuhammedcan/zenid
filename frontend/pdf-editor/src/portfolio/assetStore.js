@@ -34,7 +34,12 @@ async function runTransaction(mode, operation) {
       transaction.onerror = () => reject(transaction.error || new Error("Local media storage failed."));
       transaction.onabort = () => reject(transaction.error || new Error("Local media storage was interrupted."));
       transaction.oncomplete = () => resolve(result);
-      result = operation(store);
+      try {
+        result = operation(store);
+      } catch (error) {
+        transaction.abort();
+        reject(error);
+      }
     });
   } finally {
     database.close();

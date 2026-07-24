@@ -24,6 +24,7 @@ import {
 } from "../resume/projectSchema";
 import { buildResumePdf } from "../resume/resumePdfExport.js";
 import { downloadProjectFile, readProjectBundleFile } from "../resume/projectFile";
+import { openProjectFileAtomically } from "../resume/projectImport.js";
 import {
   deleteMediaAsset,
   getMediaAssets,
@@ -148,9 +149,11 @@ export default function PortfolioApp() {
     if (!window.confirm("Open this ZenID project? It will replace the current browser workspace.")) return;
 
     try {
-      const bundle = await readProjectBundleFile(file);
-      await importMediaAssets(bundle.assets);
-      setProject(bundle.project);
+      const bundle = await openProjectFileAtomically(file, {
+        readBundle: readProjectBundleFile,
+        persistAssets: importMediaAssets,
+        commitProject: setProject,
+      });
       setNotice(`ZenID Project opened locally${bundle.assets.length ? ` with ${bundle.assets.length} media file${bundle.assets.length === 1 ? "" : "s"}` : ""} — nothing was uploaded`);
     } catch (error) {
       console.error("Portfolio project import failed", error);

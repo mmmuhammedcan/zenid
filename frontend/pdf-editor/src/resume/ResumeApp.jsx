@@ -13,6 +13,7 @@ import {
   updateResumeDocument,
 } from "./projectSchema.js";
 import { downloadProjectFile, readProjectBundleFile } from "./projectFile.js";
+import { openProjectFileAtomically } from "./projectImport.js";
 import { buildResumePdf } from "./resumePdfExport.js";
 import { getProjectMediaAssets, importMediaAssets, mediaRecordsToArchiveAssets } from "../portfolio/assetStore.js";
 
@@ -68,10 +69,14 @@ export default function ResumeApp() {
     }
 
     try {
-      const bundle = await readProjectBundleFile(file);
-      await importMediaAssets(bundle.assets);
-      setProject(bundle.project);
-      setActiveResumeId(bundle.project.resumes[0].id);
+      await openProjectFileAtomically(file, {
+        readBundle: readProjectBundleFile,
+        persistAssets: importMediaAssets,
+        commitProject: (nextProject) => {
+          setProject(nextProject);
+          setActiveResumeId(nextProject.resumes[0].id);
+        },
+      });
       setProjectNotice({ type: "success", text: "Project opened locally. No file was uploaded." });
     } catch (error) {
       console.error("ZenID project import failed", error);

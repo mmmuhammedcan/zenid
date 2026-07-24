@@ -1,5 +1,10 @@
 import { test, expect } from "@playwright/test";
-import { createEmptyProject, PROJECT_STORAGE_KEY } from "../src/resume/projectSchema.js";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
+import {
+  createEmptyProject,
+  CURRENT_SCHEMA_VERSION,
+  PROJECT_STORAGE_KEY,
+} from "../src/resume/projectSchema.js";
 import { serializeProjectArchive } from "../src/resume/projectFile.js";
 
 const PNG_FIXTURE = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
@@ -9,6 +14,19 @@ function projectFile(project, assets = []) {
     name: "Synthetic_ZenID_Project.zenid",
     mimeType: "application/vnd.zenid.project+zip",
     buffer: Buffer.from(serializeProjectArchive(project, { assets })),
+  };
+}
+
+function futureSchemaProjectFile(project, assets = []) {
+  const files = unzipSync(serializeProjectArchive(project, { assets }));
+  const manifest = JSON.parse(strFromU8(files["manifest.json"]));
+  manifest.schemaVersion = CURRENT_SCHEMA_VERSION + 1;
+  files["manifest.json"] = strToU8(`${JSON.stringify(manifest, null, 2)}\n`);
+
+  return {
+    name: "Synthetic_Future_ZenID_Project.zenid",
+    mimeType: "application/vnd.zenid.project+zip",
+    buffer: Buffer.from(zipSync(files)),
   };
 }
 
@@ -99,6 +117,38 @@ test("opens a valid project locally without transmitting project data", async ({
   await expect(page.getByRole("status")).toContainText("Project opened locally");
   await expect(page.getByLabel("Full name")).toHaveValue("Synthetic Incoming User");
   expect(requestBodiesAfterSelection).toEqual([]);
+});
+
+test("rejects a newer project with update guidance and keeps the current workspace", async ({ page }) => {
+  const current = createEmptyProject();
+  current.profile.personalInfo.fullName = "Current Local User";
+  current.resumes[0].template = "minimal";
+  await page.addInitScript(
+    ({ storageKey, project }) => localStorage.setItem(storageKey, JSON.stringify(project)),
+    { storageKey: PROJECT_STORAGE_KEY, project: current }
+  );
+
+  const incoming = createEmptyProject();
+  incoming.profile.personalInfo.fullName = "Future Schema User";
+  incoming.resumes[0].template = "minimal";
+  incoming.portfolio.media.profileImageId = "future-profile";
+  const futureProfile = {
+    id: "future-profile",
+    kind: "profile-image",
+    name: "future-profile.png",
+    mimeType: "image/png",
+    bytes: PNG_FIXTURE,
+  };
+
+  await page.goto("/resume");
+  page.once("dialog", (dialog) => dialog.accept());
+  await chooseProject(page, futureSchemaProjectFile(incoming, [futureProfile]));
+
+  await expect(page.getByRole("alert")).toHaveText(
+    `This project was created by a newer ZenID version (schema ${CURRENT_SCHEMA_VERSION + 1}). Update ZenID before opening it.`
+  );
+  await expect(page.getByLabel("Full name")).toHaveValue("Current Local User");
+  expect(await readAsset(page, "future-profile")).toBeNull();
 });
 
 test("rolls back media and keeps the current project when IndexedDB persistence fails", async ({ page }) => {

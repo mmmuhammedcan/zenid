@@ -9,6 +9,7 @@
     "lint": "oxlint",
     "test": "node --test src/*.test.js src/resume/*.test.js src/portfolio/*.test.js",
     "test:e2e": "playwright test",
+    "benchmark:project-import": "playwright test --config=playwright.benchmark.config.js",
     "preview": "vite preview"
   },
   "dependencies": {

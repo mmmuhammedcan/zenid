@@ -30,6 +30,25 @@ function setCentralDirectoryExpandedSizes(archive, sizes) {
   return patched;
 }
 
+function replaceArchiveEntryName(archive, from, to) {
+  const fromBytes = strToU8(from);
+  const toBytes = strToU8(to);
+  assert.equal(fromBytes.byteLength, toBytes.byteLength, "replacement ZIP entry names must have equal lengths");
+
+  const patched = archive.slice();
+  let replacements = 0;
+  for (let offset = 0; offset <= patched.byteLength - fromBytes.byteLength; offset += 1) {
+    if (fromBytes.every((byte, index) => patched[offset + index] === byte)) {
+      patched.set(toBytes, offset);
+      replacements += 1;
+      offset += fromBytes.byteLength - 1;
+    }
+  }
+
+  assert.equal(replacements, 2, "fixture should replace the local and central-directory entry names");
+  return patched;
+}
+
 test("a ZIP-based .zenid project survives an export/import round trip", () => {
   const project = createEmptyProject();
   project.profile.personalInfo.fullName = "Çağla Öz";
@@ -182,6 +201,22 @@ test("a stored entry cannot understate its materialized size", () => {
   assert.throws(
     () => parseProjectBundleBytes(archive),
     (error) => error?.code === "INVALID_ARCHIVE" && /inconsistent file-size metadata/.test(error.message)
+  );
+});
+
+test("an archive with duplicate entry names is rejected before the duplicate is materialized", () => {
+  const archive = replaceArchiveEntryName(
+    zipSync({
+      "duplicate-a.json": strToU8('{"value":"first"}'),
+      "duplicate-b.json": strToU8('{"value":"second"}'),
+    }),
+    "duplicate-b.json",
+    "duplicate-a.json"
+  );
+
+  assert.throws(
+    () => parseProjectBundleBytes(archive),
+    (error) => error?.code === "DUPLICATE_ARCHIVE_ENTRY" && /same path more than once/.test(error.message)
   );
 });
 

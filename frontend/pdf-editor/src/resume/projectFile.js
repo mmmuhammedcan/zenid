@@ -83,6 +83,7 @@ function referencedMediaAssetIds(project) {
 function createArchiveResourceFilter() {
   let entryCount = 0;
   let expandedSize = 0;
+  const entryNames = new Set();
 
   return (entry) => {
     entryCount += 1;
@@ -95,6 +96,13 @@ function createArchiveResourceFilter() {
     if (!isSafeArchivePath(entry.name)) {
       throw new ProjectCompatibilityError("The project contains an unsafe archive path.", "UNSAFE_ARCHIVE_PATH");
     }
+    if (entryNames.has(entry.name)) {
+      throw new ProjectCompatibilityError(
+        "The project archive contains the same path more than once.",
+        "DUPLICATE_ARCHIVE_ENTRY"
+      );
+    }
+    entryNames.add(entry.name);
 
     // Stored entries materialize their compressed byte range directly. Requiring
     // matching sizes prevents forged metadata from understating that allocation.

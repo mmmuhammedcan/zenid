@@ -482,6 +482,10 @@ reads root `AGENTS.md` and `CLAUDE.md`:
 Avoid copying the entire spec or roadmap into agent-rule files. Rules should
 link to authoritative documents and stay short.
 
+Baseline completed 2026-07-24: root `AGENTS.md` is authoritative and
+`CLAUDE.md` is a thin adapter. Provider-specific rules remain unnecessary until
+a concrete path-scoped requirement appears.
+
 ## 12. MCP Recommendations
 
 MCP is for live external data or actions that the coding agent cannot obtain
@@ -546,7 +550,8 @@ Exit evidence:
 
 Feature: Open ZenID Project Locally
 
-- Convert SPEC-001 into a feature folder.
+- Convert SPEC-001 into a feature folder. Completed 2026-07-24; implementation
+  and evidence gates remain in progress.
 - Resolve atomic import/recovery decisions.
 - Add plan, tasks, test cases, contracts, and evidence.
 - Test malformed, hostile, and boundary archives first.
@@ -565,7 +570,8 @@ Exit evidence:
 ### Phase 2 — Frontend testing foundation
 
 - Introduce Vitest/Testing Library for React.
-- Add Playwright Test with isolated browser state.
+- Add Playwright Test with isolated browser state. Chromium foundation and
+  SPEC-001 atomic import coverage added 2026-07-24; broader journeys remain.
 - Cover Resume, Portfolio, and ZenPDF critical paths.
 - Add test fixture factories.
 - Add accessibility smoke tests.

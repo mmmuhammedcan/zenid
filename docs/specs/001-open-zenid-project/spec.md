@@ -1,5 +1,9 @@
 # SPEC-001 — Open ZenID Project Locally
 
+Status: In progress  
+Owner: Creator  
+Last clarified: 2026-07-24
+
 ## Problem and user
 
 A user needs to reopen an editable private ZenID workspace without uploading
@@ -68,8 +72,17 @@ then no HTTP request contains project bytes, profile data, or media.
 
 ## Verification mapping
 
-- AC-001: `projectFile.test.js`, `projectSchema.test.js`, future browser E2E.
-- AC-002: `projectSchema.test.js`, future import atomicity test.
+- AC-001: `projectFile.test.js`, `projectSchema.test.js`, and
+  `e2e/spec001-open-project.spec.js`.
+- AC-002: `projectSchema.test.js`; future-schema browser messaging remains
+  missing.
 - AC-003: `projectFile.test.js` covers missing/invalid media and unsafe paths;
   expanded-data resource-limit coverage remains missing.
-- AC-004: missing browser network-observation test.
+- AC-004: `e2e/spec001-open-project.spec.js` observes request bodies during
+  local import.
+
+## Delivery artifacts
+
+- Technical approach: `plan.md`
+- Executable work: `tasks.md`
+- Verified results and open evidence: `evidence.md`

@@ -37,7 +37,7 @@ npm run dev
 ## Product and engineering documents
 
 - `plan.md` — product direction and roadmap.
-- `docs/specs/` — feature contracts and acceptance criteria.
+- `docs/specs/` — feature specs with plans, tasks, and evidence.
 - `docs/decision-log.md` — product and technical decisions.
 - `docs/verification-matrix.md` — implementation and evidence status.
 - `docs/engineering/zenid-engineering-transformation.md` — proposed

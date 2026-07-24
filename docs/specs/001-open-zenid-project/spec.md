@@ -67,8 +67,9 @@ then no HTTP request contains project bytes, profile data, or media.
 
 ## Open questions
 
-- Q-002: What browser memory budget should replace the current post-unzip
-  75 MB check? Owner: Engineering.
+- Q-002: Is the current 75 MB pre-materialization browser memory budget
+  appropriate on supported devices? Owner: Engineering. Resolve with T040
+  measurements rather than implementation intuition.
 
 ## Verification mapping
 
@@ -76,8 +77,9 @@ then no HTTP request contains project bytes, profile data, or media.
   `e2e/spec001-open-project.spec.js`.
 - AC-002: `projectSchema.test.js`; future-schema browser messaging remains
   missing.
-- AC-003: `projectFile.test.js` covers missing/invalid media and unsafe paths;
-  expanded-data resource-limit coverage remains missing.
+- AC-003: `projectFile.test.js` covers missing/invalid media, unsafe and
+  duplicate paths, compressed/expanded limits, entry count, per-entry size, and
+  inconsistent stored-entry metadata.
 - AC-004: `e2e/spec001-open-project.spec.js` observes request bodies during
   local import.
 

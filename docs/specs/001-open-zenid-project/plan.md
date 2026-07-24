@@ -30,8 +30,8 @@ workspace unchanged.
 ## Security and privacy controls
 
 - Reject absolute paths, parent traversal, backslashes, null bytes, unknown
-  archive content, duplicate asset IDs/paths, invalid signatures, unsupported
-  media types, and unsupported future schemas.
+  archive content, duplicate archive paths and asset IDs, invalid signatures,
+  unsupported media types, and unsupported future schemas.
 - Enforce compressed-file, expanded-data, and per-asset limits.
 - Do not recover partially in the initial contract.
 - Verify with browser network observation that project bytes and profile/media
@@ -58,10 +58,11 @@ Measure import duration and main-thread blocking for small, typical, and
 near-limit synthetic fixtures before deciding whether ZIP parsing belongs in a
 Web Worker. Do not introduce a worker without measured evidence.
 
-The current post-unzip 75 MB limit is not sufficient protection because
-`unzipSync` materializes entries before the total is checked. The resource-limit
-task must either establish safe preflight/streaming behavior or lower and
-justify the accepted input budget.
+Archive extraction now applies entry-count, per-entry, and cumulative expanded
+limits through `fflate`'s central-directory filter before each entry's output
+buffer is allocated. The remaining decision is whether the current 75 MB
+budget gives acceptable import duration and main-thread responsiveness on
+supported devices; T040 must answer that with measurements.
 
 ## Delivery gates
 

@@ -16,9 +16,9 @@ present; acceptance still depends on `evidence.md`.
 - [x] T010 Verify valid ZIP and legacy JSON round trips.
 - [x] T011 Reject missing and invalid referenced media.
 - [x] T012 Reject unsafe archive paths.
-- [ ] T013 Add deterministic compressed, expanded, entry-count, and per-entry
+- [x] T013 Add deterministic compressed, expanded, entry-count, and per-entry
   resource-limit tests.
-- [ ] T014 Replace or contain post-materialization `unzipSync` resource
+- [x] T014 Replace or contain post-materialization `unzipSync` resource
   accounting so a ZIP bomb cannot exhaust memory before rejection.
 
 ## Atomic persistence

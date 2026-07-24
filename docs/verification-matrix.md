@@ -5,7 +5,7 @@ Last verified: 2026-07-24
 | Capability | Implemented | Automated evidence | Manual acceptance | Main gap |
 |---|---:|---:|---:|---|
 | Project schema and legacy migration | Yes | Yes | No | Invalid-storage recovery UX |
-| `.zenid` ZIP round trip | Yes | Yes | Creator-only | Import performance and main-thread responsiveness |
+| `.zenid` ZIP round trip | Yes | Yes | Creator-only | Near-limit responsiveness on supported devices / Q-002 decision |
 | Resume PDF generation | Yes | Yes | Creator-only | Browser and assistive-tech checks |
 | Resume presentation variants | Yes | Yes | No | Item selection/content overrides |
 | Portfolio privacy/static ZIP | Yes | Yes | Creator-only | Review-dialog E2E |
@@ -23,6 +23,7 @@ From `frontend/pdf-editor`:
 npm test
 npm run lint
 npm run build
+npm run benchmark:project-import
 node scripts/zenid-roundtrip-check.mjs save
 node scripts/zenid-roundtrip-check.mjs restore
 ```

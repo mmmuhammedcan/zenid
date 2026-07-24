@@ -60,9 +60,11 @@ Web Worker. Do not introduce a worker without measured evidence.
 
 Archive extraction now applies entry-count, per-entry, and cumulative expanded
 limits through `fflate`'s central-directory filter before each entry's output
-buffer is allocated. The remaining decision is whether the current 75 MB
-budget gives acceptable import duration and main-thread responsiveness on
-supported devices; T040 must answer that with measurements.
+buffer is allocated. T040 established a named-machine baseline. The remaining
+decision is whether the current 75 MB budget gives acceptable import duration
+and responsiveness on supported devices, especially after the near-limit
+measurement; resolve Q-002 with more representative device measurements before
+introducing a Web Worker.
 
 ## Delivery gates
 

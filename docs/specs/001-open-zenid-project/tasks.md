@@ -42,7 +42,7 @@ present; acceptance still depends on `evidence.md`.
 
 ## Performance, evidence, and review
 
-- [ ] T040 Record small, typical, and near-limit import timings and main-thread
+- [x] T040 Record small, typical, and near-limit import timings and main-thread
   blocking on a named environment.
 - [ ] T041 Map relevant controls to OWASP ASVS 5.0.0 without claiming full
   compliance.

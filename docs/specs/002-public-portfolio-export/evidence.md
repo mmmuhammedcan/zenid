@@ -40,10 +40,23 @@ résumé copy used by both preview and final export. The private `.zenid` profil
 is not modified. The Reviewer approved the corrected change with no remaining
 actionable findings.
 
+## Creator acceptance on real static hosts — 2026-07-25
+
+The creator deployed a portfolio ZIP exported from ZenID to two real static
+hosts and confirmed the site loaded and functioned correctly on both:
+
+- **GitHub Pages** (project-page subpath deployment, e.g.
+  `username.github.io/repo`).
+- **Netlify** (root deployment via a temporary drop link).
+
+This satisfies AC-003's root-and-subpath compatibility claim with real-host
+evidence rather than only the automated reference-integrity tests. No specific
+URL or repository name is recorded here to avoid publishing the creator's
+personal deployment details in a shared spec file.
+
 ## Missing evidence
 
-- A dated creator check of the produced ZIP on representative root and subpath
-  static hosts.
 - Broader assistive-technology and mobile review of the publication dialog.
 
-No new manual acceptance was recorded by this automated QA run.
+No new automated evidence was recorded by this update; this is manual creator
+acceptance evidence.

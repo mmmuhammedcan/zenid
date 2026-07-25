@@ -64,10 +64,11 @@ present; acceptance still depends on `evidence.md`.
 - [x] T050 Add one accessible shared recovery panel to Resume and Portfolio.
 - [x] T051 Add browser evidence for corrupt, newer-schema, missing-media, and
   browser-storage failures with current-workspace preservation.
-- [ ] T052 Run fresh Reviewer and QA gates and record exact evidence. The
-  fresh-context Reviewer gate ran at `df48301` and is recorded in
-  `evidence.md`; its findings are resolved by T053, so the gate must be re-run
-  from fresh context against the T053 commit before QA can sign off.
+- [x] T052 Run fresh Reviewer and QA gates and record exact evidence. The
+  fresh-context Reviewer gate re-ran against the T053 commit, independently
+  reproduced the verification suite, and confirmed all seven `df48301`
+  findings resolved with no new privacy or correctness regressions. It
+  returned two new Low findings, resolved as T055.
 - [x] T053 Resolve the Reviewer findings recorded at `df48301`: clear and
   re-scope `projectNotice` across the Resume surface swap, surface project
   persistence failure instead of reporting success, stop rendering the shared
@@ -78,3 +79,7 @@ present; acceptance still depends on `evidence.md`.
 - [ ] T054 Reclaim media records left in the browser store by a rejected import.
   D-009 keeps them deliberately, so this needs a reference-counted cleanup pass
   rather than a rollback delete.
+- [x] T055 Resolve the two Low findings from the T052 gate: make
+  `saveProjectToBrowserStorage` throw instead of silently discarding the
+  project when no store exists, and correct the AC-005 mapping's claim about
+  the browser-storage e2e case.

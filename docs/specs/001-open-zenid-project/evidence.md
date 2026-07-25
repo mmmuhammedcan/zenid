@@ -234,9 +234,69 @@ Chromium 149.0.7827.55:
 - `node scripts/zenid-roundtrip-check.mjs restore` — restored schema v3 and a
   one-page synthetic PDF in a fresh process.
 
-T052 stays open. The Reviewer gate that produced these findings ran against
-`df48301`, so it must be re-run from fresh context against the T053 commit before
-any QA sign-off is recorded.
+## T052 fresh-context Reviewer gate — closed
+
+A second fresh-context Reviewer independently examined the T053 commit
+(`b81131b`/`0c9ff2f`) on 2026-07-25, without access to this session's reasoning.
+It did not trust `evidence.md`'s prose: it read the full current state of every
+touched file, re-derived each of the seven `df48301` findings from the code
+directly, and reproduced the verification suite itself (`npm test`,
+`npm run lint`, `npm run build`, `npm run test:e2e`) against an exported copy of
+the tree. It also independently rebuilt a pre-fix tree (`df48301` `src/` plus the
+new `e2e/` cases) and confirmed by direct execution — not inference — that the
+three new browser cases fail without the fix.
+
+All seven `df48301` findings were confirmed resolved:
+
+- `projectNotice` clearing and single-focus-per-notice both hold across every
+  call site, including the "Templates" back button that the original fix
+  summary did not explicitly enumerate.
+- `commitProjectToBrowser` genuinely persists before applying and genuinely
+  rejects the import on a persistence failure, traced through the full
+  exception path on both surfaces.
+- The no-`recovery` alert branch cannot steal focus and is always reachable
+  with a working dismiss control.
+- `aria-describedby` resolves to real, stable, `useId`-scoped ids.
+- Every catch block in `PortfolioApp.jsx` and `assetStore.js` was checked, not
+  only the ones the commit summary named; no raw error text reaches the UI on
+  any path, and `classifyProjectOpenError` never touches `error.message`.
+- D-009 matches the code, and the reviewer additionally verified the
+  IndexedDB-rollback e2e case relies on native transaction atomicity rather
+  than application-level rollback logic — a mechanism distinct from, and
+  narrower than, the ordering gap D-009 accepts.
+- No dangling `D-006`/`D-007` references remain anywhere under `docs/`.
+
+No new correctness, race-condition, or privacy regression was found. The gate
+returned two new Low findings, both resolved as T055 below.
+
+## T055 — two Low findings from the T052 gate, resolved
+
+1. `saveProjectToBrowserStorage` (`projectSchema.js`) returned silently when no
+   `localStorage` was available, instead of throwing. Because `commitProjectToBrowser`
+   depends on `persistProject` throwing to reject a failed import, a browser
+   context where `localStorage` evaluates to a falsy value rather than throwing on
+   access would let the import report success while persisting nothing — the exact
+   "false success" failure T053 fixed, through a different unavailability mode.
+   `assetStore.js`'s `openDatabase()` already rejects explicitly when `indexedDB` is
+   undefined; `saveProjectToBrowserStorage` now matches that pattern and throws.
+2. The AC-005 mapping in `spec.md` claimed the browser-storage e2e case asserts the
+   literal workspace-preservation sentence; it actually verifies preservation
+   behaviorally (unchanged full name, absent rejected asset). Corrected in
+   `spec.md` to state this precisely.
+
+Verified on 2026-07-25 on the same environment as above:
+
+- `npm test` — 69 subtests passed, up from 67. `projectSchema.test.js` adds
+  "saving to browser storage throws instead of silently discarding the project
+  when no store exists"; `projectImport.test.js` adds "a project store that is
+  absent rather than throwing still rejects the import". Both were confirmed to
+  fail against the pre-fix code before the change was applied.
+- `npm run lint` — passed.
+- `npm run build` — passed; the existing large-chunk warning remains.
+- `npm run test:e2e` — 10/10 Chromium tests passed, unaffected by this change.
+
+T052 is closed. T053, T052, and T055 are all resolved; T054 and T046 remain the
+open items for this spec.
 
 ## Missing evidence
 

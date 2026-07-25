@@ -408,7 +408,7 @@ export function loadProjectFromBrowserStorage(storage = globalThis.localStorage)
 }
 
 export function saveProjectToBrowserStorage(project, storage = globalThis.localStorage) {
-  if (!storage) return;
+  if (!storage) throw new Error("This browser does not provide local project storage.");
   storage.setItem(PROJECT_STORAGE_KEY, JSON.stringify(normalizeProject(project)));
 }
 

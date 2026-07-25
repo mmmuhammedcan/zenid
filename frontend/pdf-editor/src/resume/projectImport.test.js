@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { commitProjectToBrowser, openProjectFileAtomically } from "./projectImport.js";
+import { saveProjectToBrowserStorage } from "./projectSchema.js";
 
 test("project import prepares, persists, and commits in order", async () => {
   const calls = [];
@@ -57,6 +58,27 @@ test("project import keeps the current project when media persistence fails", as
       },
     }),
     /local media storage failed/
+  );
+
+  assert.equal(visibleProject, currentProject);
+});
+
+test("a project store that is absent rather than throwing still rejects the import", async () => {
+  const currentProject = { id: "current" };
+  let visibleProject = currentProject;
+  const bundle = { project: { id: "incoming" }, assets: [] };
+
+  await assert.rejects(
+    openProjectFileAtomically({ name: "project.zenid" }, {
+      readBundle: async () => bundle,
+      persistAssets: async () => {},
+      commitProject: commitProjectToBrowser({
+        persistProject: (project) => saveProjectToBrowserStorage(project, null),
+        applyProject: (project) => {
+          visibleProject = project;
+        },
+      }),
+    })
   );
 
   assert.equal(visibleProject, currentProject);

@@ -42,7 +42,7 @@ Last updated: 2026-07-25
 - [x] Verify preview, direct PDF, archived PDF, generated portfolio résumé, and
   canonical portfolio-page parity.
 - [x] Run a fresh-context Reviewer gate.
-- [ ] Run the full QA matrix and record exact evidence.
+- [x] Run the full QA matrix and record exact evidence.
 
 Deferred from targeted wording: summary/title, factual-field overrides,
 structured bullet IDs, automatic factuality checks, diff/rebase, and AI rewrite.

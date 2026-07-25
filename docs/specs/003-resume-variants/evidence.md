@@ -5,7 +5,7 @@ Last updated: 2026-07-25
 
 ## Evidence recorded
 
-Implementation through commit `aed84a25dc9d9bf1a23fa80b0ca95811bb4d6ab3`
+Implementation through commit `50841bb9ae84a2aedf9d3476783de50e6f52a839`
 was tested on Linux with Node.js 22.15.1:
 
 - `npm test` — passed; 9 test-file subtests.
@@ -13,7 +13,7 @@ was tested on Linux with Node.js 22.15.1:
 - `npm run build` — passed; the existing large-chunk warning remains.
 - `npm run test:e2e` — passed; 5 Chromium tests.
 - `node scripts/zenid-roundtrip-check.mjs save` — passed with a synthetic
-  101,064-byte schema-v2 `.zenid` project.
+  101,068-byte schema-v3 `.zenid` project.
 - `node scripts/zenid-roundtrip-check.mjs restore` — passed in a fresh process
   with the expected synthetic sections and one-page PDF.
 - `git diff --check` — passed, and the tested worktree was clean.
@@ -22,7 +22,7 @@ The first sandboxed Playwright web-server start could not bind
 `127.0.0.1:4173`. The permitted local-loopback run passed 5/5; this was an
 execution-environment restriction rather than a product failure.
 
-Automated evidence covers AC-001 through AC-008:
+Automated evidence covers AC-001 through AC-012:
 
 - two variants keep independent names, templates, colors, section orders, and
   Experience/Project selections over one canonical profile;
@@ -35,9 +35,18 @@ Automated evidence covers AC-001 through AC-008:
 - the same filtered output reaches design preview, live ATS PDF preview,
   downloaded PDF, generated PDFs inside `.zenid`, and a generated portfolio
   résumé;
-- save/open and fresh-process round trips retain selections;
-- schema v1 migrates to v2 with all pre-existing items included, while newer
-  unsupported schemas remain safely rejected.
+- targeted Experience/Project descriptions, including an explicit empty
+  string, affect only the active variant and leave canonical data unchanged;
+- shared and targeted wording remain visible together, and reset returns to
+  the latest canonical description;
+- duplicate/save/reopen preserve overrides, while deleting a canonical item
+  removes its overrides from every variant;
+- generated résumé PDFs use targeted wording while public portfolio HTML keeps
+  canonical portfolio content;
+- save/open and fresh-process round trips retain selections and overrides;
+- schema v1 migrates sequentially through v2 to v3 with existing items
+  included; v2 override placeholders do not accidentally gain v3 meaning, and
+  newer unsupported schemas remain safely rejected.
 
 A fresh-context Reviewer found two Medium issues: v1 placeholder selection
 fields could accidentally gain v2 meaning, and output-parity evidence was too
@@ -47,13 +56,20 @@ text from direct and archived downloads and exercise the portfolio résumé
 package. The Reviewer approved the corrected change with no remaining
 actionable findings.
 
+A second fresh-context Reviewer examined the targeted-wording slice and found
+no actionable issues. The review covered canonical/output separation,
+empty-string and reset semantics, sequential migration, malformed and unknown
+override handling, duplicate/deletion/orphan behavior, accessible UI labels,
+PDF parity, and canonical-only portfolio HTML.
+
 ## Missing evidence
 
-- Dated manual acceptance of the selection controls on representative desktop
-  and mobile layouts.
+- Dated manual acceptance of the selection and targeted-wording controls on
+  representative desktop and mobile layouts.
 - Independent rendered-image content comparison for the ATS preview. The
   preview and export currently share the same filtered input and PDF builder,
   and exported PDF text is automatically inspected.
 
-Deferred product work remains tracked separately: `contentOverrides`, selection
-for other repeatable sections, and the Modern-preview/non-ATS-PDF decision.
+Deferred product work remains tracked separately: selection and targeted
+wording for other fields/sections, summary/title overrides, automatic
+factuality checks, and the Modern-preview/non-ATS-PDF decision.

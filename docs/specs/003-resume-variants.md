@@ -1,6 +1,6 @@
 # SPEC-003 — Resume Variants from One Profile
 
-Status: In progress
+Status: Automatically verified
 Owner: Creator
 Last clarified: 2026-07-25
 

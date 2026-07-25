@@ -7,7 +7,7 @@ Last verified: 2026-07-25
 | Project schema and legacy migration | Yes | Yes | No | Invalid-storage recovery UX |
 | `.zenid` ZIP round trip | Yes | Yes | Creator-only | 75 MB memory-budget validation on minimum supported physical device |
 | Resume PDF generation | Yes | Yes | Creator-only | Browser and assistive-tech checks |
-| Resume presentation variants | Yes | Yes | No | Item selection/content overrides |
+| Resume presentation variants | Yes | Yes | No | Content overrides and broader item selection |
 | Portfolio privacy/static ZIP | Yes | Yes | Creator-only | Root/subpath host acceptance |
 | IndexedDB media lifecycle | Yes | No | No | Integration and rollback tests |
 | ZenPDF overlay export | Yes | Partial | No | Page/navigation/browser regressions |

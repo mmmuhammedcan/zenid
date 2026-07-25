@@ -23,7 +23,7 @@ Last updated: 2026-07-25
 
 - [x] Add failing unit and browser tests before implementation.
 - [x] Run a fresh-context Reviewer audit.
-- [ ] Run the required QA matrix and record exact commit evidence.
+- [x] Run the required QA matrix and record exact commit evidence.
 
 ## Deferred
 

@@ -169,6 +169,22 @@ test("resume item selections survive a private project archive round trip", () =
   assert.deepEqual(restored.resumes[0].selectedItems, project.resumes[0].selectedItems);
 });
 
+test("resume description overrides survive a private project archive round trip", () => {
+  const project = createEmptyProject();
+  project.resumes[0].contentOverrides = {
+    experience: {
+      [project.profile.experience[0].id]: { description: "Targeted wording" },
+    },
+    projects: {
+      [project.profile.projects[0].id]: { description: "" },
+    },
+  };
+
+  const restored = parseProjectFileBytes(serializeProjectArchive(project));
+
+  assert.deepEqual(restored.resumes[0].contentOverrides, project.resumes[0].contentOverrides);
+});
+
 test("a schema v1 ZenID archive migrates without hiding existing resume items", () => {
   const project = createEmptyProject();
   const files = unzipSync(serializeProjectArchive(project));

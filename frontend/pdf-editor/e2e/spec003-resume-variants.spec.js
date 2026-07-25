@@ -26,12 +26,22 @@ test("keeps resume item selections isolated and restores them from a ZenID proje
   project.resumes[0].name = "General Resume";
   project.profile.personalInfo.fullName = "Synthetic Variant User";
   project.profile.experience = [
-    { id: "backend", company: "ZenID", role: "Backend Engineer" },
-    { id: "retail", company: "Store", role: "Retail Associate" },
+    {
+      id: "backend",
+      company: "ZenID",
+      role: "Backend Engineer",
+      description: "Shared backend description",
+    },
+    {
+      id: "retail",
+      company: "Store",
+      role: "Retail Associate",
+      description: "Shared retail description",
+    },
   ];
   project.profile.projects = [
-    { id: "api", name: "API Project" },
-    { id: "landing", name: "Landing Page" },
+    { id: "api", name: "API Project", description: "Shared API description" },
+    { id: "landing", name: "Landing Page", description: "Shared landing description" },
   ];
 
   await page.addInitScript(
@@ -44,12 +54,27 @@ test("keeps resume item selections isolated and restores them from a ZenID proje
   await page.getByLabel("Resume version name").fill("Backend Resume");
   await page.getByLabel("Include Retail Associate — Store in this resume").uncheck();
   await page.getByLabel("Include Landing Page in this resume").uncheck();
+  await page.getByRole("button", { name: "Targeted wording", exact: true }).click();
+  await page.getByLabel("Customize wording for Backend Engineer — ZenID").click();
+  await page.getByLabel("Targeted wording for Backend Engineer — ZenID").fill(
+    "Targeted backend description"
+  );
+  await page.getByLabel("Customize wording for API Project").click();
+  await page.getByLabel("Targeted wording for API Project").fill("Targeted API description");
 
   const preview = page.getByLabel("Resume design preview");
   await expect(preview).toContainText("Backend Engineer");
   await expect(preview).toContainText("API Project");
   await expect(preview).not.toContainText("Retail Associate");
   await expect(preview).not.toContainText("Landing Page");
+  await expect(preview).toContainText("Targeted backend description");
+  await expect(preview).toContainText("Targeted API description");
+  await expect(preview).not.toContainText("Shared backend description");
+
+  await page.getByLabel("Use shared wording for API Project").click();
+  await expect(preview).toContainText("Shared API description");
+  await page.getByLabel("Customize wording for API Project").click();
+  await page.getByLabel("Targeted wording for API Project").fill("Targeted API description");
 
   await page.getByRole("button", { name: "PDF export", exact: true }).click();
   await expect(page.getByAltText(/Resume PDF page 1 of/)).toBeVisible();
@@ -61,12 +86,17 @@ test("keeps resume item selections isolated and restores them from a ZenID proje
   const directPdfText = await extractPdfText(await readFile(await pdfDownload.path()));
   expect(directPdfText).toContain("Backend Engineer");
   expect(directPdfText).toContain("API Project");
+  expect(directPdfText).toContain("Targeted backend description");
+  expect(directPdfText).toContain("Targeted API description");
   expect(directPdfText).not.toContain("Retail Associate");
   expect(directPdfText).not.toContain("Landing Page");
 
   await page.getByLabel("Active resume version").selectOption({ label: "General Resume" });
   await expect(preview).toContainText("Retail Associate");
   await expect(preview).toContainText("Landing Page");
+  await expect(preview).toContainText("Shared backend description");
+  await expect(preview).toContainText("Shared API description");
+  await expect(preview).not.toContainText("Targeted backend description");
 
   await page.getByLabel("Active resume version").selectOption({ label: "Backend Resume" });
   const downloadPromise = page.waitForEvent("download");
@@ -83,6 +113,8 @@ test("keeps resume item selections isolated and restores them from a ZenID proje
   );
   const savedPdfText = await extractPdfText(projectFiles[backendPdfEntry.path]);
   expect(savedPdfText).toContain("Backend Engineer");
+  expect(savedPdfText).toContain("Targeted backend description");
+  expect(savedPdfText).toContain("Targeted API description");
   expect(savedPdfText).not.toContain("Retail Associate");
   expect(savedPdfText).not.toContain("Landing Page");
 
@@ -96,6 +128,16 @@ test("keeps resume item selections isolated and restores them from a ZenID proje
   await page.getByLabel("Active resume version").selectOption({ label: "Backend Resume" });
   await expect(page.getByLabel("Include Retail Associate — Store in this resume")).not.toBeChecked();
   await expect(page.getByLabel("Include Landing Page in this resume")).not.toBeChecked();
+  const backendWording = page.getByLabel("Targeted wording for Backend Engineer — ZenID");
+  if (!(await backendWording.isVisible())) {
+    await page.getByRole("button", { name: "Targeted wording", exact: true }).click();
+  }
+  await expect(backendWording).toHaveValue(
+    "Targeted backend description"
+  );
+  await expect(page.getByLabel("Targeted wording for API Project")).toHaveValue(
+    "Targeted API description"
+  );
   await expect(preview).not.toContainText("Retail Associate");
   await expect(preview).not.toContainText("Landing Page");
 });

@@ -2,7 +2,7 @@ import { createInitialResumeData, DEFAULT_SECTION_ORDER } from "./data.js";
 import { createStableId } from "./ids.js";
 import { DEFAULT_ACCENT } from "./themes.js";
 
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;
 // The storage location is stable; schemaVersion inside the payload controls
 // migrations. This avoids stranding data under a new key for every release.
 export const PROJECT_STORAGE_KEY = "zenid.project";
@@ -72,6 +72,7 @@ const PROFILE_ARRAY_FIELDS = [
 ];
 
 export const RESUME_SELECTABLE_FIELDS = ["experience", "projects"];
+export const RESUME_OVERRIDE_FIELDS = ["experience", "projects"];
 
 export class ProjectCompatibilityError extends Error {
   constructor(message, code = "INCOMPATIBLE_PROJECT") {
@@ -87,6 +88,35 @@ function clone(value) {
 
 function isRecord(value) {
   return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function normalizeContentOverrides(source) {
+  if (source === undefined) return {};
+  if (!isRecord(source)) {
+    throw new ProjectCompatibilityError("Resume content overrides are invalid.", "INVALID_CONTENT_OVERRIDE");
+  }
+  const normalized = clone(source);
+  RESUME_OVERRIDE_FIELDS.forEach((field) => {
+    if (!Object.prototype.hasOwnProperty.call(normalized, field)) return;
+    if (!isRecord(normalized[field])) {
+      throw new ProjectCompatibilityError(`Resume ${field} overrides are invalid.`, "INVALID_CONTENT_OVERRIDE");
+    }
+    Object.entries(normalized[field]).forEach(([itemId, patch]) => {
+      if (!itemId || !isRecord(patch)) {
+        throw new ProjectCompatibilityError(`A resume ${field} override is invalid.`, "INVALID_CONTENT_OVERRIDE");
+      }
+      if (
+        Object.prototype.hasOwnProperty.call(patch, "description") &&
+        typeof patch.description !== "string"
+      ) {
+        throw new ProjectCompatibilityError(
+          `A resume ${field} description override is invalid.`,
+          "INVALID_CONTENT_OVERRIDE"
+        );
+      }
+    });
+  });
+  return normalized;
 }
 
 export function normalizePortfolio(source = {}) {
@@ -225,7 +255,7 @@ export function createResumeDocument(overrides = {}) {
         ? [...overrides.sectionOrder]
         : [...DEFAULT_SECTION_ORDER],
     selectedItems,
-    contentOverrides: isRecord(overrides.contentOverrides) ? clone(overrides.contentOverrides) : {},
+    contentOverrides: normalizeContentOverrides(overrides.contentOverrides),
   };
 }
 
@@ -330,6 +360,21 @@ export function migrateProject(input) {
       };
       continue;
     }
+    if (migrated.schemaVersion === 2) {
+      migrated = {
+        ...migrated,
+        schemaVersion: 3,
+        resumes: Array.isArray(migrated.resumes)
+          ? migrated.resumes.map((resume) => {
+              if (!isRecord(resume) || !isRecord(resume.contentOverrides)) return resume;
+              const contentOverrides = clone(resume.contentOverrides);
+              RESUME_OVERRIDE_FIELDS.forEach((field) => delete contentOverrides[field]);
+              return { ...resume, contentOverrides };
+            })
+          : migrated.resumes,
+      };
+      continue;
+    }
     throw new ProjectCompatibilityError(
       `ZenID does not recognize project schema ${String(migrated.schemaVersion)}.`,
       "UNSUPPORTED_PROJECT"
@@ -383,6 +428,18 @@ export function materializeResumeData(project, resumeId) {
   const resume = getResumeDocument(project, resumeId);
   const data = materializeResumeEditorData(project, resumeId);
 
+  RESUME_OVERRIDE_FIELDS.forEach((field) => {
+    const overrides = resume.contentOverrides[field];
+    if (!isRecord(overrides)) return;
+    data[field] = data[field].map((item) => {
+      const patch = overrides[item.id];
+      if (!isRecord(patch) || !Object.prototype.hasOwnProperty.call(patch, "description")) {
+        return item;
+      }
+      return { ...item, description: patch.description };
+    });
+  });
+
   RESUME_SELECTABLE_FIELDS.forEach((field) => {
     if (!Object.prototype.hasOwnProperty.call(resume.selectedItems, field)) return;
     const selected = new Set(resume.selectedItems[field]);
@@ -394,28 +451,46 @@ export function materializeResumeData(project, resumeId) {
 
 export function applyResumeData(project, resumeId, resumeData) {
   const { sectionOrder, ...profile } = resumeData;
+  const deletedIds = Object.fromEntries(
+    RESUME_OVERRIDE_FIELDS.map((field) => {
+      const nextIds = new Set((profile[field] || []).map((item) => item.id));
+      return [
+        field,
+        new Set((project.profile[field] || []).map((item) => item.id).filter((id) => !nextIds.has(id))),
+      ];
+    })
+  );
   return normalizeProject({
     ...project,
     profile,
-    resumes: project.resumes.map((resume) =>
-      resume.id === resumeId
-        ? {
-            ...resume,
-            sectionOrder: Array.isArray(sectionOrder) ? [...sectionOrder] : resume.sectionOrder,
-            selectedItems: RESUME_SELECTABLE_FIELDS.reduce((selectedItems, field) => {
-              if (!Object.prototype.hasOwnProperty.call(selectedItems, field)) return selectedItems;
-              const previousIds = new Set((project.profile[field] || []).map((item) => item.id));
-              const nextIds = (profile[field] || []).map((item) => item.id);
-              const addedIds = nextIds.filter((id) => !previousIds.has(id));
-              if (!addedIds.length) return selectedItems;
-              return {
-                ...selectedItems,
-                [field]: [...new Set([...(selectedItems[field] || []), ...addedIds])],
-              };
-            }, clone(resume.selectedItems)),
-          }
-        : resume
-    ),
+    resumes: project.resumes.map((resume) => {
+      let contentOverrides = clone(resume.contentOverrides);
+      RESUME_OVERRIDE_FIELDS.forEach((field) => {
+        if (!isRecord(contentOverrides[field]) || deletedIds[field].size === 0) return;
+        deletedIds[field].forEach((itemId) => delete contentOverrides[field][itemId]);
+        if (Object.keys(contentOverrides[field]).length === 0) delete contentOverrides[field];
+      });
+      if (resume.id !== resumeId) return { ...resume, contentOverrides };
+
+      const selectedItems = RESUME_SELECTABLE_FIELDS.reduce((selections, field) => {
+        if (!Object.prototype.hasOwnProperty.call(selections, field)) return selections;
+        const previousIds = new Set((project.profile[field] || []).map((item) => item.id));
+        const nextIds = (profile[field] || []).map((item) => item.id);
+        const addedIds = nextIds.filter((id) => !previousIds.has(id));
+        if (!addedIds.length) return selections;
+        return {
+          ...selections,
+          [field]: [...new Set([...(selections[field] || []), ...addedIds])],
+        };
+      }, clone(resume.selectedItems));
+
+      return {
+        ...resume,
+        contentOverrides,
+        sectionOrder: Array.isArray(sectionOrder) ? [...sectionOrder] : resume.sectionOrder,
+        selectedItems,
+      };
+    }),
   });
 }
 
@@ -448,6 +523,48 @@ export function updateResumeItemSelection(project, resumeId, field, itemId, incl
       [field]: [...selected],
     },
   });
+}
+
+export function setResumeContentOverride(project, resumeId, field, itemId, description) {
+  if (
+    !RESUME_OVERRIDE_FIELDS.includes(field) ||
+    typeof itemId !== "string" ||
+    !itemId ||
+    typeof description !== "string" ||
+    !(project.profile[field] || []).some((item) => item.id === itemId)
+  ) {
+    throw new ProjectCompatibilityError("This resume wording override is invalid.", "INVALID_CONTENT_OVERRIDE");
+  }
+  const resume = getResumeDocument(project, resumeId);
+  return updateResumeDocument(project, resumeId, {
+    contentOverrides: {
+      ...resume.contentOverrides,
+      [field]: {
+        ...(resume.contentOverrides[field] || {}),
+        [itemId]: {
+          ...(resume.contentOverrides[field]?.[itemId] || {}),
+          description,
+        },
+      },
+    },
+  });
+}
+
+export function resetResumeContentOverride(project, resumeId, field, itemId) {
+  if (!RESUME_OVERRIDE_FIELDS.includes(field)) {
+    throw new ProjectCompatibilityError("This resume wording override is invalid.", "INVALID_CONTENT_OVERRIDE");
+  }
+  const resume = getResumeDocument(project, resumeId);
+  const contentOverrides = clone(resume.contentOverrides);
+  if (!isRecord(contentOverrides[field]) || !isRecord(contentOverrides[field][itemId])) {
+    return project;
+  }
+  delete contentOverrides[field][itemId].description;
+  if (Object.keys(contentOverrides[field][itemId]).length === 0) {
+    delete contentOverrides[field][itemId];
+  }
+  if (Object.keys(contentOverrides[field]).length === 0) delete contentOverrides[field];
+  return updateResumeDocument(project, resumeId, { contentOverrides });
 }
 
 export function updatePortfolio(project, updates) {

@@ -12,6 +12,7 @@ import CertificationsForm from "./CertificationsForm";
 import EducationForm from "./EducationForm";
 import AdditionalSectionForm from "./AdditionalSectionForm";
 import ResumeItemSelection from "./ResumeItemSelection";
+import TargetedWording from "./TargetedWording";
 import ResumePreview from "./ResumePreview";
 import ResumePdfPreview from "./ResumePdfPreview";
 import { SECTION_LABELS, DEFAULT_SECTION_ORDER } from "./data";
@@ -25,6 +26,8 @@ export default function BuilderView({
   accentColor,
   onChangeResumeData,
   onChangeResumeItemSelection,
+  onSetContentOverride,
+  onResetContentOverride,
   onChangeTemplate,
   resumes,
   activeResume,
@@ -243,6 +246,16 @@ export default function BuilderView({
               resumeData={resumeData}
               selectedItems={activeResume.selectedItems}
               onChange={onChangeResumeItemSelection}
+            />
+          </AccordionSection>
+
+          <AccordionSection title="Targeted wording">
+            <TargetedWording
+              resumeData={resumeData}
+              selectedItems={activeResume.selectedItems}
+              contentOverrides={activeResume.contentOverrides}
+              onSet={onSetContentOverride}
+              onReset={onResetContentOverride}
             />
           </AccordionSection>
 

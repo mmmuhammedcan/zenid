@@ -91,11 +91,15 @@ test("generated public résumé data excludes private contacts and hidden items"
   assert.deepEqual(resumeData.projects.map((item) => item.name), ["Public Project"]);
 });
 
-test("generated portfolio résumé PDF honors the selected resume variant items", async () => {
+test("generated portfolio résumé PDF honors variant selections and wording without changing site content", async () => {
   const project = fixture();
   project.portfolio.resume.source = "generated";
-  project.portfolio.hiddenItems.projects = [];
-  project.resumes[0].selectedItems = { projects: ["private-project"] };
+  project.resumes[0].selectedItems = { projects: ["public-project"] };
+  project.resumes[0].contentOverrides = {
+    projects: {
+      "public-project": { description: "Targeted resume project wording" },
+    },
+  };
   const resumeData = buildPublicResumeData(project, project.resumes[0].id);
   const pdf = await buildResumePdf({
     resumeData,
@@ -106,11 +110,14 @@ test("generated portfolio résumé PDF honors the selected resume variant items"
     assets: assets.filter((asset) => asset.id !== "resume-pdf"),
     resumePdfBytes: new Uint8Array(pdf.output("arraybuffer")),
   }));
+  const html = strFromU8(files["index.html"]);
 
-  assert.deepEqual(resumeData.projects.map((item) => item.name), ["Private Project"]);
-  assert.match(pageOperators, /Private Project/);
-  assert.doesNotMatch(pageOperators, /Public Project/);
+  assert.deepEqual(resumeData.projects.map((item) => item.name), ["Public Project"]);
+  assert.match(pageOperators, /Targeted resume project wording/);
+  assert.doesNotMatch(pageOperators, /Safe public details/);
   assert.ok(files["resume.pdf"]);
+  assert.match(html, /Safe public details/);
+  assert.doesNotMatch(html, /Targeted resume project wording/);
 });
 
 test("static portfolio ZIP contains only explicitly published content and works without source JSON", () => {

@@ -1,6 +1,6 @@
 # SPEC-003 — Resume Variants from One Profile
 
-Status: Automatically verified
+Status: In progress
 Owner: Creator
 Last clarified: 2026-07-25
 
@@ -14,8 +14,9 @@ accidentally changing another document's presentation.
 Implemented today: variant name, template, accent color, and section order over
 one shared profile.
 
-This slice adds per-variant inclusion for Experience and Projects. Targeted
-wording through `contentOverrides` remains deferred.
+Per-variant inclusion for Experience and Projects is automatically verified.
+The current slice adds targeted wording for only Experience and Project
+descriptions.
 
 ## Business rules
 
@@ -39,6 +40,21 @@ wording through `contentOverrides` remains deferred.
 - BR-009: Activating selection semantics requires schema v2 and a sequential
   v1-to-v2 migration so older ZenID releases reject the newer behavior instead
   of silently producing different output.
+- BR-010: A wording override is a sparse field-level replacement keyed by the
+  canonical item's stable ID. The first allowlist contains only
+  `experience[id].description` and `projects[id].description`.
+- BR-011: Missing override properties use the current canonical description. A
+  present string, including an empty string, replaces it only in that variant's
+  output. **Use shared wording** removes the property.
+- BR-012: Canonical and targeted descriptions remain visibly separate in the
+  editor. Company, role, dates, tools, project name, technology, metrics, and
+  links cannot be overridden in this slice.
+- BR-013: Output applies supported overrides before item selection. Deleting a
+  canonical item removes its override from every résumé; imported orphan
+  overrides are retained but ignored.
+- BR-014: Activating override semantics requires schema v3 and a sequential
+  v2-to-v3 migration. Newly semantic Experience/Project override branches from
+  v2 are reset while unknown future branches remain preserved.
 
 ## Acceptance criteria
 
@@ -55,20 +71,31 @@ wording through `contentOverrides` remains deferred.
   selections; migrated v1 projects include all existing items.
 - AC-008: Duplicating a variant copies its selections while assigning a new ID
   and generated name.
+- AC-009: A non-empty or explicitly empty Experience/Project description
+  override changes only the active variant output and never the canonical
+  profile or another variant.
+- AC-010: The UI shows the current shared description beside targeted wording,
+  and **Use shared wording** returns output to the latest canonical value.
+- AC-011: Duplicate/save/reopen preserve overrides; deleting the canonical item
+  removes its overrides from all variants.
+- AC-012: Design preview, ATS PDF preview/export, archived generated PDFs, and
+  the selected generated portfolio résumé use the same override, while
+  portfolio page content remains canonical.
 
 ## Open questions
 
 - Q-001 — Resolved: The next slice includes per-variant Experience and Project
   selection.
-- Q-002 — Deferred: Should a content override replace a whole item, individual fields, or
-  store a patch against the canonical item?
+- Q-002 — Resolved: Overrides are allowlisted field-level replacements keyed by
+  stable item ID. The first slice supports only Experience and Project
+  descriptions.
 - Q-003: Must the Modern design preview have a matching non-ATS PDF, or is the
   explicitly presented single-column ATS export the only download?
 
 ## Verification mapping
 
-- AC-001–AC-005 and AC-007–AC-008: schema, migration, materialization, and
+- AC-001–AC-005 and AC-007–AC-011: schema, migration, materialization, and
   round-trip unit tests.
-- AC-005–AC-007: browser E2E for variant switching, output parity, and local
-  `.zenid` reopen.
-- Future override behavior and Q-003: not part of this slice.
+- AC-005–AC-007 and AC-009–AC-012: browser E2E for variant switching, output
+  parity, targeted/shared reset, and local `.zenid` reopen.
+- Q-003: not part of this slice.

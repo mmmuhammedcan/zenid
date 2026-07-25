@@ -12,7 +12,10 @@ import {
   materializeResumeData,
   migrateLegacyResumeDraft,
   migrateProject,
+  normalizeProject,
   normalizePortfolio,
+  resetResumeContentOverride,
+  setResumeContentOverride,
   DEFAULT_PORTFOLIO_SECTION_ORDER,
   PROJECT_STORAGE_KEY,
   LEGACY_RESUME_STORAGE_KEY,
@@ -67,6 +70,37 @@ test("schema v1 projects migrate with every resume item included", () => {
   assert.equal(
     materializeResumeData(migrated, migrated.resumes[0].id).experience.length,
     migrated.profile.experience.length
+  );
+});
+
+test("schema v2 projects reset newly semantic override placeholders and preserve unknown branches", () => {
+  const current = createEmptyProject();
+  const experienceId = current.profile.experience[0].id;
+  current.resumes[0].contentOverrides = {
+    experience: { [experienceId]: { description: "Placeholder wording" } },
+    projects: { placeholder: { description: "Placeholder project" } },
+    futureBranch: { preserved: true },
+  };
+
+  const migrated = migrateProject({ ...current, schemaVersion: 2 });
+
+  assert.equal(migrated.schemaVersion, CURRENT_SCHEMA_VERSION);
+  assert.deepEqual(migrated.resumes[0].contentOverrides, {
+    futureBranch: { preserved: true },
+  });
+  assert.equal(
+    materializeResumeData(migrated, migrated.resumes[0].id).experience[0].description,
+    current.profile.experience[0].description
+  );
+});
+
+test("schema v3 rejects malformed known override branches", () => {
+  const project = createEmptyProject();
+  project.resumes[0].contentOverrides = { experience: [] };
+
+  assert.throws(
+    () => normalizeProject(project),
+    (error) => error.code === "INVALID_CONTENT_OVERRIDE"
   );
 });
 
@@ -148,6 +182,11 @@ test("duplicating a resume creates a new document without duplicating the profil
     experience: [project.profile.experience[0].id],
     projects: [],
   };
+  project.resumes[0].contentOverrides = {
+    experience: {
+      [project.profile.experience[0].id]: { description: "Targeted wording" },
+    },
+  };
   const result = duplicateResumeDocument(project, project.resumes[0].id);
 
   assert.equal(result.project.resumes.length, 2);
@@ -158,6 +197,7 @@ test("duplicating a resume creates a new document without duplicating the profil
   assert.equal(result.project.resumes[1].accentColor, "#123456");
   assert.deepEqual(result.project.resumes[1].sectionOrder, ["projects", "experience"]);
   assert.deepEqual(result.project.resumes[1].selectedItems, project.resumes[0].selectedItems);
+  assert.deepEqual(result.project.resumes[1].contentOverrides, project.resumes[0].contentOverrides);
 });
 
 test("two variants keep presentation separate while sharing canonical company facts", () => {
@@ -256,6 +296,111 @@ test("an explicit empty selection hides a section and a new item joins only the 
     materializeResumeData(updated, resumeId).experience.map((item) => item.id),
     ["new-experience"]
   );
+});
+
+test("description overrides affect only one resume output and can explicitly blank wording", () => {
+  const project = createEmptyProject();
+  project.profile.experience[0] = {
+    ...project.profile.experience[0],
+    company: "ZenID",
+    role: "Engineer",
+    description: "Shared verified wording",
+  };
+  project.profile.projects[0] = {
+    ...project.profile.projects[0],
+    name: "ZenID Project",
+    description: "Shared project wording",
+  };
+  const generalId = project.resumes[0].id;
+  const duplicated = duplicateResumeDocument(project, generalId);
+  const targetedId = duplicated.resumeId;
+  let updated = setResumeContentOverride(
+    duplicated.project,
+    targetedId,
+    "experience",
+    project.profile.experience[0].id,
+    "Targeted backend wording"
+  );
+  updated = setResumeContentOverride(
+    updated,
+    targetedId,
+    "projects",
+    project.profile.projects[0].id,
+    ""
+  );
+
+  assert.equal(materializeResumeEditorData(updated, targetedId).experience[0].description, "Shared verified wording");
+  assert.equal(materializeResumeData(updated, generalId).experience[0].description, "Shared verified wording");
+  assert.equal(materializeResumeData(updated, targetedId).experience[0].description, "Targeted backend wording");
+  assert.equal(materializeResumeData(updated, targetedId).projects[0].description, "");
+  assert.equal(updated.profile.experience[0].description, "Shared verified wording");
+});
+
+test("resetting an override uses the latest canonical wording", () => {
+  const project = createEmptyProject();
+  const resumeId = project.resumes[0].id;
+  const experienceId = project.profile.experience[0].id;
+  project.profile.experience[0].description = "Original shared wording";
+  let updated = setResumeContentOverride(
+    project,
+    resumeId,
+    "experience",
+    experienceId,
+    "Targeted wording"
+  );
+  const editorData = materializeResumeEditorData(updated, resumeId);
+  editorData.experience[0].description = "Latest shared wording";
+  updated = applyResumeData(updated, resumeId, editorData);
+  updated = resetResumeContentOverride(updated, resumeId, "experience", experienceId);
+
+  assert.equal(materializeResumeData(updated, resumeId).experience[0].description, "Latest shared wording");
+  assert.equal(updated.resumes[0].contentOverrides.experience, undefined);
+});
+
+test("deleting a canonical item removes its overrides from every resume", () => {
+  const project = createEmptyProject();
+  const experienceId = project.profile.experience[0].id;
+  const firstId = project.resumes[0].id;
+  const duplicated = duplicateResumeDocument(project, firstId);
+  let updated = setResumeContentOverride(
+    duplicated.project,
+    firstId,
+    "experience",
+    experienceId,
+    "First wording"
+  );
+  updated = setResumeContentOverride(
+    updated,
+    duplicated.resumeId,
+    "experience",
+    experienceId,
+    "Second wording"
+  );
+  const editorData = materializeResumeEditorData(updated, firstId);
+  editorData.experience = [];
+  updated = applyResumeData(updated, firstId, editorData);
+
+  updated.resumes.forEach((resume) => {
+    assert.equal(resume.contentOverrides.experience, undefined);
+  });
+});
+
+test("an override for an excluded or orphan item never enters output", () => {
+  const project = createEmptyProject();
+  const resumeId = project.resumes[0].id;
+  const experienceId = project.profile.experience[0].id;
+  let updated = setResumeContentOverride(
+    project,
+    resumeId,
+    "experience",
+    experienceId,
+    "Hidden targeted wording"
+  );
+  updated = updateResumeItemSelection(updated, resumeId, "experience", experienceId, false);
+  updated.resumes[0].contentOverrides.experience.orphan = { description: "Orphan wording" };
+
+  assert.deepEqual(materializeResumeData(updated, resumeId).experience, []);
+  assert.equal(updated.resumes[0].contentOverrides.experience.orphan.description, "Orphan wording");
 });
 
 test("resume variants can be deleted but a project always keeps one resume", () => {

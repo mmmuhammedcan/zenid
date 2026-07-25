@@ -27,6 +27,22 @@ Last updated: 2026-07-25
 
 ## Deferred
 
-- `contentOverrides` and targeted wording UX.
 - Selection controls for other repeatable sections.
 - A non-ATS PDF matching the Modern design preview.
+
+## Targeted wording slice
+
+- [x] Resolve Q-002 with stable-ID field-level replacements.
+- [x] Limit the first allowlist to Experience and Project descriptions.
+- [x] Add schema v3 and the sequential v2-to-v3 migration.
+- [x] Add override normalization, apply/reset, materialization, deletion, and
+  round-trip tests before implementation.
+- [x] Add a separate **Targeted wording** control with shared text always
+  visible.
+- [x] Verify preview, direct PDF, archived PDF, generated portfolio résumé, and
+  canonical portfolio-page parity.
+- [x] Run a fresh-context Reviewer gate.
+- [ ] Run the full QA matrix and record exact evidence.
+
+Deferred from targeted wording: summary/title, factual-field overrides,
+structured bullet IDs, automatic factuality checks, diff/rebase, and AI rewrite.

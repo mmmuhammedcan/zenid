@@ -10,7 +10,9 @@ import {
   loadProjectFromBrowserStorage,
   materializeResumeEditorData,
   materializeResumeData,
+  resetResumeContentOverride,
   saveProjectToBrowserStorage,
+  setResumeContentOverride,
   updateResumeDocument,
   updateResumeItemSelection,
 } from "./projectSchema.js";
@@ -66,6 +68,18 @@ export default function ResumeApp() {
   const handleResumeItemSelection = (field, itemId, included) => {
     setProject((current) =>
       updateResumeItemSelection(current, activeResume.id, field, itemId, included)
+    );
+  };
+
+  const handleSetContentOverride = (field, itemId, description) => {
+    setProject((current) =>
+      setResumeContentOverride(current, activeResume.id, field, itemId, description)
+    );
+  };
+
+  const handleResetContentOverride = (field, itemId) => {
+    setProject((current) =>
+      resetResumeContentOverride(current, activeResume.id, field, itemId)
     );
   };
 
@@ -173,6 +187,8 @@ export default function ResumeApp() {
       accentColor={activeResume.accentColor}
       onChangeResumeData={handleResumeDataChange}
       onChangeResumeItemSelection={handleResumeItemSelection}
+      onSetContentOverride={handleSetContentOverride}
+      onResetContentOverride={handleResetContentOverride}
       onChangeTemplate={() => updateActiveResume({ template: null })}
       resumes={project.resumes}
       activeResume={activeResume}

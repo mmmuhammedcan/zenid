@@ -40,6 +40,35 @@ résumé copy used by both preview and final export. The private `.zenid` profil
 is not modified. The Reviewer approved the corrected change with no remaining
 actionable findings.
 
+## GitHub Pages instructions and AI-assistant prompt — 2026-07-25
+
+Added to the publication review dialog (`PublicationReviewDialog.jsx`), covering
+BR-007/AC-006 and BR-008/AC-007:
+
+- Static, numbered GitHub Pages publishing steps with a link to GitHub's own
+  documentation.
+- A copyable prompt (`deploymentAssistantPrompt.js`), written for a
+  non-technical user, that names GitHub Pages, Netlify, and Cloudflare Pages
+  and asks the user's own external AI assistant to help choose one and walk
+  through publishing step by step. The prompt exists because static
+  screenshots or fixed per-provider walkthroughs go stale as provider
+  dashboards change; an external AI assistant adapts to what the user
+  actually sees. ZenID does not call, embed, or connect to any AI model —
+  copying uses only the clipboard API.
+
+Verified on 2026-07-25 on the same environment as the T052/T055 evidence above:
+
+- `npm test` — 69 subtests passed, unaffected by this UI-only change.
+- `npm run lint` — passed.
+- `npm run build` — passed; the existing large-chunk warning remains.
+- `npm run test:e2e` — 10/10 Chromium tests passed. The SPEC-002 case now also
+  asserts the GitHub Pages section text and link `href`, that clicking **Copy
+  prompt for your AI assistant** places the exact prompt text on the clipboard
+  and shows a **Copied** state, and that copying triggers no network request.
+  Confirmed to fail against the pre-change tree: the test references the new
+  `deploymentAssistantPrompt.js` module, which does not exist before this
+  change, so the suite fails to load rather than passing accidentally.
+
 ## Creator acceptance on real static hosts — 2026-07-25
 
 The creator deployed a portfolio ZIP exported from ZenID to two real static

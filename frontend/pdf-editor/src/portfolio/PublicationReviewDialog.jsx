@@ -1,5 +1,6 @@
-import { useEffect } from "react";
-import { ContactRound, Download, FileArchive, LayoutTemplate, ShieldCheck, UserRound, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Check, ContactRound, Copy, Download, FileArchive, FolderGit2, LayoutTemplate, Sparkles, ShieldCheck, UserRound, X } from "lucide-react";
+import { DEPLOYMENT_ASSISTANT_PROMPT } from "./deploymentAssistantPrompt.js";
 
 function ReviewGroup({ Icon, title, emptyMessage, children }) {
   return (
@@ -13,6 +14,8 @@ function ReviewGroup({ Icon, title, emptyMessage, children }) {
 }
 
 export default function PublicationReviewDialog({ review, busy, onCancel, onPublish }) {
+  const [promptCopied, setPromptCopied] = useState(false);
+
   useEffect(() => {
     const handleKey = (event) => {
       if (event.key === "Escape" && !busy) onCancel();
@@ -20,6 +23,16 @@ export default function PublicationReviewDialog({ review, busy, onCancel, onPubl
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [busy, onCancel]);
+
+  const copyDeploymentPrompt = async () => {
+    try {
+      await navigator.clipboard.writeText(DEPLOYMENT_ASSISTANT_PROMPT);
+      setPromptCopied(true);
+      window.setTimeout(() => setPromptCopied(false), 2500);
+    } catch {
+      // Clipboard access can be blocked; the prompt text below stays selectable by hand.
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-6" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && !busy && onCancel()}>
@@ -51,6 +64,49 @@ export default function PublicationReviewDialog({ review, busy, onCancel, onPubl
         <div className="mx-5 mb-5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-xs leading-5 text-emerald-200/80 sm:mx-6 sm:mb-6">
           Publishing includes {review.projectCount} project{review.projectCount === 1 ? "" : "s"} and {review.certificationCount} certificate{review.certificationCount === 1 ? "" : "s"}. Hidden profile items and the private <code>.zenid</code> project are excluded.
         </div>
+
+        <section className="mx-5 mb-5 rounded-xl border border-stone-800 bg-stone-900/40 p-4 text-xs leading-5 text-stone-400 sm:mx-6 sm:mb-6">
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-stone-300">
+            <FolderGit2 size={15} className="text-stone-400" /> Publishing this ZIP on GitHub Pages
+          </div>
+          <ol className="list-decimal space-y-1 pl-4">
+            <li>Create a new GitHub repository and add the contents of this ZIP to it, including <code>index.html</code> at the repository root.</li>
+            <li>Commit and push the files to the repository&apos;s default branch.</li>
+            <li>Open the repository&apos;s <strong>Settings → Pages</strong>, set Source to that branch and the root folder, then save.</li>
+            <li>Your site goes live at <code>your-username.github.io/repository-name</code> within a few minutes.</li>
+          </ol>
+          <a
+            href="https://docs.github.com/en/pages/getting-started-with-github-pages"
+            target="_blank"
+            rel="noreferrer"
+            className="mt-2 inline-block text-amber-400 hover:underline"
+          >
+            GitHub Pages documentation ↗
+          </a>
+        </section>
+
+        <section className="mx-5 mb-5 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-xs leading-5 text-stone-300 sm:mx-6 sm:mb-6">
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-amber-300">
+            <Sparkles size={15} /> Not sure where to start? Ask your AI assistant
+          </div>
+          <p className="text-stone-400">
+            New to publishing a website? Copy this prompt and paste it into ChatGPT, Claude, Gemini, or
+            any AI assistant you already use. It will help you pick between GitHub Pages, Netlify, and
+            Cloudflare Pages, then walk you through publishing this ZIP step by step — adapted to
+            whatever those sites currently look like, since their screens change more often than this
+            page does.
+          </p>
+          <pre className="mt-3 max-h-32 overflow-y-auto whitespace-pre-wrap rounded-lg border border-stone-800 bg-stone-950/70 p-3 text-[11px] leading-5 text-stone-400">
+            {DEPLOYMENT_ASSISTANT_PROMPT}
+          </pre>
+          <button
+            type="button"
+            onClick={copyDeploymentPrompt}
+            className="mt-3 flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-300 hover:bg-amber-500/15"
+          >
+            {promptCopied ? <Check size={14} /> : <Copy size={14} />} {promptCopied ? "Copied" : "Copy prompt for your AI assistant"}
+          </button>
+        </section>
 
         <footer className="sticky bottom-0 flex flex-col-reverse gap-2 border-t border-stone-800 bg-stone-950/95 p-5 backdrop-blur sm:flex-row sm:justify-end sm:p-6">
           <button type="button" onClick={onCancel} disabled={busy} className="rounded-lg border border-stone-800 px-4 py-2.5 text-xs font-medium text-stone-300 hover:bg-stone-900 disabled:opacity-40">Keep editing</button>

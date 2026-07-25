@@ -66,6 +66,79 @@ test("a ZIP-based .zenid project survives an export/import round trip", () => {
   assert.equal(restored.resumes[0].template, "modern");
 });
 
+test("browser project reads delegate archive parsing to a worker", async () => {
+  const project = createEmptyProject();
+  project.profile.personalInfo.fullName = "Synthetic Worker User";
+  const archive = serializeProjectArchive(project);
+  const originalWorker = globalThis.Worker;
+  const calls = [];
+
+  class WorkerStub {
+    constructor(url, options) {
+      calls.push({ url: String(url), options });
+    }
+
+    postMessage(message, transfer) {
+      calls.push({ message, transfer });
+      const bundle = parseProjectBundleBytes(new Uint8Array(message.bytes));
+      queueMicrotask(() => this.onmessage({ data: { ok: true, bundle } }));
+    }
+
+    terminate() {
+      calls.push({ terminated: true });
+    }
+  }
+
+  globalThis.Worker = WorkerStub;
+  try {
+    const { readProjectBundleFile } = await import("./projectFile.js");
+    const bundle = await readProjectBundleFile({
+      size: archive.byteLength,
+      arrayBuffer: async () => archive.slice().buffer,
+    });
+
+    assert.equal(bundle.project.profile.personalInfo.fullName, "Synthetic Worker User");
+    assert.match(calls[0].url, /projectImport\.worker\.js$/);
+    assert.deepEqual(calls[0].options, { type: "module" });
+    assert.equal(calls[1].transfer.length, 1);
+    assert.deepEqual(calls.at(-1), { terminated: true });
+  } finally {
+    if (originalWorker === undefined) delete globalThis.Worker;
+    else globalThis.Worker = originalWorker;
+  }
+});
+
+test("browser project reads terminate and reject controlled worker message failures", async () => {
+  const originalWorker = globalThis.Worker;
+  let terminated = false;
+
+  class FailingWorkerStub {
+    postMessage() {
+      queueMicrotask(() => this.onmessageerror());
+    }
+
+    terminate() {
+      terminated = true;
+    }
+  }
+
+  globalThis.Worker = FailingWorkerStub;
+  try {
+    const { readProjectBundleFile } = await import("./projectFile.js");
+    await assert.rejects(
+      readProjectBundleFile({
+        size: 0,
+        arrayBuffer: async () => new ArrayBuffer(0),
+      }),
+      (error) => error?.code === "PROJECT_WORKER_FAILED" && /processed locally/.test(error.message)
+    );
+    assert.equal(terminated, true);
+  } finally {
+    if (originalWorker === undefined) delete globalThis.Worker;
+    else globalThis.Worker = originalWorker;
+  }
+});
+
 test("generated resume PDFs can travel inside the private project archive", () => {
   const project = createEmptyProject();
   const pdfBytes = strToU8("%PDF-1.3\nfixture");

@@ -384,7 +384,59 @@ export async function readProjectBundleFile(file) {
   if (file.size > MAX_PROJECT_FILE_BYTES) {
     throw new ProjectCompatibilityError("The ZenID project is too large to open safely.", "PROJECT_TOO_LARGE");
   }
-  return parseProjectBundleBytes(await file.arrayBuffer());
+  const buffer = await file.arrayBuffer();
+  if (typeof Worker === "undefined") {
+    return parseProjectBundleBytes(buffer);
+  }
+
+  return new Promise((resolve, reject) => {
+    let worker;
+    try {
+      worker = new Worker(new URL("./projectImport.worker.js", import.meta.url), { type: "module" });
+    } catch {
+      reject(new ProjectCompatibilityError(
+        "The ZenID project could not be processed locally. Try reopening it.",
+        "PROJECT_WORKER_FAILED"
+      ));
+      return;
+    }
+
+    let settled = false;
+    const finish = (callback, value) => {
+      if (settled) return;
+      settled = true;
+      worker.terminate();
+      callback(value);
+    };
+    const rejectWorkerFailure = () => {
+      finish(
+        reject,
+        new ProjectCompatibilityError(
+          "The ZenID project could not be processed locally. Try reopening it.",
+          "PROJECT_WORKER_FAILED"
+        )
+      );
+    };
+
+    worker.onmessage = ({ data }) => {
+      if (data?.ok) {
+        finish(resolve, data.bundle);
+        return;
+      }
+      const details = data?.error || {};
+      const error = details.name === "ProjectCompatibilityError"
+        ? new ProjectCompatibilityError(details.message, details.code)
+        : new Error(details.message || "This ZenID project could not be opened.");
+      finish(reject, error);
+    };
+    worker.onerror = rejectWorkerFailure;
+    worker.onmessageerror = rejectWorkerFailure;
+    try {
+      worker.postMessage({ bytes: buffer }, [buffer]);
+    } catch {
+      rejectWorkerFailure();
+    }
+  });
 }
 
 export function getProjectFileName(fullName) {

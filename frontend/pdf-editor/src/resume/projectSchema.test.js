@@ -16,6 +16,7 @@ import {
   DEFAULT_PORTFOLIO_SECTION_ORDER,
   PROJECT_STORAGE_KEY,
   LEGACY_RESUME_STORAGE_KEY,
+  updateResumeDocument,
   updateResumeItemSelection,
 } from "./projectSchema.js";
 
@@ -140,6 +141,9 @@ test("resume edits update shared facts while keeping document presentation separ
 test("duplicating a resume creates a new document without duplicating the profile", () => {
   const project = createEmptyProject();
   project.profile.personalInfo.fullName = "One Profile";
+  project.resumes[0].template = "modern";
+  project.resumes[0].accentColor = "#123456";
+  project.resumes[0].sectionOrder = ["projects", "experience"];
   project.resumes[0].selectedItems = {
     experience: [project.profile.experience[0].id],
     projects: [],
@@ -149,7 +153,52 @@ test("duplicating a resume creates a new document without duplicating the profil
   assert.equal(result.project.resumes.length, 2);
   assert.notEqual(result.project.resumes[0].id, result.project.resumes[1].id);
   assert.equal(result.project.profile.personalInfo.fullName, "One Profile");
+  assert.equal(result.project.resumes[1].name, "Resume 2");
+  assert.equal(result.project.resumes[1].template, "modern");
+  assert.equal(result.project.resumes[1].accentColor, "#123456");
+  assert.deepEqual(result.project.resumes[1].sectionOrder, ["projects", "experience"]);
   assert.deepEqual(result.project.resumes[1].selectedItems, project.resumes[0].selectedItems);
+});
+
+test("two variants keep presentation separate while sharing canonical company facts", () => {
+  const project = createEmptyProject();
+  project.profile.experience[0] = {
+    ...project.profile.experience[0],
+    company: "Acme",
+    role: "Engineer",
+  };
+  const generalId = project.resumes[0].id;
+  project.resumes[0] = {
+    ...project.resumes[0],
+    name: "General Resume",
+    template: "modern",
+    accentColor: "#111111",
+    sectionOrder: ["experience", "projects"],
+  };
+  const duplicated = duplicateResumeDocument(project, generalId);
+  const targetedId = duplicated.resumeId;
+  let updated = updateResumeDocument(duplicated.project, targetedId, {
+    name: "Targeted Resume",
+    template: "minimal",
+    accentColor: "#abcdef",
+    sectionOrder: ["projects", "experience"],
+  });
+  const editorData = materializeResumeEditorData(updated, generalId);
+  editorData.experience[0].company = "ZenID";
+  updated = applyResumeData(updated, generalId, editorData);
+
+  const general = getResumeDocument(updated, generalId);
+  const targeted = getResumeDocument(updated, targetedId);
+  assert.deepEqual(
+    [general.name, general.template, general.accentColor, general.sectionOrder],
+    ["General Resume", "modern", "#111111", ["experience", "projects"]]
+  );
+  assert.deepEqual(
+    [targeted.name, targeted.template, targeted.accentColor, targeted.sectionOrder],
+    ["Targeted Resume", "minimal", "#abcdef", ["projects", "experience"]]
+  );
+  assert.equal(materializeResumeData(updated, generalId).experience[0].company, "ZenID");
+  assert.equal(materializeResumeData(updated, targetedId).experience[0].company, "ZenID");
 });
 
 test("resume item selections filter output without hiding canonical editor data", () => {

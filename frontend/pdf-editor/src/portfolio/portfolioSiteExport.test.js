@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { createEmptyProject } from "../resume/projectSchema.js";
 import {
+  buildPublicResumeData,
   buildPublicationReview,
   getPublicPortfolioAssetIds,
   serializePortfolioSite,
@@ -69,10 +70,24 @@ test("public asset selection excludes media attached only to hidden items", () =
 test("publication review lists every public contact and packaged file", () => {
   const review = buildPublicationReview(fixture());
   assert.deepEqual(review.contacts, [{ label: "Email", value: "public@example.com" }]);
-  assert.equal(review.files.includes("Profile image"), true);
-  assert.equal(review.files.includes("Public Resume.pdf"), true);
-  assert.equal(review.files.some((file) => file.includes("Private Project")), false);
+  assert.deepEqual(review.files, [
+    "index.html",
+    "Profile image",
+    "Public Project: 1 project image",
+    "Public Certificate: certificate image",
+    "Public Resume.pdf",
+  ]);
   assert.equal(review.sections[0], "Projects");
+});
+
+test("generated public résumé data excludes private contacts and hidden items", () => {
+  const project = fixture();
+  project.portfolio.resume.source = "generated";
+  const resumeData = buildPublicResumeData(project, project.resumes[0].id);
+
+  assert.equal(resumeData.personalInfo.email, "public@example.com");
+  assert.equal(resumeData.personalInfo.phone, "");
+  assert.deepEqual(resumeData.projects.map((item) => item.name), ["Public Project"]);
 });
 
 test("static portfolio ZIP contains only explicitly published content and works without source JSON", () => {

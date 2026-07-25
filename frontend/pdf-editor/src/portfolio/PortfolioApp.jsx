@@ -17,7 +17,6 @@ import PortfolioPreview from "./PortfolioPreview";
 import PublicationReviewDialog from "./PublicationReviewDialog";
 import {
   loadProjectFromBrowserStorage,
-  materializeResumeData,
   saveProjectToBrowserStorage,
   updatePortfolio,
   updateProjectProfile,
@@ -35,6 +34,7 @@ import {
   saveMediaFile,
 } from "./assetStore";
 import {
+  buildPublicResumeData,
   buildPublicationReview,
   downloadPortfolioSite,
   getPublicPortfolioAssetIds,
@@ -121,7 +121,7 @@ export default function PortfolioApp() {
       if (!resume) return;
       try {
         const pdf = await buildResumePdf({
-          resumeData: materializeResumeData(project, resume.id),
+          resumeData: buildPublicResumeData(project, resume.id),
           accentColor: resume.accentColor,
         });
         if (!active) return;
@@ -190,7 +190,7 @@ export default function PortfolioApp() {
         const resume = project.resumes.find((item) => item.id === resumeId) || project.resumes[0];
         if (!resume) throw new Error("Choose a résumé version before publishing.");
         const pdf = await buildResumePdf({
-          resumeData: materializeResumeData(project, resume.id),
+          resumeData: buildPublicResumeData(project, resume.id),
           accentColor: resume.accentColor,
         });
         resumePdfBytes = new Uint8Array(pdf.output("arraybuffer"));

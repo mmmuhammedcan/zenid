@@ -1,5 +1,9 @@
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
-import { DEFAULT_PORTFOLIO_SECTION_ORDER, normalizeProject } from "../resume/projectSchema.js";
+import {
+  DEFAULT_PORTFOLIO_SECTION_ORDER,
+  materializeResumeData,
+  normalizeProject,
+} from "../resume/projectSchema.js";
 
 export const PORTFOLIO_ZIP_MIME = "application/zip";
 export const MAX_PORTFOLIO_ZIP_BYTES = 25 * 1024 * 1024;
@@ -95,6 +99,25 @@ function publicContacts(project) {
   ].filter((entry) => entry && entry.href);
 }
 
+export function buildPublicResumeData(input, resumeId) {
+  const project = normalizeProject(input);
+  const resumeData = materializeResumeData(project, resumeId);
+  const { contactPrivacy, hiddenItems, visibleSections } = project.portfolio;
+  const personalInfo = { ...resumeData.personalInfo };
+
+  ["email", "phone", "linkedin", "github"].forEach((field) => {
+    if (!visibleSections.contact || !contactPrivacy[field]) personalInfo[field] = "";
+  });
+
+  return {
+    ...resumeData,
+    personalInfo,
+    experience: publishedItems(resumeData.experience, hiddenItems.experience, ["role", "company"]),
+    projects: publishedItems(resumeData.projects, hiddenItems.projects, ["name"]),
+    certifications: publishedItems(resumeData.certifications, hiddenItems.certifications, ["title"]),
+  };
+}
+
 export function getPublicPortfolioAssetIds(input) {
   const project = normalizeProject(input);
   const { profile, portfolio } = project;
@@ -128,7 +151,7 @@ export function buildPublicationReview(input) {
   const certifications = visible.certifications
     ? publishedItems(profile.certifications, portfolio.hiddenItems.certifications, ["title"])
     : [];
-  const files = [];
+  const files = ["index.html"];
   if (portfolio.media.profileImageId) files.push("Profile image");
   projects.forEach((item) => {
     const count = new Set([

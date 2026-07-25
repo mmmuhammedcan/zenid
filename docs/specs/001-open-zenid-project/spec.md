@@ -33,6 +33,14 @@ transfer, and automatic recovery of unsupported future schemas.
   offers another local project selection.
 - BR-008: Resume and Portfolio use the same recovery categories and guidance.
   Raw stack traces, DOM exception details, and internal paths are not shown.
+  Only messages authored for users are displayed; any other failure is replaced
+  by a shared fallback sentence.
+- BR-009: An import is not reported as opened until the project is stored in the
+  browser. A failed store is a failed import and is classified like any other
+  local-browser failure.
+- BR-010: Recovery guidance takes focus once when it appears. It does not take
+  focus again on re-render or navigation, and a notice that carries no recovery
+  action never takes focus and is always dismissible.
 
 ## Acceptance criteria
 
@@ -63,13 +71,16 @@ Given a project is newer, unsupported, corrupt/incomplete, blocked by a safety
 limit, or cannot be persisted by the local browser, when opening fails, then an
 accessible recovery panel shows the matching category, states that the current
 workspace was not changed and nothing was uploaded, and offers **Open another
-project** and **Continue with current workspace**.
+project** and **Continue with current workspace**. The panel's accessible
+description carries the workspace assurance, and the panel is discarded when the
+user navigates to another resume surface instead of following it there.
 
 ### AC-006 — Shared recovery surfaces
 
 Given the same failure in Resume or Portfolio, when recovery guidance appears,
 then both surfaces use the same classification and actions while their current
-profile and media remain unchanged.
+profile and media remain unchanged. An unavailable browser store is reported with
+one shared sentence on both surfaces.
 
 ## Non-functional requirements
 
@@ -83,20 +94,27 @@ profile and media remain unchanged.
 
 - Q-001: A project with a missing or invalid referenced media item fails
   atomically. The current workspace remains unchanged. See D-005.
-- D-006: A released ZenID reader supports its current schema plus the previous
+- D-007: A released ZenID reader supports its current schema plus the previous
   three schema versions for at least 18 months after each schema's release. A
   schema leaves support only after both conditions are true. Older readers
   reject newer schemas without partial recovery and direct the user to update.
-- D-007: ZIP extraction and project validation run in a Web Worker. The
+- D-008: ZIP extraction and project validation run in a Web Worker. The
   existing named-machine baseline showed a 250–280 ms near-limit scheduler
   delay on the main thread; the worker reduced the same proxy to 10 ms while
   preserving every archive limit and the prepare-then-commit boundary.
+- D-009: Media persists before the project is committed. A failed commit is a
+  rejected import that leaves `localStorage` and the visible workspace
+  untouched, and the already-written media is not rolled back because stable
+  identifiers make deletion destructive on a re-import.
+
+These were previously numbered D-006 and D-007 inside this spec, which collided
+with the decision-log entry D-006. They now match `docs/decision-log.md`.
 
 ## Open questions
 
 - Q-002: Is the current 75 MB pre-materialization browser memory budget
   appropriate on the minimum supported physical device? Owner: Engineering.
-  The responsiveness decision is resolved by D-007; a real lower-bound device
+  The responsiveness decision is resolved by D-008; a real lower-bound device
   measurement is still required before release to validate the memory budget
   and either retain or lower the 75 MB limit.
 
@@ -113,13 +131,25 @@ profile and media remain unchanged.
 - AC-004: `e2e/spec001-open-project.spec.js` observes request bodies during
   local import.
 - AC-005: `projectOpenRecovery.test.js` maps controlled error codes without
-  exposing raw details. `e2e/spec001-open-project.spec.js` verifies the visible
-  category and the workspace-preservation assurance in the corrupt,
-  newer-schema, missing-media, and browser-storage cases. Browser coverage of
-  focus is partial: focus-on-appear is asserted only in the corrupt case and
-  focus-return-after-dismiss only in the newer-schema case. The safety-limit
-  and unsupported-version categories have unit coverage but no browser case.
+  exposing raw details and pins the authored-versus-raw notice rule.
+  `e2e/spec001-open-project.spec.js` verifies the visible category and the
+  workspace-preservation assurance in the corrupt, newer-schema, missing-media,
+  browser-storage, and blocked-project-store cases, and asserts the panel's
+  accessible description in the corrupt case. Browser coverage of focus is
+  partial: focus-on-appear is asserted in the corrupt case and in the
+  navigation case, and focus-return-after-dismiss only in the newer-schema case.
+  The safety-limit and unsupported-version categories have unit coverage but no
+  browser case.
 - AC-006: Resume and Portfolio browser cases use the shared recovery component.
+  `projectOpenRecovery.test.js` pins the shared unavailable-store sentence used
+  by both surfaces.
+- BR-009: `projectImport.test.js` proves the browser commit persists before the
+  visible workspace changes and that a failed store rejects the import;
+  `e2e/spec001-open-project.spec.js` proves a blocked store reports recovery
+  guidance instead of success.
+- BR-010: `e2e/spec001-open-project.spec.js` proves a recovery panel is
+  discarded across a resume surface swap and that an autosave warning neither
+  takes focus nor lacks a dismiss control.
 
 ## Delivery artifacts
 

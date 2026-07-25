@@ -77,3 +77,53 @@ replacement so historical context remains explainable.
 - Consequence: Core AI compatibility remains local and optional. Job discovery,
   listing trust, matching, and application automation require a separate
   opt-in ZenID Jobs product decision.
+
+## D-007 — A released reader supports its schema plus the previous three
+
+- Date: 2026-07-25
+- Status: Accepted
+- Decision owner: Creator
+- Context: Recorded for SPEC-001 as a feature-local decision that reused a
+  decision-log number already taken by D-006.
+- Decision: A released ZenID reader supports its current schema plus the
+  previous three schema versions for at least 18 months after each schema's
+  release. A schema leaves support only after both conditions are true. Older
+  readers reject newer schemas without partial recovery and direct the user to
+  update.
+- Consequence: Compatibility is bounded and testable. Newer projects fail
+  closed with update guidance instead of degrading silently.
+
+## D-008 — Archive extraction and validation run in a Web Worker
+
+- Date: 2026-07-25
+- Status: Accepted
+- Decision owner: Engineering
+- Context: Recorded for SPEC-001 as a feature-local decision that reused a
+  decision-log number already taken by D-007 in that spec.
+- Decision: ZIP extraction and project validation run in a Web Worker. The
+  named-machine baseline showed a 250–280 ms near-limit scheduler delay on the
+  main thread; the worker reduced the same proxy to 10 ms while preserving every
+  archive limit and the prepare-then-commit boundary.
+- Consequence: The responsiveness question is resolved. The 75 MB
+  pre-materialization memory budget is a separate open question (Q-002).
+
+## D-009 — Media persists before the project is committed
+
+- Date: 2026-07-25
+- Status: Accepted
+- Decision owner: Engineering
+- Context: A ZenID import writes media to IndexedDB, then commits the project to
+  `localStorage`, then makes it the visible workspace. A failure at the commit
+  step therefore leaves media records that the committed project never
+  references.
+- Decision: Keep this order and treat a failed commit as a rejected import.
+  Persistence runs before the visible workspace changes, so a commit failure
+  leaves both `localStorage` and the on-screen workspace untouched and the
+  recovery panel's assurance stays true. Do not delete the already-written media
+  on failure: identifiers are stable, so a re-import of a project over itself
+  would target records the current workspace still references, and a rollback
+  would be destructive.
+- Consequence: A rejected import can leave unreferenced media records in the
+  browser store. They are inert, never surfaced, and never included in an
+  export. Reclaiming them needs a separate reference-counted cleanup pass, which
+  is out of scope for SPEC-001.

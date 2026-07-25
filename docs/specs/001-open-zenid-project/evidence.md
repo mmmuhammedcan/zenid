@@ -177,6 +177,67 @@ These findings are tracked as T053. T052 remains open because the gate has not
 returned clean and no QA sign-off can be recorded against unresolved Medium
 findings.
 
+## T053 Reviewer findings resolved
+
+Each `df48301` finding was closed as follows, with BR-009 and BR-010 added to the
+spec so the new behavior is contractual rather than incidental:
+
+- Resume clears `projectNotice` before any user-driven surface change (template
+  chosen, template reopened, resume variant switched), and the shared panel now
+  takes focus at most once per notice through a `WeakSet` of already-announced
+  notices, so a remount cannot re-steal focus.
+- Both surfaces import through `commitProjectToBrowser`, which writes the project
+  to browser storage before the visible workspace changes. A blocked store now
+  fails the import and reaches the shared classifier instead of rendering
+  success. Resume also reports an unavailable store, using the same sentence
+  Portfolio uses.
+- An error notice without a `recovery` object renders as a dismissible
+  `role="alert"` line that never takes focus.
+- The panel exposes `aria-describedby` over its message, guidance, and assurance,
+  and its element ids come from `useId` instead of one hardcoded id.
+- The Portfolio save, publish, and media paths no longer print `error.message`.
+  `noticeTextForError` shows only errors marked by `userFacingError`, so the
+  authored publishing guidance survives while raw DOM exceptions fall back to a
+  shared sentence.
+- Persist-before-commit ordering is accepted as D-009. The residual unreferenced
+  media a rejected import can leave is tracked as T054.
+
+The two spec-local decisions previously numbered D-006 and D-007 collided with
+the decision-log entry D-006. They are now recorded in `docs/decision-log.md` as
+D-007 and D-008, and the spec references match.
+
+Verified on 2026-07-25 on Linux x64 (kernel 6.14.0-37-generic), Intel Core
+i7-10875H (16 logical CPUs), Node.js 22.15.1, Playwright 1.61.1, headless
+Chromium 149.0.7827.55:
+
+- `npm test` — 67 subtests across 10 test files passed, up from 63.
+  `projectOpenRecovery.test.js` adds "notice text keeps authored guidance and
+  replaces raw failure details" and "both surfaces describe an unavailable
+  browser store with one shared sentence". `projectImport.test.js` adds "browser
+  commit persists the project before the visible workspace changes" and "a
+  failed browser commit rejects the import and never shows the project as
+  opened".
+- `npm run lint` — passed.
+- `npm run build` — passed; the existing large-chunk warning remains.
+- `npm run test:e2e` — 10 Chromium tests passed, up from 7. The new cases are
+  "reports a blocked browser store instead of a false success", "clears an
+  abandoned recovery panel when the user navigates the resume surfaces", and
+  "warns about an unavailable browser store without stealing focus". All three
+  were confirmed to fail against the pre-fix `src/` tree before the change was
+  applied.
+- `npm run benchmark:project-import` — passed. Small fixture p95 25.8 ms against
+  the 200 ms budget; typical fixture p95 32.3 ms against the 500 ms budget; both
+  recorded a 10 ms maximum scheduler-delay proxy. The near-limit single sample
+  measured 278.2 ms import with a 10 ms proxy and remains measurement-only.
+- `node scripts/zenid-roundtrip-check.mjs save` — created a 101,067-byte
+  synthetic `.zenid` archive.
+- `node scripts/zenid-roundtrip-check.mjs restore` — restored schema v3 and a
+  one-page synthetic PDF in a fresh process.
+
+T052 stays open. The Reviewer gate that produced these findings ran against
+`df48301`, so it must be re-run from fresh context against the T053 commit before
+any QA sign-off is recorded.
+
 ## Missing evidence
 
 - Peak-memory/crash behavior and the resulting 75 MB limit decision on the

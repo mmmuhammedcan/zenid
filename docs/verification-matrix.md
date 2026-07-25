@@ -4,7 +4,7 @@ Last verified: 2026-07-25
 
 | Capability | Implemented | Automated evidence | Manual acceptance | Main gap |
 |---|---:|---:|---:|---|
-| Project schema and legacy migration | Yes | Yes | No | Invalid-storage recovery UX |
+| Project schema and legacy migration | Yes | Yes | No | Unreferenced media left by a rejected import (T054) |
 | `.zenid` ZIP round trip | Yes | Yes | Creator-only | 75 MB memory-budget validation on minimum supported physical device |
 | Resume PDF generation | Yes | Yes | Creator-only | Browser and assistive-tech checks |
 | Resume presentation variants | Yes | Yes | No | Other-section selection and wording fields |

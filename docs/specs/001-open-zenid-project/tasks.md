@@ -66,11 +66,15 @@ present; acceptance still depends on `evidence.md`.
   browser-storage failures with current-workspace preservation.
 - [ ] T052 Run fresh Reviewer and QA gates and record exact evidence. The
   fresh-context Reviewer gate ran at `df48301` and is recorded in
-  `evidence.md`; it returned unresolved findings, so no QA sign-off exists yet.
-- [ ] T053 Resolve the Reviewer findings recorded at `df48301`: clear and
+  `evidence.md`; its findings are resolved by T053, so the gate must be re-run
+  from fresh context against the T053 commit before QA can sign off.
+- [x] T053 Resolve the Reviewer findings recorded at `df48301`: clear and
   re-scope `projectNotice` across the Resume surface swap, surface project
   persistence failure instead of reporting success, stop rendering the shared
   recovery panel for notices without a recovery object, add the AC-005
   assurance to the panel's accessible description, remove raw `error.message`
   from the Portfolio save and publish paths, and record a decision on the
   persist-before-commit ordering.
+- [ ] T054 Reclaim media records left in the browser store by a rejected import.
+  D-009 keeps them deliberately, so this needs a reference-counted cleanup pass
+  rather than a rollback delete.

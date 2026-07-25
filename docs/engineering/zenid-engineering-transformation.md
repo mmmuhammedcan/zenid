@@ -394,26 +394,35 @@ must not be the condition that determines whether CI passed.
 
 ## 10. Agent Operating Model
 
-### Recommended model: one primary agent, gated reviewers
+### Recommended model: visible roles with one implementation owner
 
 ```text
 Human product owner
         |
         v
-Primary agent: spec/plan/task/implementation owner
+Analyst: problem, scope, acceptance criteria
         |
-        +--> Deterministic verification pipeline
+        v
+Architect: structural review when risk justifies it
         |
-        +--> Fresh-context test reviewer
-        +--> Fresh-context security reviewer (high-risk changes)
-        +--> Fresh-context architecture reviewer (structural changes)
+        v
+Developer: single implementation owner
+        |
+        v
+Reviewer: fresh-context code/security/architecture review
+        |
+        v
+QA: deterministic verification and exact evidence
         |
         v
 Human acceptance and release decision
 ```
 
-This is not a permanent "council". Review agents are invoked only when the
-change risk justifies them.
+These names make the current stage understandable to the creator. This is not
+a permanent five-agent council: combine roles for small changes, omit a
+separate Architect when no structural decision exists, and invoke independent
+review only when risk justifies it. One agent owns implementation; reviewers
+and QA do not co-author the change they evaluate.
 
 ### Why not let Cursor, Claude, and Codex all implement together?
 

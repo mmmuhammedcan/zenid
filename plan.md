@@ -307,13 +307,25 @@ Deferred until real usage proves they are needed:
 - Add Turkish UI and Turkish resume defaults when English behavior is stable.
 - Continue adding templates as presentation layers without changing canonical profile facts.
 
-### Phase 5 — Optional AI or Hosted Capabilities
+### Phase 5 — Optional User-Owned AI Compatibility
 
-- Resume analyzer and job-description comparison
-- Job-specific resume variants grounded only in user-provided evidence
-- Resume/portfolio consistency checks
-- Explicit per-action consent before data leaves the device
-- Clear retention, deletion, cost, and privacy explanations
+ZenID will not require or host an AI model, model-provider API key, AI proxy,
+or ZenID account. A future ZenID plugin may instead teach the user's own
+Claude, Codex, or another compatible AI how to read and safely edit a private
+`.zenid` project:
+
+```text
+ZenID -> save .zenid -> user's AI edits it -> ZenID validates and reopens it
+```
+
+This can support job-description comparison, evidence-grounded resume
+variants, ATS readability checks, and resume/portfolio consistency review.
+ZenID does not send the project to the provider; the user chooses whether to
+give the file to their AI, after which that provider's data terms apply.
+
+Job listing, matching, fake-listing detection, and application automation are
+not part of this local core. They may be considered later as a separate,
+explicitly opt-in ZenID Jobs product with its own privacy and service boundary.
 
 ## Immediate Implementation Checklist
 

@@ -62,3 +62,18 @@ replacement so historical context remains explainable.
 - Consequence: Partial recovery is not part of the initial compatibility
   contract. A documented recovery mode may be considered later if real user
   evidence demonstrates the need.
+
+## D-006 — AI compatibility belongs to the user-owned project boundary
+
+- Date: 2026-07-25
+- Status: Accepted
+- Decision owner: Creator
+- Context: Users may want Claude, Codex, or another AI they already use to
+  prepare a targeted resume without ZenID hosting inference, storing project
+  data, receiving API keys, or requiring accounts.
+- Decision: A future plugin may teach the user's AI how to read, safely edit,
+  and return a valid `.zenid` project. ZenID itself does not connect to or host
+  the model.
+- Consequence: Core AI compatibility remains local and optional. Job discovery,
+  listing trust, matching, and application automation require a separate
+  opt-in ZenID Jobs product decision.

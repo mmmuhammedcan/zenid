@@ -37,6 +37,22 @@ Do not equate code presence with acceptance:
 Prefer one implementation owner for a bounded change. Use fresh-context
 reviewers for security, test, or architecture gates when the risk justifies it.
 
+## Visible agent roles
+
+For substantial work, name the active role so the creator can follow the
+workflow:
+
+1. **Analyst** — clarifies the user problem, scope, and acceptance criteria.
+2. **Architect** — reviews data flow and structural choices when architecture
+   risk exists.
+3. **Developer** — is the single implementation owner and writer.
+4. **Reviewer** — inspects the completed change from fresh context.
+5. **QA** — maps acceptance criteria to tests and records exact evidence.
+
+This is a gated workflow, not a permanent five-agent council. Combine roles for
+small changes. Separate them when risk or complexity makes independent context
+valuable. Reviewers and QA do not co-author the implementation they evaluate.
+
 ## Privacy and safety
 
 - Keep project data in the browser unless an accepted opt-in spec says otherwise.

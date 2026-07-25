@@ -145,6 +145,7 @@ test("guides recovery from a corrupt project and can open another local backup",
   await expect(alert).toBeFocused();
   await expect(alert).toContainText("damaged or incomplete");
   await expect(alert).toContainText("Your current workspace was not changed. Nothing was uploaded.");
+  await expect(alert).toHaveAccessibleDescription(/Your current workspace was not changed\. Nothing was uploaded\./);
   await expect(page.getByLabel("Full name")).toHaveValue("Current Local User");
   expect(requestBodies).toEqual([]);
 
@@ -297,4 +298,95 @@ test("shows the shared recovery panel in Portfolio when referenced media is miss
 
   await expect(page.getByRole("status")).toContainText("ZenID Project opened locally");
   await expect(page.getByLabel("Full name")).toHaveValue("Valid Portfolio Backup");
+});
+
+test("reports a blocked browser store instead of a false success", async ({ page }) => {
+  const current = createEmptyProject();
+  current.profile.personalInfo.fullName = "Current Local User";
+  current.resumes[0].template = "minimal";
+  await page.addInitScript(
+    ({ storageKey, project }) => localStorage.setItem(storageKey, JSON.stringify(project)),
+    { storageKey: PROJECT_STORAGE_KEY, project: current }
+  );
+  await page.addInitScript((storageKey) => {
+    const originalSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function injectedFailure(key, value) {
+      if (key === storageKey && String(value).includes("Storage Blocked Incoming")) {
+        throw new DOMException("Injected localStorage quota failure", "QuotaExceededError");
+      }
+      return originalSetItem.call(this, key, value);
+    };
+  }, PROJECT_STORAGE_KEY);
+
+  const incoming = createEmptyProject();
+  incoming.profile.personalInfo.fullName = "Storage Blocked Incoming";
+  incoming.resumes[0].template = "minimal";
+
+  await page.goto("/resume");
+  page.once("dialog", (dialog) => dialog.accept());
+  await chooseProject(page, projectFile(incoming));
+
+  const alert = page.getByRole("alert");
+  await expect(alert).toContainText("could not be opened locally");
+  await expect(alert).toContainText("Your current workspace was not changed. Nothing was uploaded.");
+  await expect(alert).not.toContainText("Injected localStorage quota failure");
+  await expect(page.getByText("Project opened locally")).toHaveCount(0);
+  await expect(page.getByLabel("Full name")).toHaveValue("Current Local User");
+  expect(
+    await page.evaluate(
+      (storageKey) => JSON.parse(localStorage.getItem(storageKey)).profile.personalInfo.fullName,
+      PROJECT_STORAGE_KEY
+    )
+  ).toBe("Current Local User");
+});
+
+test("clears an abandoned recovery panel when the user navigates the resume surfaces", async ({ page }) => {
+  const current = createEmptyProject();
+  current.profile.personalInfo.fullName = "Current Local User";
+  current.resumes[0].template = "minimal";
+  await page.addInitScript(
+    ({ storageKey, project }) => localStorage.setItem(storageKey, JSON.stringify(project)),
+    { storageKey: PROJECT_STORAGE_KEY, project: current }
+  );
+  await page.goto("/resume");
+
+  page.once("dialog", (dialog) => dialog.accept());
+  await chooseProject(page, {
+    name: "Corrupt_Project.zenid",
+    mimeType: "application/vnd.zenid.project+zip",
+    buffer: Buffer.from("not a ZenID archive"),
+  });
+
+  const alert = page.getByRole("alert");
+  await expect(alert).toBeFocused();
+
+  await page.getByRole("button", { name: /^templates$/i }).click();
+  await expect(page.getByRole("heading", { name: /choose a starting point/i })).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+
+  await page.getByRole("button", { name: /minimal/i }).click();
+  await page.getByRole("button", { name: /^continue$/i }).click();
+  await expect(page.getByLabel("Full name")).toHaveValue("Current Local User");
+  await expect(page.getByRole("alert")).toHaveCount(0);
+});
+
+test("warns about an unavailable browser store without stealing focus", async ({ page }) => {
+  await page.addInitScript((storageKey) => {
+    const originalSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function injectedFailure(key, value) {
+      if (key === storageKey) throw new DOMException("Injected autosave failure", "QuotaExceededError");
+      return originalSetItem.call(this, key, value);
+    };
+  }, PROJECT_STORAGE_KEY);
+
+  await page.goto("/resume");
+
+  const alert = page.getByRole("alert");
+  await expect(alert).toContainText("Browser autosave is unavailable");
+  await expect(alert).not.toContainText("Injected autosave failure");
+  await expect(alert).not.toBeFocused();
+  await expect(alert.getByRole("button", { name: /open another project/i })).toHaveCount(0);
+
+  await alert.getByRole("button", { name: /^dismiss$/i }).click();
+  await expect(page.getByRole("alert")).toHaveCount(0);
 });

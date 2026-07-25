@@ -1,4 +1,5 @@
 import { createStableId } from "../resume/ids.js";
+import { userFacingError } from "../resume/projectOpenRecovery.js";
 
 const DATABASE_NAME = "zenid-local-assets";
 const DATABASE_VERSION = 1;
@@ -48,13 +49,13 @@ async function runTransaction(mode, operation) {
 
 async function validateMedia(file) {
   if (!file || !SUPPORTED_MEDIA_TYPES.has(file.type)) {
-    throw new Error("Choose a JPEG, PNG, WebP, or PDF file.");
+    throw userFacingError("Choose a JPEG, PNG, WebP, or PDF file.");
   }
   if (file.size > MAX_MEDIA_FILE_BYTES) {
-    throw new Error("Local portfolio files must be 8 MB or smaller.");
+    throw userFacingError("Local portfolio files must be 8 MB or smaller.");
   }
   if (file.type === "application/pdf" && await file.slice(0, 5).text() !== "%PDF-") {
-    throw new Error("The selected résumé is not a valid PDF.");
+    throw userFacingError("The selected résumé is not a valid PDF.");
   }
 }
 
@@ -134,7 +135,7 @@ export async function getProjectMediaAssets(project) {
   const ids = [...new Set(referencedAssetIds(project))];
   const records = await getMediaAssets(ids);
   if (records.length !== ids.length) {
-    throw new Error("One or more portfolio files are missing from this browser. Replace or remove them before saving the project.");
+    throw userFacingError("One or more portfolio files are missing from this browser. Replace or remove them before saving the project.");
   }
   return records;
 }

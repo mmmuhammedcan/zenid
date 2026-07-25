@@ -30,6 +30,22 @@ const SAFETY_LIMIT = new Set([
 
 const ASSURANCE = "Your current workspace was not changed. Nothing was uploaded.";
 
+export const BROWSER_AUTOSAVE_UNAVAILABLE =
+  "Browser autosave is unavailable — save a ZenID Project backup to keep your work.";
+export const PROJECT_SAVE_FAILED = "The ZenID Project could not be saved.";
+export const PORTFOLIO_EXPORT_FAILED = "The public portfolio ZIP could not be created.";
+export const MEDIA_SAVE_FAILED = "This file could not be saved locally.";
+
+export function userFacingError(message) {
+  const error = new Error(message);
+  error.userFacing = true;
+  return error;
+}
+
+export function noticeTextForError(error, fallback) {
+  return error?.userFacing && typeof error.message === "string" ? error.message : fallback;
+}
+
 export function classifyProjectOpenError(error) {
   const code = typeof error?.code === "string" ? error.code : undefined;
 

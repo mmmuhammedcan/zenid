@@ -17,9 +17,14 @@ import {
   updateResumeItemSelection,
 } from "./projectSchema.js";
 import { downloadProjectFile, readProjectBundleFile } from "./projectFile.js";
-import { openProjectFileAtomically } from "./projectImport.js";
+import { commitProjectToBrowser, openProjectFileAtomically } from "./projectImport.js";
 import { buildResumePdf } from "./resumePdfExport.js";
-import { classifyProjectOpenError } from "./projectOpenRecovery.js";
+import {
+  BROWSER_AUTOSAVE_UNAVAILABLE,
+  classifyProjectOpenError,
+  noticeTextForError,
+  PROJECT_SAVE_FAILED,
+} from "./projectOpenRecovery.js";
 import { getProjectMediaAssets, importMediaAssets, mediaRecordsToArchiveAssets } from "../portfolio/assetStore.js";
 
 function projectHasUserContent(project) {
@@ -55,11 +60,17 @@ export default function ResumeApp() {
       saveProjectToBrowserStorage(project);
     } catch (error) {
       console.warn("ZenID could not autosave this project in the browser.", error);
+      setProjectNotice({ type: "error", text: BROWSER_AUTOSAVE_UNAVAILABLE });
     }
   }, [project]);
 
   const updateActiveResume = (updates) => {
     setProject((current) => updateResumeDocument(current, activeResume.id, updates));
+  };
+
+  const navigateWithin = (change) => {
+    setProjectNotice(null);
+    change();
   };
 
   const handleResumeDataChange = (nextResumeData) => {
@@ -96,10 +107,13 @@ export default function ResumeApp() {
       await openProjectFileAtomically(file, {
         readBundle: readProjectBundleFile,
         persistAssets: importMediaAssets,
-        commitProject: (nextProject) => {
-          setProject(nextProject);
-          setActiveResumeId(nextProject.resumes[0].id);
-        },
+        commitProject: commitProjectToBrowser({
+          persistProject: saveProjectToBrowserStorage,
+          applyProject: (nextProject) => {
+            setProject(nextProject);
+            setActiveResumeId(nextProject.resumes[0].id);
+          },
+        }),
       });
       setProjectNotice({ type: "success", text: "Project opened locally. No file was uploaded." });
     } catch (error) {
@@ -135,7 +149,7 @@ export default function ResumeApp() {
       });
     } catch (error) {
       console.error("ZenID project export failed", error);
-      setProjectNotice({ type: "error", text: "The ZenID project could not be saved." });
+      setProjectNotice({ type: "error", text: noticeTextForError(error, PROJECT_SAVE_FAILED) });
     }
   };
 
@@ -171,7 +185,7 @@ export default function ResumeApp() {
       <TemplateSelector
         selected={activeResume.pendingTemplate}
         onSelect={(pendingTemplate) => updateActiveResume({ pendingTemplate })}
-        onContinue={() => updateActiveResume({ template: activeResume.pendingTemplate })}
+        onContinue={() => navigateWithin(() => updateActiveResume({ template: activeResume.pendingTemplate }))}
         accentColor={activeResume.accentColor}
         onSelectAccent={(accentColor) => updateActiveResume({ accentColor })}
         onOpenProject={handleOpenProject}
@@ -191,10 +205,10 @@ export default function ResumeApp() {
       onChangeResumeItemSelection={handleResumeItemSelection}
       onSetContentOverride={handleSetContentOverride}
       onResetContentOverride={handleResetContentOverride}
-      onChangeTemplate={() => updateActiveResume({ template: null })}
+      onChangeTemplate={() => navigateWithin(() => updateActiveResume({ template: null }))}
       resumes={project.resumes}
       activeResume={activeResume}
-      onSelectResume={setActiveResumeId}
+      onSelectResume={(resumeId) => navigateWithin(() => setActiveResumeId(resumeId))}
       onRenameResume={(name) => updateActiveResume({ name })}
       onDuplicateResume={handleDuplicateResume}
       onDeleteResume={handleDeleteResume}

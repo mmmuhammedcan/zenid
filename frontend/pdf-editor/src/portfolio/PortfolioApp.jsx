@@ -23,9 +23,17 @@ import {
 } from "../resume/projectSchema";
 import { buildResumePdf } from "../resume/resumePdfExport.js";
 import ProjectOpenNotice from "../resume/ProjectOpenNotice.jsx";
-import { classifyProjectOpenError } from "../resume/projectOpenRecovery.js";
+import {
+  BROWSER_AUTOSAVE_UNAVAILABLE,
+  classifyProjectOpenError,
+  MEDIA_SAVE_FAILED,
+  noticeTextForError,
+  PORTFOLIO_EXPORT_FAILED,
+  PROJECT_SAVE_FAILED,
+  userFacingError,
+} from "../resume/projectOpenRecovery.js";
 import { downloadProjectFile, readProjectBundleFile } from "../resume/projectFile";
-import { openProjectFileAtomically } from "../resume/projectImport.js";
+import { commitProjectToBrowser, openProjectFileAtomically } from "../resume/projectImport.js";
 import {
   deleteMediaAsset,
   getMediaAssets,
@@ -73,7 +81,7 @@ export default function PortfolioApp() {
       setNotice("Saved locally in this browser");
     } catch (error) {
       console.warn("ZenID could not autosave the portfolio project.", error);
-      setNotice("Browser autosave is unavailable — save a ZenID Project backup");
+      setNotice(BROWSER_AUTOSAVE_UNAVAILABLE);
     }
   }, [project]);
 
@@ -156,7 +164,10 @@ export default function PortfolioApp() {
       const bundle = await openProjectFileAtomically(file, {
         readBundle: readProjectBundleFile,
         persistAssets: importMediaAssets,
-        commitProject: setProject,
+        commitProject: commitProjectToBrowser({
+          persistProject: saveProjectToBrowserStorage,
+          applyProject: setProject,
+        }),
       });
       setProjectNotice({
         type: "success",
@@ -177,7 +188,7 @@ export default function PortfolioApp() {
       setNotice(`Private ZenID Project saved${assets.length ? ` with ${assets.length} media file${assets.length === 1 ? "" : "s"}` : ""}`);
     } catch (error) {
       console.error("Portfolio project export failed", error);
-      setNotice(error?.message || "The ZenID Project could not be saved");
+      setNotice(noticeTextForError(error, PROJECT_SAVE_FAILED));
     }
   };
 
@@ -188,14 +199,14 @@ export default function PortfolioApp() {
       const assetIds = getPublicPortfolioAssetIds(project);
       const records = await getMediaAssets(assetIds);
       if (records.length !== assetIds.length) {
-        throw new Error("One or more public portfolio files are missing from this browser. Replace or remove them before publishing.");
+        throw userFacingError("One or more public portfolio files are missing from this browser. Replace or remove them before publishing.");
       }
       const assets = await mediaRecordsToArchiveAssets(records);
       let resumePdfBytes;
       if (project.portfolio.resume.enabled && project.portfolio.resume.source !== "uploaded") {
         const resumeId = project.portfolio.resume.resumeId || project.resumes[0]?.id;
         const resume = project.resumes.find((item) => item.id === resumeId) || project.resumes[0];
-        if (!resume) throw new Error("Choose a résumé version before publishing.");
+        if (!resume) throw userFacingError("Choose a résumé version before publishing.");
         const pdf = await buildResumePdf({
           resumeData: buildPublicResumeData(project, resume.id),
           accentColor: resume.accentColor,
@@ -207,7 +218,7 @@ export default function PortfolioApp() {
       setNotice("Public portfolio ZIP downloaded — private project data was excluded");
     } catch (error) {
       console.error("Portfolio site export failed", error);
-      setNotice(error?.message || "The public portfolio ZIP could not be created");
+      setNotice(noticeTextForError(error, PORTFOLIO_EXPORT_FAILED));
     } finally {
       setIsPublishing(false);
     }
@@ -268,7 +279,7 @@ export default function PortfolioApp() {
       setNotice(descriptor.kind === "resume-pdf" ? "Résumé PDF saved locally in this browser" : "Image saved locally in this browser");
     } catch (error) {
       console.error("Portfolio media save failed", error);
-      setNotice(error?.message || "This image could not be saved locally");
+      setNotice(noticeTextForError(error, MEDIA_SAVE_FAILED));
     }
   };
 

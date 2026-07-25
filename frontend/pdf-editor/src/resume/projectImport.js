@@ -1,3 +1,10 @@
+export function commitProjectToBrowser({ persistProject, applyProject }) {
+  return (nextProject) => {
+    persistProject(nextProject);
+    applyProject(nextProject);
+  };
+}
+
 export async function openProjectFileAtomically(file, dependencies) {
   const { readBundle, persistAssets, commitProject } = dependencies || {};
   if (

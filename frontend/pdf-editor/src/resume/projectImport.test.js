@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { openProjectFileAtomically } from "./projectImport.js";
+import { commitProjectToBrowser, openProjectFileAtomically } from "./projectImport.js";
 
 test("project import prepares, persists, and commits in order", async () => {
   const calls = [];
@@ -57,6 +57,42 @@ test("project import keeps the current project when media persistence fails", as
       },
     }),
     /local media storage failed/
+  );
+
+  assert.equal(visibleProject, currentProject);
+});
+
+test("browser commit persists the project before the visible workspace changes", () => {
+  const calls = [];
+  const commit = commitProjectToBrowser({
+    persistProject: (project) => calls.push(`persist:${project.id}`),
+    applyProject: (project) => calls.push(`apply:${project.id}`),
+  });
+
+  commit({ id: "incoming" });
+
+  assert.deepEqual(calls, ["persist:incoming", "apply:incoming"]);
+});
+
+test("a failed browser commit rejects the import and never shows the project as opened", async () => {
+  const currentProject = { id: "current" };
+  let visibleProject = currentProject;
+  const bundle = { project: { id: "incoming" }, assets: [] };
+
+  await assert.rejects(
+    openProjectFileAtomically({ name: "project.zenid" }, {
+      readBundle: async () => bundle,
+      persistAssets: async () => {},
+      commitProject: commitProjectToBrowser({
+        persistProject: () => {
+          throw new DOMException("Injected quota failure", "QuotaExceededError");
+        },
+        applyProject: (project) => {
+          visibleProject = project;
+        },
+      }),
+    }),
+    /Injected quota failure/
   );
 
   assert.equal(visibleProject, currentProject);

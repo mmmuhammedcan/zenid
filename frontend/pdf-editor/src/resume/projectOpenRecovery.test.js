@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { classifyProjectOpenError } from "./projectOpenRecovery.js";
+import {
+  BROWSER_AUTOSAVE_UNAVAILABLE,
+  classifyProjectOpenError,
+  noticeTextForError,
+  userFacingError,
+} from "./projectOpenRecovery.js";
 
 const CASES = [
   ["NEWER_PROJECT", "update-required"],
@@ -49,4 +54,20 @@ test("unknown browser failures suppress raw details and stay actionable", () => 
   assert.equal(recovery.category, "local-browser");
   assert.match(recovery.guidance, /browser storage/i);
   assert.doesNotMatch(JSON.stringify(recovery), /Injected|private\/storage|QuotaExceeded/);
+});
+
+test("notice text keeps authored guidance and replaces raw failure details", () => {
+  const authored = userFacingError("Choose a résumé version before publishing.");
+  assert.equal(authored.userFacing, true);
+  assert.equal(noticeTextForError(authored, "fallback"), "Choose a résumé version before publishing.");
+
+  const raw = new DOMException("Quota exceeded for origin /private/storage", "QuotaExceededError");
+  assert.equal(noticeTextForError(raw, "The ZenID Project could not be saved."), "The ZenID Project could not be saved.");
+  assert.equal(noticeTextForError(new Error("TypeError: e.blob is undefined"), "fallback"), "fallback");
+  assert.equal(noticeTextForError(undefined, "fallback"), "fallback");
+});
+
+test("both surfaces describe an unavailable browser store with one shared sentence", () => {
+  assert.match(BROWSER_AUTOSAVE_UNAVAILABLE, /backup/i);
+  assert.doesNotMatch(BROWSER_AUTOSAVE_UNAVAILABLE, /quota|indexeddb|localstorage/i);
 });

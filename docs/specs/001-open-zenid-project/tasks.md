@@ -62,6 +62,15 @@ present; acceptance still depends on `evidence.md`.
 - [x] T049 Add failing classifier tests for every controlled error family and
   raw-detail suppression.
 - [x] T050 Add one accessible shared recovery panel to Resume and Portfolio.
-- [ ] T051 Add browser evidence for corrupt, newer-schema, missing-media, and
+- [x] T051 Add browser evidence for corrupt, newer-schema, missing-media, and
   browser-storage failures with current-workspace preservation.
-- [ ] T052 Run fresh Reviewer and QA gates and record exact evidence.
+- [ ] T052 Run fresh Reviewer and QA gates and record exact evidence. The
+  fresh-context Reviewer gate ran at `df48301` and is recorded in
+  `evidence.md`; it returned unresolved findings, so no QA sign-off exists yet.
+- [ ] T053 Resolve the Reviewer findings recorded at `df48301`: clear and
+  re-scope `projectNotice` across the Resume surface swap, surface project
+  persistence failure instead of reporting success, stop rendering the shared
+  recovery panel for notices without a recovery object, add the AC-005
+  assurance to the panel's accessible description, remove raw `error.message`
+  from the Portfolio save and publish paths, and record a decision on the
+  persist-before-commit ordering.

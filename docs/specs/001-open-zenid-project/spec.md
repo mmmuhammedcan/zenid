@@ -113,8 +113,12 @@ profile and media remain unchanged.
 - AC-004: `e2e/spec001-open-project.spec.js` observes request bodies during
   local import.
 - AC-005: `projectOpenRecovery.test.js` maps controlled error codes without
-  exposing raw details; `e2e/spec001-open-project.spec.js` verifies visible
-  categories, focus, actions, and workspace preservation.
+  exposing raw details. `e2e/spec001-open-project.spec.js` verifies the visible
+  category and the workspace-preservation assurance in the corrupt,
+  newer-schema, missing-media, and browser-storage cases. Browser coverage of
+  focus is partial: focus-on-appear is asserted only in the corrupt case and
+  focus-return-after-dismiss only in the newer-schema case. The safety-limit
+  and unsupported-version categories have unit coverage but no browser case.
 - AC-006: Resume and Portfolio browser cases use the shared recovery component.
 
 ## Delivery artifacts

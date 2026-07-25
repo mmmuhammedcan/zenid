@@ -61,6 +61,7 @@ test("keeps resume item selections isolated and restores them from a ZenID proje
   );
   await page.getByLabel("Customize wording for API Project").click();
   await page.getByLabel("Targeted wording for API Project").fill("Targeted API description");
+  await expect(page.getByText("Shared backend description", { exact: true })).toBeVisible();
 
   const preview = page.getByLabel("Resume design preview");
   await expect(preview).toContainText("Backend Engineer");

@@ -8,7 +8,7 @@ Last verified: 2026-07-25
 | `.zenid` ZIP round trip | Yes | Yes | Creator-only | 75 MB memory-budget validation on minimum supported physical device |
 | Resume PDF generation | Yes | Yes | Creator-only | Browser and assistive-tech checks |
 | Resume presentation variants | Yes | Yes | No | Item selection/content overrides |
-| Portfolio privacy/static ZIP | Yes | Yes | Creator-only | Review-dialog E2E |
+| Portfolio privacy/static ZIP | Yes | Yes | Creator-only | Root/subpath host acceptance |
 | IndexedDB media lifecycle | Yes | No | No | Integration and rollback tests |
 | ZenPDF overlay export | Yes | Partial | No | Page/navigation/browser regressions |
 | React user journeys | Yes | Partial | No | Broader component and Playwright suites |

@@ -1,6 +1,6 @@
 # SPEC-002 — Export a Public Portfolio Package
 
-Status: In progress
+Status: Automatically verified
 Owner: Creator
 Last clarified: 2026-07-25
 
@@ -50,4 +50,4 @@ provider integration require a separate follow-up spec and decision.
 
 - [x] Include `index.html` in the review inventory.
 - [x] Verify public-only review data and cancellation in a real browser.
-- [ ] Run the mapped checks and record exact commit evidence.
+- [x] Run the mapped checks and record exact commit evidence.

@@ -53,3 +53,15 @@ present; acceptance still depends on `evidence.md`.
   named-machine near-limit baseline showed user-visible main-thread blocking.
 - [ ] T046 Validate the 75 MB memory budget on the minimum supported physical
   device and retain or lower the limit before release.
+
+## Phase 4 recovery guidance
+
+- [x] T047 Keep partial import, ZIP repair, upload, and salvage out of scope.
+- [x] T048 Define shared update, unsupported, corrupt/incomplete, safety-limit,
+  and local-browser recovery categories.
+- [x] T049 Add failing classifier tests for every controlled error family and
+  raw-detail suppression.
+- [x] T050 Add one accessible shared recovery panel to Resume and Portfolio.
+- [ ] T051 Add browser evidence for corrupt, newer-schema, missing-media, and
+  browser-storage failures with current-workspace preservation.
+- [ ] T052 Run fresh Reviewer and QA gates and record exact evidence.

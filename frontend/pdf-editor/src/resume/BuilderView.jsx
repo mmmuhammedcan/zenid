@@ -13,6 +13,7 @@ import EducationForm from "./EducationForm";
 import AdditionalSectionForm from "./AdditionalSectionForm";
 import ResumeItemSelection from "./ResumeItemSelection";
 import TargetedWording from "./TargetedWording";
+import ProjectOpenNotice from "./ProjectOpenNotice";
 import ResumePreview from "./ResumePreview";
 import ResumePdfPreview from "./ResumePdfPreview";
 import { SECTION_LABELS, DEFAULT_SECTION_ORDER } from "./data";
@@ -39,11 +40,13 @@ export default function BuilderView({
   onOpenProject,
   onResetProject,
   projectNotice,
+  onDismissProjectNotice,
 }) {
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState("");
   const [previewMode, setPreviewMode] = useState("design");
   const projectInputRef = useRef(null);
+  const openProjectButtonRef = useRef(null);
   const checklistUrl = `${import.meta.env.BASE_URL}assets/zenid-resume-checklist.pdf`;
 
   const setPersonalInfo = (personalInfo) => onChangeResumeData({ ...resumeData, personalInfo });
@@ -166,6 +169,7 @@ export default function BuilderView({
           className="hidden"
         />
         <button
+          ref={openProjectButtonRef}
           type="button"
           onClick={() => projectInputRef.current?.click()}
           aria-label="Open ZenID project"
@@ -212,18 +216,12 @@ export default function BuilderView({
         </button>
       </header>
 
-      {projectNotice && (
-        <div
-          role={projectNotice.type === "error" ? "alert" : "status"}
-          className={`border-b px-6 py-2 text-center text-sm ${
-            projectNotice.type === "error"
-              ? "border-red-900/50 bg-red-950/60 text-red-300"
-              : "border-emerald-900/50 bg-emerald-950/40 text-emerald-300"
-          }`}
-        >
-          {projectNotice.text}
-        </div>
-      )}
+      <ProjectOpenNotice
+        notice={projectNotice}
+        onOpenAnother={() => projectInputRef.current?.click()}
+        onDismiss={onDismissProjectNotice}
+        returnFocusRef={openProjectButtonRef}
+      />
 
       {exportError && (
         <div role="alert" className="border-b border-red-900/50 bg-red-950/60 px-6 py-2 text-center text-sm text-red-300">

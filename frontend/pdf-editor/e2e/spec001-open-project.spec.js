@@ -119,6 +119,48 @@ test("opens a valid project locally without transmitting project data", async ({
   expect(requestBodiesAfterSelection).toEqual([]);
 });
 
+test("guides recovery from a corrupt project and can open another local backup", async ({ page }) => {
+  const current = createEmptyProject();
+  current.profile.personalInfo.fullName = "Current Local User";
+  current.resumes[0].template = "minimal";
+  await page.addInitScript(
+    ({ storageKey, project }) => localStorage.setItem(storageKey, JSON.stringify(project)),
+    { storageKey: PROJECT_STORAGE_KEY, project: current }
+  );
+  await page.goto("/resume");
+
+  const requestBodies = [];
+  page.on("request", (request) => {
+    const body = request.postDataBuffer();
+    if (body?.byteLength) requestBodies.push(body.toString("utf8"));
+  });
+  page.once("dialog", (dialog) => dialog.accept());
+  await chooseProject(page, {
+    name: "Corrupt_Project.zenid",
+    mimeType: "application/vnd.zenid.project+zip",
+    buffer: Buffer.from("not a ZenID archive"),
+  });
+
+  const alert = page.getByRole("alert");
+  await expect(alert).toBeFocused();
+  await expect(alert).toContainText("damaged or incomplete");
+  await expect(alert).toContainText("Your current workspace was not changed. Nothing was uploaded.");
+  await expect(page.getByLabel("Full name")).toHaveValue("Current Local User");
+  expect(requestBodies).toEqual([]);
+
+  const replacement = createEmptyProject();
+  replacement.profile.personalInfo.fullName = "Recovered From Backup";
+  replacement.resumes[0].template = "minimal";
+  const chooserPromise = page.waitForEvent("filechooser");
+  await alert.getByRole("button", { name: /open another project/i }).click();
+  const chooser = await chooserPromise;
+  page.once("dialog", (dialog) => dialog.accept());
+  await chooser.setFiles(projectFile(replacement));
+
+  await expect(page.getByRole("status")).toContainText("Project opened locally");
+  await expect(page.getByLabel("Full name")).toHaveValue("Recovered From Backup");
+});
+
 test("rejects a newer project with update guidance and keeps the current workspace", async ({ page }) => {
   const current = createEmptyProject();
   current.profile.personalInfo.fullName = "Current Local User";
@@ -144,11 +186,15 @@ test("rejects a newer project with update guidance and keeps the current workspa
   page.once("dialog", (dialog) => dialog.accept());
   await chooseProject(page, futureSchemaProjectFile(incoming, [futureProfile]));
 
-  await expect(page.getByRole("alert")).toHaveText(
-    `This project was created by a newer ZenID version (schema ${CURRENT_SCHEMA_VERSION + 1}). Update ZenID before opening it.`
-  );
+  const alert = page.getByRole("alert");
+  await expect(alert).toContainText("needs a newer ZenID");
+  await expect(alert).toContainText("Your current workspace was not changed. Nothing was uploaded.");
+  await expect(alert.getByRole("button", { name: /open another project/i })).toBeVisible();
+  await expect(alert.getByRole("button", { name: /continue with current workspace/i })).toBeVisible();
   await expect(page.getByLabel("Full name")).toHaveValue("Current Local User");
   expect(await readAsset(page, "future-profile")).toBeNull();
+  await alert.getByRole("button", { name: /continue with current workspace/i }).click();
+  await expect(page.getByRole("button", { name: /open zenid project/i })).toBeFocused();
 });
 
 test("rolls back media and keeps the current project when IndexedDB persistence fails", async ({ page }) => {
@@ -204,8 +250,51 @@ test("rolls back media and keeps the current project when IndexedDB persistence 
   page.once("dialog", (dialog) => dialog.accept());
   await chooseProject(page, projectFile(incoming, assets));
 
-  await expect(page.getByRole("alert")).toContainText("Injected media write failure");
+  const alert = page.getByRole("alert");
+  await expect(alert).toContainText("could not be opened locally");
+  await expect(alert).toContainText("Check browser storage availability and free space");
+  await expect(alert).not.toContainText("Injected media write failure");
   await expect(page.getByLabel("Full name")).toHaveValue("Current Local User");
   expect((await readAsset(page, "current-profile"))?.name).toBe("current.png");
   expect(await readAsset(page, "incoming-profile")).toBeNull();
+});
+
+test("shows the shared recovery panel in Portfolio when referenced media is missing", async ({ page }) => {
+  const current = createEmptyProject();
+  current.profile.personalInfo.fullName = "Current Portfolio User";
+  await page.addInitScript(
+    ({ storageKey, project }) => localStorage.setItem(storageKey, JSON.stringify(project)),
+    { storageKey: PROJECT_STORAGE_KEY, project: current }
+  );
+
+  const incomplete = createEmptyProject();
+  incomplete.profile.personalInfo.fullName = "Incomplete Incoming User";
+  incomplete.portfolio.media.profileImageId = "missing-profile";
+
+  await page.goto("/portfolio");
+  page.once("dialog", (dialog) => dialog.accept());
+  const chooserPromise = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: /open project/i }).click();
+  const chooser = await chooserPromise;
+  await chooser.setFiles(projectFile(incomplete));
+
+  const alert = page.getByRole("alert");
+  await expect(alert).toContainText("damaged or incomplete");
+  await expect(alert).toContainText("Your current workspace was not changed. Nothing was uploaded.");
+  await expect(alert.getByRole("button", { name: /open another project/i })).toBeVisible();
+  await expect(page.getByLabel("Full name")).toHaveValue("Current Portfolio User");
+  expect(
+    await page.evaluate((storageKey) => JSON.parse(localStorage.getItem(storageKey)).profile.personalInfo.fullName, PROJECT_STORAGE_KEY)
+  ).toBe("Current Portfolio User");
+
+  const valid = createEmptyProject();
+  valid.profile.personalInfo.fullName = "Valid Portfolio Backup";
+  const replacementChooserPromise = page.waitForEvent("filechooser");
+  await alert.getByRole("button", { name: /open another project/i }).click();
+  const replacementChooser = await replacementChooserPromise;
+  page.once("dialog", (dialog) => dialog.accept());
+  await replacementChooser.setFiles(projectFile(valid));
+
+  await expect(page.getByRole("status")).toContainText("ZenID Project opened locally");
+  await expect(page.getByLabel("Full name")).toHaveValue("Valid Portfolio Backup");
 });

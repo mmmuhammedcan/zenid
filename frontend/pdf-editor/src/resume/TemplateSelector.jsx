@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { Check, FolderOpen } from "lucide-react";
 import { ACCENT_THEMES } from "./themes";
+import ProjectOpenNotice from "./ProjectOpenNotice";
 
 const TEMPLATES = [
   {
@@ -60,8 +61,10 @@ export default function TemplateSelector({
   onSelectAccent,
   onOpenProject,
   projectNotice,
+  onDismissProjectNotice,
 }) {
   const projectInputRef = useRef(null);
+  const openProjectButtonRef = useRef(null);
 
   const handleProjectFile = (event) => {
     const file = event.target.files?.[0];
@@ -82,6 +85,7 @@ export default function TemplateSelector({
           className="hidden"
         />
         <button
+          ref={openProjectButtonRef}
           type="button"
           onClick={() => projectInputRef.current?.click()}
           className="mt-5 inline-flex items-center gap-2 rounded-lg border border-stone-700 px-3 py-2 text-sm font-medium text-stone-200 transition-colors hover:border-amber-600 hover:bg-amber-600/10 hover:text-amber-400"
@@ -91,18 +95,13 @@ export default function TemplateSelector({
         <p className="mt-2 text-xs text-stone-500">Opened locally in your browser—nothing is uploaded.</p>
       </div>
 
-      {projectNotice && (
-        <div
-          role={projectNotice.type === "error" ? "alert" : "status"}
-          className={`mb-6 w-full max-w-3xl rounded-lg border px-4 py-3 text-sm ${
-            projectNotice.type === "error"
-              ? "border-red-900/60 bg-red-950/60 text-red-300"
-              : "border-emerald-900/60 bg-emerald-950/40 text-emerald-300"
-          }`}
-        >
-          {projectNotice.text}
-        </div>
-      )}
+      <ProjectOpenNotice
+        notice={projectNotice}
+        onOpenAnother={() => projectInputRef.current?.click()}
+        onDismiss={onDismissProjectNotice}
+        returnFocusRef={openProjectButtonRef}
+        className="mb-6 w-full max-w-3xl rounded-lg"
+      />
 
       <div className="grid w-full max-w-3xl grid-cols-1 gap-6 sm:grid-cols-2">
         {TEMPLATES.map((tpl) => {

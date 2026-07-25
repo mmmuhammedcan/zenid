@@ -1,6 +1,6 @@
 # SPEC-001 — Open ZenID Project Locally
 
-Status: Automatically verified; representative-device release gate open
+Status: In progress; representative-device release gate open
 Owner: Creator
 Last clarified: 2026-07-25
 
@@ -28,6 +28,11 @@ transfer, and automatic recovery of unsupported future schemas.
 - BR-005: Imported media and project state commit atomically from the user's
   perspective.
 - BR-006: Opening a project performs no project-data network upload.
+- BR-007: A rejected project is never repaired or opened partially. ZenID
+  classifies the failure, confirms the current workspace was not changed, and
+  offers another local project selection.
+- BR-008: Resume and Portfolio use the same recovery categories and guidance.
+  Raw stack traces, DOM exception details, and internal paths are not shown.
 
 ## Acceptance criteria
 
@@ -51,6 +56,20 @@ limit, when it is opened, then ZenID rejects it without partial persistence.
 
 Given any local project open attempt, when the operation completes or fails,
 then no HTTP request contains project bytes, profile data, or media.
+
+### AC-005 — Actionable recovery guidance
+
+Given a project is newer, unsupported, corrupt/incomplete, blocked by a safety
+limit, or cannot be persisted by the local browser, when opening fails, then an
+accessible recovery panel shows the matching category, states that the current
+workspace was not changed and nothing was uploaded, and offers **Open another
+project** and **Continue with current workspace**.
+
+### AC-006 — Shared recovery surfaces
+
+Given the same failure in Resume or Portfolio, when recovery guidance appears,
+then both surfaces use the same classification and actions while their current
+profile and media remain unchanged.
 
 ## Non-functional requirements
 
@@ -93,6 +112,10 @@ then no HTTP request contains project bytes, profile data, or media.
   inconsistent stored-entry metadata.
 - AC-004: `e2e/spec001-open-project.spec.js` observes request bodies during
   local import.
+- AC-005: `projectOpenRecovery.test.js` maps controlled error codes without
+  exposing raw details; `e2e/spec001-open-project.spec.js` verifies visible
+  categories, focus, actions, and workspace preservation.
+- AC-006: Resume and Portfolio browser cases use the shared recovery component.
 
 ## Delivery artifacts
 

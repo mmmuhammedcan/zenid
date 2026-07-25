@@ -22,6 +22,8 @@ import {
   updateProjectProfile,
 } from "../resume/projectSchema";
 import { buildResumePdf } from "../resume/resumePdfExport.js";
+import ProjectOpenNotice from "../resume/ProjectOpenNotice.jsx";
+import { classifyProjectOpenError } from "../resume/projectOpenRecovery.js";
 import { downloadProjectFile, readProjectBundleFile } from "../resume/projectFile";
 import { openProjectFileAtomically } from "../resume/projectImport.js";
 import {
@@ -53,11 +55,13 @@ export default function PortfolioApp() {
   const [activeStep, setActiveStep] = useState("profile");
   const [mobileView, setMobileView] = useState("edit");
   const [notice, setNotice] = useState("Saved locally in this browser");
+  const [projectNotice, setProjectNotice] = useState(null);
   const [assetUrls, setAssetUrls] = useState({});
   const [resumeUrl, setResumeUrl] = useState(null);
   const [showPublicationReview, setShowPublicationReview] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const openInputRef = useRef(null);
+  const openProjectButtonRef = useRef(null);
   const assetUrlsRef = useRef({});
   const resumeUrlRef = useRef(null);
   const activeIndex = STEPS.findIndex((step) => step.id === activeStep);
@@ -154,10 +158,13 @@ export default function PortfolioApp() {
         persistAssets: importMediaAssets,
         commitProject: setProject,
       });
-      setNotice(`ZenID Project opened locally${bundle.assets.length ? ` with ${bundle.assets.length} media file${bundle.assets.length === 1 ? "" : "s"}` : ""} — nothing was uploaded`);
+      setProjectNotice({
+        type: "success",
+        text: `ZenID Project opened locally${bundle.assets.length ? ` with ${bundle.assets.length} media file${bundle.assets.length === 1 ? "" : "s"}` : ""} — nothing was uploaded`,
+      });
     } catch (error) {
       console.error("Portfolio project import failed", error);
-      setNotice(error?.message || "This ZenID Project could not be opened");
+      setProjectNotice({ type: "error", recovery: classifyProjectOpenError(error) });
     }
   };
 
@@ -294,7 +301,7 @@ export default function PortfolioApp() {
           </div>
           <div className="flex w-full flex-wrap gap-2 sm:w-auto">
             <input ref={openInputRef} type="file" accept=".zenid,application/json" onChange={handleOpenProject} className="hidden" />
-            <button type="button" onClick={() => openInputRef.current?.click()} className="flex items-center gap-2 rounded-lg border border-stone-800 px-3 py-2 text-xs font-medium text-stone-300 transition-colors hover:bg-stone-900">
+            <button ref={openProjectButtonRef} type="button" onClick={() => openInputRef.current?.click()} className="flex items-center gap-2 rounded-lg border border-stone-800 px-3 py-2 text-xs font-medium text-stone-300 transition-colors hover:bg-stone-900">
               <FolderOpen size={14} /> Open Project
             </button>
             <button type="button" onClick={handleSaveProject} className="flex items-center gap-2 rounded-lg bg-amber-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-amber-500">
@@ -306,6 +313,14 @@ export default function PortfolioApp() {
           </div>
         </div>
       </header>
+
+      <ProjectOpenNotice
+        notice={projectNotice}
+        onOpenAnother={() => openInputRef.current?.click()}
+        onDismiss={() => setProjectNotice(null)}
+        returnFocusRef={openProjectButtonRef}
+        className="mx-auto my-4 max-w-[1760px] rounded-lg"
+      />
 
       <div className="border-b border-stone-800/70 bg-stone-950 px-4 py-3 sm:px-6">
         <div className="mx-auto flex max-w-[1800px] gap-2 overflow-x-auto pb-1">

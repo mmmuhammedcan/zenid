@@ -19,6 +19,7 @@ import {
 import { downloadProjectFile, readProjectBundleFile } from "./projectFile.js";
 import { openProjectFileAtomically } from "./projectImport.js";
 import { buildResumePdf } from "./resumePdfExport.js";
+import { classifyProjectOpenError } from "./projectOpenRecovery.js";
 import { getProjectMediaAssets, importMediaAssets, mediaRecordsToArchiveAssets } from "../portfolio/assetStore.js";
 
 function projectHasUserContent(project) {
@@ -105,7 +106,7 @@ export default function ResumeApp() {
       console.error("ZenID project import failed", error);
       setProjectNotice({
         type: "error",
-        text: error?.message || "This ZenID project could not be opened.",
+        recovery: classifyProjectOpenError(error),
       });
     }
   };
@@ -175,6 +176,7 @@ export default function ResumeApp() {
         onSelectAccent={(accentColor) => updateActiveResume({ accentColor })}
         onOpenProject={handleOpenProject}
         projectNotice={projectNotice}
+        onDismissProjectNotice={() => setProjectNotice(null)}
       />
     );
   }
@@ -200,6 +202,7 @@ export default function ResumeApp() {
       onOpenProject={handleOpenProject}
       onResetProject={handleResetProject}
       projectNotice={projectNotice}
+      onDismissProjectNotice={() => setProjectNotice(null)}
     />
   );
 }

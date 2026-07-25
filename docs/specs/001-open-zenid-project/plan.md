@@ -1,7 +1,7 @@
 # SPEC-001 Implementation Plan
 
-Status: In progress
-Updated: 2026-07-24
+Status: Automatically verified; representative-device release gate open
+Updated: 2026-07-25
 
 ## Technical context
 
@@ -56,17 +56,20 @@ state, and trace-on-first-retry in CI.
 
 Measure import duration and main-thread blocking for small, typical, and
 near-limit synthetic fixtures before deciding whether ZIP parsing belongs in a
-Web Worker. Do not introduce a worker without measured evidence.
+Web Worker.
 
 Archive extraction now applies entry-count, per-entry, and cumulative expanded
 limits through `fflate`'s central-directory filter before each entry's output
-buffer is allocated. T040 established a named-machine baseline. The remaining
-decision is whether the current 75 MB budget gives acceptable import duration
-and responsiveness on supported devices, especially after the near-limit
-measurement; resolve Q-002 with more representative device measurements before
-introducing a Web Worker. If those measurements show user-visible near-limit
-responsiveness problems, ZIP extraction and validation move to a Web Worker;
-the worker is a responsiveness boundary, not a replacement for archive limits.
+buffer is allocated. T040 established a 250–280 ms near-limit scheduler-delay
+proxy on the named i7 environment, which was sufficient evidence to move ZIP
+extraction and validation to a Web Worker. Commit `d67dd8c` reduced that proxy
+to 10 ms while retaining the same limits and atomic commit boundary.
+
+The worker is a responsiveness boundary, not a replacement for archive limits
+or physical-device memory evidence. Before release, T046 must validate the
+75 MB budget on the minimum supported physical device. If that measurement
+shows memory pressure, crashes, or unacceptable import behavior, lower the
+expanded-data limit rather than describing the worker as a memory control.
 
 ## Schema lifecycle policy
 

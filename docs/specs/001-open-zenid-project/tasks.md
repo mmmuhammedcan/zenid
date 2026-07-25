@@ -49,3 +49,7 @@ present; acceptance still depends on `evidence.md`.
 - [x] T042 Run the complete verification command set and update `evidence.md`.
 - [x] T043 Perform an independent spec/security/test review.
 - [x] T044 Complete dated creator acceptance.
+- [x] T045 Move archive extraction and validation to a Web Worker after the
+  named-machine near-limit baseline showed user-visible main-thread blocking.
+- [ ] T046 Validate the 75 MB memory budget on the minimum supported physical
+  device and retain or lower the limit before release.

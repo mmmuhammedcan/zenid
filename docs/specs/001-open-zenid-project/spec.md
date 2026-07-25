@@ -1,8 +1,8 @@
 # SPEC-001 — Open ZenID Project Locally
 
-Status: In progress
+Status: Automatically verified; representative-device release gate open
 Owner: Creator
-Last clarified: 2026-07-24
+Last clarified: 2026-07-25
 
 ## Problem and user
 
@@ -68,15 +68,18 @@ then no HTTP request contains project bytes, profile data, or media.
   three schema versions for at least 18 months after each schema's release. A
   schema leaves support only after both conditions are true. Older readers
   reject newer schemas without partial recovery and direct the user to update.
+- D-007: ZIP extraction and project validation run in a Web Worker. The
+  existing named-machine baseline showed a 250–280 ms near-limit scheduler
+  delay on the main thread; the worker reduced the same proxy to 10 ms while
+  preserving every archive limit and the prepare-then-commit boundary.
 
 ## Open questions
 
 - Q-002: Is the current 75 MB pre-materialization browser memory budget
-  appropriate on supported devices? Owner: Engineering. Resolve with T040
-  measurements rather than implementation intuition. If representative-device
-  measurements show user-visible near-limit responsiveness problems, move ZIP
-  extraction and validation to a Web Worker while retaining every resource and
-  validation limit.
+  appropriate on the minimum supported physical device? Owner: Engineering.
+  The responsiveness decision is resolved by D-007; a real lower-bound device
+  measurement is still required before release to validate the memory budget
+  and either retain or lower the 75 MB limit.
 
 ## Verification mapping
 

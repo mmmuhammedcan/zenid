@@ -1,20 +1,19 @@
 # SPEC-001 Evidence
 
-Status: Partial — browser atomicity and archive resource containment verified;
-feature gate remains open
-Last updated: 2026-07-24
+Status: Automatically verified; representative-device release gate open
+Last updated: 2026-07-25
 
 ## Evidence recorded
 
-Implementation tested through commit `42cd828` on Linux with Node.js 22.15.1
+Implementation tested through commit `d67dd8c` on Linux with Node.js 22.15.1
 and Playwright 1.61.1 Chromium:
 
-- `npm test` — 9 test-file subtests passed on 2026-07-24.
-- Focused `projectFile.test.js` run — 16 tests passed on 2026-07-24.
-- `npm run lint` — passed on 2026-07-24.
-- `npm run build` — passed on 2026-07-24.
-- `npm run test:e2e` — 2 Chromium tests passed on 2026-07-24.
-- `npm run benchmark:project-import` — passed on 2026-07-24; its detailed
+- `npm test` — 9 test-file subtests passed on 2026-07-25.
+- `npm run lint` — passed on 2026-07-25.
+- `npm run build` — passed on 2026-07-25 and emitted a separate 16.18 kB
+  project-import worker bundle; the existing large-chunk warning remains.
+- `npm run test:e2e` — 3 Chromium tests passed on 2026-07-25.
+- `npm run benchmark:project-import` — passed on 2026-07-25; its detailed
   baseline is recorded below.
 - `node scripts/zenid-roundtrip-check.mjs save` — created a 101,066-byte
   synthetic `.zenid` archive.
@@ -39,21 +38,27 @@ Automated cases currently cover:
 - no project-data request body during import;
 - IndexedDB transaction abort after an injected second-write failure;
 - preservation of the prior media record and visible current project after
-  persistence failure.
+  persistence failure;
+- browser archive parsing through a module Worker with transferable input;
+- controlled Worker message-failure rejection and termination.
 
-T040 baseline on Linux x64 (kernel 6.14.0-37-generic), Intel Core i7-10875H
-(16 logical CPUs), Node.js 22.15.1, and headless Chromium 149.0.7827.55:
+Worker-enabled T040 follow-up on Linux x64 (kernel 6.14.0-37-generic), Intel
+Core i7-10875H (16 logical CPUs), Node.js 22.15.1, and headless Chromium
+149.0.7827.55:
 
 - Small fixture (1,901-byte archive; 7 samples): 2.8 ms p95 import and a
-  10 ms maximum scheduler-delay proxy; both approved budgets passed
+  10 ms maximum scheduler-delay proxy before the worker. With the worker the
+  p95 was 22.2 ms and the proxy remained 10 ms; both approved budgets passed
   (200 ms import, 50 ms proxy).
 - Typical fixture (1,575,957-byte archive; 1,572,864 bytes expanded media;
-  5 samples): 6.8 ms p95 import and a 10 ms maximum scheduler-delay proxy;
-  both approved budgets passed (500 ms import, 100 ms proxy).
+  5 samples): 6.8 ms p95 import and a 10 ms maximum scheduler-delay proxy
+  before the worker. With the worker the p95 was 24.1 ms and the proxy remained
+  10 ms; both approved budgets passed (500 ms import, 100 ms proxy).
 - Near-limit fixture (300,179-byte archive; 75,488,256 bytes expanded media,
-  96% of the 75 MiB limit; 1 sample): 288.3 ms import and a 280 ms
-  scheduler-delay proxy. This is explicitly measurement-only, not a pass/fail
-  gate.
+  96% of the 75 MiB limit; 1 sample): the pre-worker runs recorded
+  251.6–288.3 ms import and a 250–280 ms scheduler-delay proxy. Commit
+  `d67dd8c` recorded 280.6 ms total import with a 10 ms proxy. The near-limit
+  scenario remains explicitly measurement-only, not a pass/fail gate.
 
 The scheduler-delay proxy uses a 10 ms browser pulse and rounds upward to 10 ms
 buckets. It indicates responsiveness but is not a precise blocking duration;
@@ -73,9 +78,16 @@ product-wide compliance claim.
 T043 used an independent, read-only Claude Sonnet review of the complete
 SPEC-001 contract and its curated security, test, performance, and evidence
 packet. The final structured report returned no concrete findings. The review
-does not close the explicitly recorded future-schema messaging,
-representative-device Q-002 gap, and does not establish product-wide security
-assurance.
+did not by itself close the then-recorded future-schema messaging or
+representative-device Q-002 gaps, and does not establish product-wide security
+assurance. The future-schema browser case was subsequently added at `e7e7c02`.
+
+A fresh-context reviewer examined the Worker change and reported one Medium
+missing `messageerror` cleanup path plus Low controlled-error and test gaps.
+Commit `d67dd8c` adds idempotent termination, handles worker, message, and
+synchronous post failures through a controlled compatibility error, and adds a
+message-failure regression. The reviewer found no change to the security limits
+or atomic commit boundary.
 
 Creator acceptance recorded 2026-07-24 (browser name not recorded): a valid
 downloaded ZenID project reopened successfully; a deliberately invalid project
@@ -98,15 +110,16 @@ fail the build, but route-level code splitting remains a performance follow-up.
 
 ## Missing evidence
 
-- Near-limit responsiveness on representative supported devices and the
-  resulting Web Worker decision for Q-002.
+- Peak-memory/crash behavior and the resulting 75 MB limit decision on the
+  minimum supported physical device. The Web Worker resolves the observed
+  main-thread responsiveness problem but is not evidence of memory suitability.
 
 ## Acceptance status
 
 - Implemented: Yes for the current atomic-import, bounded archive-extraction,
-  and named-environment performance-baseline contract.
-- Automatically verified: No.
+  worker-responsiveness, and named-environment performance-baseline contract.
+- Automatically verified: Yes for AC-001 through AC-004 at `d67dd8c`.
 - Manually accepted: Yes — 2026-07-24 creator acceptance recorded above.
 
-This file must be updated with exact commands, environment, tested commit, and
-results before either verification status changes.
+Release readiness remains open until T046 supplies the physical-device evidence
+needed to retain or lower the 75 MB limit.

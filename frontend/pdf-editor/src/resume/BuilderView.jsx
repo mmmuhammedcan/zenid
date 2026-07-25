@@ -11,6 +11,7 @@ import AchievementsForm from "./AchievementsForm";
 import CertificationsForm from "./CertificationsForm";
 import EducationForm from "./EducationForm";
 import AdditionalSectionForm from "./AdditionalSectionForm";
+import ResumeItemSelection from "./ResumeItemSelection";
 import ResumePreview from "./ResumePreview";
 import ResumePdfPreview from "./ResumePdfPreview";
 import { SECTION_LABELS, DEFAULT_SECTION_ORDER } from "./data";
@@ -20,8 +21,10 @@ import { exportResumeToPdf } from "./resumePdfExport";
 export default function BuilderView({
   template,
   resumeData,
+  outputResumeData,
   accentColor,
   onChangeResumeData,
+  onChangeResumeItemSelection,
   onChangeTemplate,
   resumes,
   activeResume,
@@ -78,7 +81,7 @@ export default function BuilderView({
     setExportError("");
     setExporting(true);
     try {
-      await exportResumeToPdf({ template, resumeData, accentColor });
+      await exportResumeToPdf({ template, resumeData: outputResumeData, accentColor });
     } catch (error) {
       console.error("Resume export failed", error);
       setExportError("We couldn't export your resume. Please try again.");
@@ -235,6 +238,14 @@ export default function BuilderView({
             <PersonalInfoForm data={resumeData.personalInfo} onChange={setPersonalInfo} />
           </AccordionSection>
 
+          <AccordionSection title="Included in this resume" defaultOpen>
+            <ResumeItemSelection
+              resumeData={resumeData}
+              selectedItems={activeResume.selectedItems}
+              onChange={onChangeResumeItemSelection}
+            />
+          </AccordionSection>
+
           {sectionOrder.map((key, idx) => {
             const config = SECTION_CONFIG[key];
             if (!config) return null;
@@ -288,9 +299,9 @@ export default function BuilderView({
               </span>
             </div>
             {previewMode === "pdf" ? (
-              <ResumePdfPreview resumeData={resumeData} accentColor={accentColor} />
+              <ResumePdfPreview resumeData={outputResumeData} accentColor={accentColor} />
             ) : (
-              <ResumePreview template={template} resumeData={resumeData} accentColor={accentColor} />
+              <ResumePreview template={template} resumeData={outputResumeData} accentColor={accentColor} />
             )}
           </div>
         </div>

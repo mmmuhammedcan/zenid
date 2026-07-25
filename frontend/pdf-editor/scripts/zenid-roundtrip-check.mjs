@@ -2,7 +2,11 @@ import assert from "node:assert/strict";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { materializeResumeData, normalizeProject } from "../src/resume/projectSchema.js";
+import {
+  CURRENT_SCHEMA_VERSION,
+  materializeResumeData,
+  normalizeProject,
+} from "../src/resume/projectSchema.js";
 import { parseProjectFileBytes, serializeProjectArchive } from "../src/resume/projectFile.js";
 import { buildResumePdf } from "../src/resume/resumePdfExport.js";
 
@@ -15,7 +19,7 @@ const restoredPdfPath = path.join(artifactsDirectory, "Synthetic_Restored_Resume
 
 function fixtureProject() {
   return normalizeProject({
-    schemaVersion: 1,
+    schemaVersion: CURRENT_SCHEMA_VERSION,
     profile: {
       personalInfo: {
         fullName: "Ada Yılmaz",

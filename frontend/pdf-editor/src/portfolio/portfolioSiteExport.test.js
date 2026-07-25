@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { createEmptyProject } from "../resume/projectSchema.js";
+import { buildResumePdf } from "../resume/resumePdfExport.js";
 import {
   buildPublicResumeData,
   buildPublicationReview,
@@ -88,6 +89,28 @@ test("generated public résumé data excludes private contacts and hidden items"
   assert.equal(resumeData.personalInfo.email, "public@example.com");
   assert.equal(resumeData.personalInfo.phone, "");
   assert.deepEqual(resumeData.projects.map((item) => item.name), ["Public Project"]);
+});
+
+test("generated portfolio résumé PDF honors the selected resume variant items", async () => {
+  const project = fixture();
+  project.portfolio.resume.source = "generated";
+  project.portfolio.hiddenItems.projects = [];
+  project.resumes[0].selectedItems = { projects: ["private-project"] };
+  const resumeData = buildPublicResumeData(project, project.resumes[0].id);
+  const pdf = await buildResumePdf({
+    resumeData,
+    accentColor: project.resumes[0].accentColor,
+  });
+  const pageOperators = pdf.internal.pages.slice(1).flat().join("\n");
+  const files = unzipSync(serializePortfolioSite(project, {
+    assets: assets.filter((asset) => asset.id !== "resume-pdf"),
+    resumePdfBytes: new Uint8Array(pdf.output("arraybuffer")),
+  }));
+
+  assert.deepEqual(resumeData.projects.map((item) => item.name), ["Private Project"]);
+  assert.match(pageOperators, /Private Project/);
+  assert.doesNotMatch(pageOperators, /Public Project/);
+  assert.ok(files["resume.pdf"]);
 });
 
 test("static portfolio ZIP contains only explicitly published content and works without source JSON", () => {

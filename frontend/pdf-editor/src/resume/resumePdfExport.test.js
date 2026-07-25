@@ -1,5 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import {
+  createEmptyProject,
+  materializeResumeData,
+  updateResumeItemSelection,
+} from "./projectSchema.js";
 import { buildResumePdf, getResumeFileName } from "./resumePdfExport.js";
 
 test("buildResumePdf creates an ATS-readable multi-section PDF", async () => {
@@ -42,4 +47,23 @@ test("resume filenames are safe and predictable", () => {
   assert.equal(getResumeFileName("  Şule Işık  "), "Şule_Işık_Resume.pdf");
   assert.equal(getResumeFileName("Jane / Doe"), "Jane__Doe_Resume.pdf");
   assert.equal(getResumeFileName(""), "Resume.pdf");
+});
+
+test("ATS PDF rendering uses the active resume variant item selection", async () => {
+  const project = createEmptyProject();
+  const resumeId = project.resumes[0].id;
+  project.profile.experience = [
+    { id: "backend", company: "ZenID", role: "Backend Engineer" },
+    { id: "retail", company: "Store", role: "Retail Associate" },
+  ];
+  const selected = updateResumeItemSelection(project, resumeId, "experience", "retail", false);
+
+  const doc = await buildResumePdf({
+    resumeData: materializeResumeData(selected, resumeId),
+    accentColor: selected.resumes[0].accentColor,
+  });
+  const pageOperators = doc.internal.pages.slice(1).flat().join("\n");
+
+  assert.match(pageOperators, /Backend Engineer/);
+  assert.doesNotMatch(pageOperators, /Retail Associate/);
 });

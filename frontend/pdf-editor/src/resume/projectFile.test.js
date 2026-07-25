@@ -1,7 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
-import { createEmptyProject, migrateLegacyResumeDraft } from "./projectSchema.js";
+import {
+  createEmptyProject,
+  CURRENT_SCHEMA_VERSION,
+  migrateLegacyResumeDraft,
+} from "./projectSchema.js";
 import {
   getProjectFileName,
   MAX_ARCHIVE_ENTRIES,
@@ -151,6 +155,33 @@ test("generated resume PDFs can travel inside the private project archive", () =
   assert.ok(files[generatedPath]);
   assert.equal(new TextDecoder().decode(files[generatedPath]), "%PDF-1.3\nfixture");
   assert.equal(parseProjectFileBytes(bytes).resumes[0].id, project.resumes[0].id);
+});
+
+test("resume item selections survive a private project archive round trip", () => {
+  const project = createEmptyProject();
+  project.resumes[0].selectedItems = {
+    experience: [project.profile.experience[0].id],
+    projects: [],
+  };
+
+  const restored = parseProjectFileBytes(serializeProjectArchive(project));
+
+  assert.deepEqual(restored.resumes[0].selectedItems, project.resumes[0].selectedItems);
+});
+
+test("a schema v1 ZenID archive migrates without hiding existing resume items", () => {
+  const project = createEmptyProject();
+  const files = unzipSync(serializeProjectArchive(project));
+  const manifest = JSON.parse(strFromU8(files["manifest.json"]));
+  manifest.schemaVersion = 1;
+  files["manifest.json"] = strToU8(JSON.stringify(manifest));
+
+  const restored = parseProjectFileBytes(zipSync(files));
+
+  assert.equal(restored.schemaVersion, CURRENT_SCHEMA_VERSION);
+  assert.deepEqual(restored.resumes[0].selectedItems, {});
+  assert.equal(restored.profile.experience.length, project.profile.experience.length);
+  assert.equal(restored.profile.projects.length, project.profile.projects.length);
 });
 
 test("portfolio media survives a private project archive round trip", () => {

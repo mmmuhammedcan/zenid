@@ -8,9 +8,11 @@ import {
   duplicateResumeDocument,
   getResumeDocument,
   loadProjectFromBrowserStorage,
+  materializeResumeEditorData,
   materializeResumeData,
   saveProjectToBrowserStorage,
   updateResumeDocument,
+  updateResumeItemSelection,
 } from "./projectSchema.js";
 import { downloadProjectFile, readProjectBundleFile } from "./projectFile.js";
 import { openProjectFileAtomically } from "./projectImport.js";
@@ -42,7 +44,8 @@ export default function ResumeApp() {
   const [projectNotice, setProjectNotice] = useState(null);
 
   const activeResume = getResumeDocument(project, activeResumeId);
-  const resumeData = materializeResumeData(project, activeResume.id);
+  const resumeData = materializeResumeEditorData(project, activeResume.id);
+  const outputResumeData = materializeResumeData(project, activeResume.id);
 
   useEffect(() => {
     try {
@@ -58,6 +61,12 @@ export default function ResumeApp() {
 
   const handleResumeDataChange = (nextResumeData) => {
     setProject((current) => applyResumeData(current, activeResume.id, nextResumeData));
+  };
+
+  const handleResumeItemSelection = (field, itemId, included) => {
+    setProject((current) =>
+      updateResumeItemSelection(current, activeResume.id, field, itemId, included)
+    );
   };
 
   const handleOpenProject = async (file) => {
@@ -160,8 +169,10 @@ export default function ResumeApp() {
     <BuilderView
       template={activeResume.template}
       resumeData={resumeData}
+      outputResumeData={outputResumeData}
       accentColor={activeResume.accentColor}
       onChangeResumeData={handleResumeDataChange}
+      onChangeResumeItemSelection={handleResumeItemSelection}
       onChangeTemplate={() => updateActiveResume({ template: null })}
       resumes={project.resumes}
       activeResume={activeResume}

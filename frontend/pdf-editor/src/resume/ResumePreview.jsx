@@ -467,6 +467,7 @@ function ModernLayout({ resumeData, accentColor }) {
 export default function ResumePreview({ template, resumeData, accentColor = DEFAULT_ACCENT }) {
   return (
     <div
+      aria-label="Resume design preview"
       className="mx-auto overflow-hidden rounded-md bg-stone-100 ring-1 ring-stone-900/10"
       style={{ width: A4_WIDTH_PT, height: A4_HEIGHT_PT, boxShadow: "0 0 60px -15px rgba(0, 0, 0, 0.7)" }}
     >

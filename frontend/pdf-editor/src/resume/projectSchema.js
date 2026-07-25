@@ -2,7 +2,7 @@ import { createInitialResumeData, DEFAULT_SECTION_ORDER } from "./data.js";
 import { createStableId } from "./ids.js";
 import { DEFAULT_ACCENT } from "./themes.js";
 
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;
 // The storage location is stable; schemaVersion inside the payload controls
 // migrations. This avoids stranding data under a new key for every release.
 export const PROJECT_STORAGE_KEY = "zenid.project";
@@ -70,6 +70,8 @@ const PROFILE_ARRAY_FIELDS = [
   "certifications",
   "education",
 ];
+
+export const RESUME_SELECTABLE_FIELDS = ["experience", "projects"];
 
 export class ProjectCompatibilityError extends Error {
   constructor(message, code = "INCOMPATIBLE_PROJECT") {
@@ -202,6 +204,14 @@ export function normalizeProfile(source = {}) {
 }
 
 export function createResumeDocument(overrides = {}) {
+  const selectedItems = isRecord(overrides.selectedItems) ? clone(overrides.selectedItems) : {};
+  RESUME_SELECTABLE_FIELDS.forEach((field) => {
+    if (!Object.prototype.hasOwnProperty.call(selectedItems, field)) return;
+    selectedItems[field] = Array.isArray(selectedItems[field])
+      ? [...new Set(selectedItems[field].filter((id) => typeof id === "string" && id))]
+      : [];
+  });
+
   return {
     ...clone(overrides),
     id: overrides.id || createStableId(),
@@ -214,7 +224,7 @@ export function createResumeDocument(overrides = {}) {
       Array.isArray(overrides.sectionOrder) && overrides.sectionOrder.length
         ? [...overrides.sectionOrder]
         : [...DEFAULT_SECTION_ORDER],
-    selectedItems: isRecord(overrides.selectedItems) ? clone(overrides.selectedItems) : {},
+    selectedItems,
     contentOverrides: isRecord(overrides.contentOverrides) ? clone(overrides.contentOverrides) : {},
   };
 }
@@ -299,7 +309,33 @@ export function migrateProject(input) {
   if (isRecord(input) && input.schemaVersion === undefined && input.resumeData) {
     return migrateLegacyResumeDraft(input);
   }
-  return normalizeProject(input);
+  if (!isRecord(input) || input.schemaVersion === undefined || input.schemaVersion >= CURRENT_SCHEMA_VERSION) {
+    return normalizeProject(input);
+  }
+
+  let migrated = clone(input);
+  while (migrated.schemaVersion < CURRENT_SCHEMA_VERSION) {
+    if (migrated.schemaVersion === 1) {
+      migrated = {
+        ...migrated,
+        schemaVersion: 2,
+        resumes: Array.isArray(migrated.resumes)
+          ? migrated.resumes.map((resume) => {
+              if (!isRecord(resume) || !isRecord(resume.selectedItems)) return resume;
+              const selectedItems = clone(resume.selectedItems);
+              RESUME_SELECTABLE_FIELDS.forEach((field) => delete selectedItems[field]);
+              return { ...resume, selectedItems };
+            })
+          : migrated.resumes,
+      };
+      continue;
+    }
+    throw new ProjectCompatibilityError(
+      `ZenID does not recognize project schema ${String(migrated.schemaVersion)}.`,
+      "UNSUPPORTED_PROJECT"
+    );
+  }
+  return normalizeProject(migrated);
 }
 
 export function loadProjectFromBrowserStorage(storage = globalThis.localStorage) {
@@ -335,12 +371,25 @@ export function getResumeDocument(project, resumeId) {
   return project.resumes.find((resume) => resume.id === resumeId) || project.resumes[0];
 }
 
-export function materializeResumeData(project, resumeId) {
+export function materializeResumeEditorData(project, resumeId) {
   const resume = getResumeDocument(project, resumeId);
   return {
     ...clone(project.profile),
     sectionOrder: [...resume.sectionOrder],
   };
+}
+
+export function materializeResumeData(project, resumeId) {
+  const resume = getResumeDocument(project, resumeId);
+  const data = materializeResumeEditorData(project, resumeId);
+
+  RESUME_SELECTABLE_FIELDS.forEach((field) => {
+    if (!Object.prototype.hasOwnProperty.call(resume.selectedItems, field)) return;
+    const selected = new Set(resume.selectedItems[field]);
+    data[field] = data[field].filter((item) => selected.has(item.id));
+  });
+
+  return data;
 }
 
 export function applyResumeData(project, resumeId, resumeData) {
@@ -350,7 +399,21 @@ export function applyResumeData(project, resumeId, resumeData) {
     profile,
     resumes: project.resumes.map((resume) =>
       resume.id === resumeId
-        ? { ...resume, sectionOrder: Array.isArray(sectionOrder) ? [...sectionOrder] : resume.sectionOrder }
+        ? {
+            ...resume,
+            sectionOrder: Array.isArray(sectionOrder) ? [...sectionOrder] : resume.sectionOrder,
+            selectedItems: RESUME_SELECTABLE_FIELDS.reduce((selectedItems, field) => {
+              if (!Object.prototype.hasOwnProperty.call(selectedItems, field)) return selectedItems;
+              const previousIds = new Set((project.profile[field] || []).map((item) => item.id));
+              const nextIds = (profile[field] || []).map((item) => item.id);
+              const addedIds = nextIds.filter((id) => !previousIds.has(id));
+              if (!addedIds.length) return selectedItems;
+              return {
+                ...selectedItems,
+                [field]: [...new Set([...(selectedItems[field] || []), ...addedIds])],
+              };
+            }, clone(resume.selectedItems)),
+          }
         : resume
     ),
   });
@@ -362,6 +425,28 @@ export function updateResumeDocument(project, resumeId, updates) {
     resumes: project.resumes.map((resume) =>
       resume.id === resumeId ? { ...resume, ...clone(updates), id: resume.id } : resume
     ),
+  });
+}
+
+export function updateResumeItemSelection(project, resumeId, field, itemId, included) {
+  if (!RESUME_SELECTABLE_FIELDS.includes(field)) {
+    throw new ProjectCompatibilityError(`Resume item selection is not supported for ${field}.`, "INVALID_SELECTION");
+  }
+  const resume = getResumeDocument(project, resumeId);
+  const hasExplicitSelection = Object.prototype.hasOwnProperty.call(resume.selectedItems, field);
+  const selected = new Set(
+    hasExplicitSelection
+      ? resume.selectedItems[field]
+      : (project.profile[field] || []).map((item) => item.id)
+  );
+  if (included) selected.add(itemId);
+  else selected.delete(itemId);
+
+  return updateResumeDocument(project, resumeId, {
+    selectedItems: {
+      ...resume.selectedItems,
+      [field]: [...selected],
+    },
   });
 }
 

@@ -40,9 +40,10 @@ npm run dev
   deployable static artifact. It is verified for root and project-subpath
   hosting and keeps the private `.zenid` workspace separate.
 - `npm run build` produces the ZenID application bundle. The initial
-  owner-only acceptance deployment uses ChatGPT Sites under D-018; no custom
-  domain is selected. The root build includes a matching `404.html` SPA
-  fallback and validates every entry-point asset path.
+  acceptance deployment uses ChatGPT Sites under D-018 and is temporarily
+  public for cross-device acceptance under D-019; no custom domain is selected.
+  The root build includes a matching `404.html` SPA fallback and validates
+  every entry-point asset path.
 - `npm run build:subpath` produces and validates the same application for the
   example `/zenid/` base. Hosting configuration must route unknown application
   paths to the generated shell (or use the included `404.html` fallback).

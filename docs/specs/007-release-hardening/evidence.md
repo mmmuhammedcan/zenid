@@ -66,9 +66,9 @@ From `frontend/pdf-editor`:
 ## Initial production deployment
 
 - Provider: ChatGPT Sites
-- Access: owner-only
-- Source commit: `5c5b79d6fc7b5f86439a133015d37669524aa34e`
-- Saved version: 3
+- Access: temporarily public under D-019
+- Source commit: `2b04ddf0aa8782365d5afed8afb56d5a067628cc`
+- Saved version: 5
 - Deployment status: succeeded on 2026-07-26
 - URL: `https://zenid-local-workspace.cosmican.chatgpt.site`
 
@@ -92,6 +92,22 @@ inferred. The creator reported successful:
 This closes T010 for the initial owner-only deployment. It does not close D-016
 Windows/Android accessibility acceptance, public-access acceptance, or the
 deferred Apple-platform matrix.
+
+## Public route smoke
+
+After the creator authorized temporary public access, anonymous HTTP checks
+passed for the application shell. The hosting asset layer canonicalizes the
+three application paths with a trailing slash; version 5 preserves each route
+and returns HTML with status 200:
+
+- `/resume` -> `/resume/` -> 200
+- `/portfolio` -> `/portfolio/` -> 200
+- `/editor` -> `/editor/` -> 200
+
+The earlier provider behavior redirected unknown paths to `/`. The tested
+static build adapter now emits a route shell for every known application route
+instead of depending on a request that the provider handles before the Worker.
+Manual anonymous-browser acceptance remains part of D-016.
 
 ## Independent fresh-context review
 

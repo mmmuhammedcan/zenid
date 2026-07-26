@@ -276,3 +276,19 @@ replacement so historical context remains explainable.
 - Consequence: The generated address is a real production deployment but not a
   public launch. Changing access to public or attaching a domain remains an
   explicit later action.
+
+## D-019 — Production access is temporarily public for device acceptance
+
+- Date: 2026-07-26
+- Status: Accepted
+- Decision owner: Creator
+- Context: The creator wants to exercise the production deployment from Ubuntu,
+  Android, and a family member's Windows device without signing a personal
+  ChatGPT account into the shared Windows computer.
+- Decision: Make the generated production URL public during the cross-device
+  acceptance period. Revisit whether to retain public access after D-016
+  acceptance is complete.
+- Consequence: Anyone with the URL can load the application code. ZenID still
+  has no project-data backend; each visitor's workspace remains inside that
+  visitor's browser origin. Shared-device acceptance must use synthetic data
+  and must save/remove its local test workspace deliberately.

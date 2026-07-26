@@ -299,7 +299,7 @@ Verified on 2026-07-25 on the same environment as above:
 T052 is closed. T053, T052, T054, and T055 are resolved; T046 remains the open
 physical-device item for this spec.
 
-## T056 — collision-safe media import, working-tree verification
+## T056/T057 — collision-safe media import and independent review
 
 Implemented on 2026-07-26 on top of `f41c820`:
 
@@ -329,16 +329,26 @@ working-tree verification passed:
   v3 and a one-page synthetic PDF were restored in a fresh process.
 - `git diff --check` — passed.
 
-This evidence describes an uncommitted working tree and therefore does not close
-the repository's commit-scoped evidence gate. T057 remains open for an immutable
-tested commit and fresh-context review.
+The implementation was committed and the complete gate was rerun at immutable
+commit `3e73b4b3e3af2a4abca3ac8581f8fb6de1138870`; exact commit-scoped results are
+recorded in SPEC-006 evidence.
+
+An independent fresh-context Reviewer completed T057 on 2026-07-26. The review
+found no functional, security, or privacy blocker. It independently reran 12/12
+unit test files and 10/10 targeted browser cases, including identical reuse,
+identifier collision with current-byte preservation, blocked-store
+preservation, atomic add/replace rollback, and version-one media upgrade.
+Atomic and upgrade coverage passed in Chromium, Firefox, and WebKit. The
+Reviewer confirmed that the later Blob-to-`Uint8Array` storage change retains
+legacy Blob reads and does not weaken T056.
 
 ## Missing evidence
 
 - Peak-memory/crash behavior and the resulting 75 MB limit decision on the
   minimum supported physical device. The Web Worker resolves the observed
   main-thread responsiveness problem but is not evidence of memory suitability.
-- Commit-scoped evidence and fresh-context review for T056 (T057).
+- T046 physical-device validation remains deferred under D-013 and must not be
+  described as completed physical-device evidence.
 
 ## Acceptance status
 
@@ -347,5 +357,6 @@ tested commit and fresh-context review.
 - Automatically verified: Yes for AC-001 through AC-004 at `d67dd8c`.
 - Manually accepted: Yes — 2026-07-24 creator acceptance recorded above.
 
-Release readiness remains open until T046 supplies the physical-device evidence
-needed to retain or lower the 75 MB limit.
+T046 is not a present release blocker under creator decision D-013. The 75 MB
+limit remains automatically benchmarked but is not claimed as physically
+validated.

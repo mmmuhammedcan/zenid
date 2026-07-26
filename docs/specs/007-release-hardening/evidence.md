@@ -61,7 +61,19 @@ From `frontend/pdf-editor`:
   manual; axe and viewport automation do not replace them.
 - Q-001 still requires the creator to choose the production provider and
   domain before an external deploy.
-- SPEC-007 T008's independent fresh-context review remains open; the
-  implementation owner cannot self-attest this gate.
-- T057's independent fresh-context review remains open; commit evidence for its
-  implementation already exists.
+
+## Independent fresh-context review
+
+An independent Reviewer completed T008 on 2026-07-26 and found no
+release-blocking correctness, security, or privacy issue. The Reviewer reran
+12/12 unit test files, lint, both production builds, and the browser matrix in
+the CI-style single-worker configuration: 54 passed, 6 intentionally scoped
+skips, and 0 failures.
+
+The review confirmed D-014's byte storage and legacy Blob compatibility and
+D-015's absence of RSC, data-router actions, SSR, or backend execution paths.
+Two Low documentation/test-hardening observations were resolved: README now
+describes the deploy checker as validating entry-point asset paths, and the
+ZenPDF privacy regression uses a document-specific sentinel to reject document
+content in same-origin request URLs as well as cross-origin or non-GET
+requests.

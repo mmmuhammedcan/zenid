@@ -2,8 +2,11 @@ import { readFile } from "node:fs/promises";
 import { test, expect } from "@playwright/test";
 import { PDFDocument } from "pdf-lib";
 
+const PRIVATE_DOCUMENT_SENTINEL = "ZENID_PRIVATE_DOCUMENT_7F3A91C2";
+
 async function syntheticTwoPagePdf() {
   const pdf = await PDFDocument.create();
+  pdf.setSubject(PRIVATE_DOCUMENT_SENTINEL);
   pdf.addPage([595, 842]);
   pdf.addPage([595, 842]);
   return Buffer.from(await pdf.save());
@@ -11,6 +14,8 @@ async function syntheticTwoPagePdf() {
 
 test("loads, navigates, and exports a synthetic two-page PDF locally", async ({ page }) => {
   const requests = [];
+  const privatePdf = await syntheticTwoPagePdf();
+  const privatePdfBase64 = privatePdf.toString("base64");
   await page.goto("/editor");
   await expect(page.getByRole("heading", { name: /fill and sign application forms privately/i })).toBeVisible();
   await page.waitForLoadState("networkidle");
@@ -19,7 +24,7 @@ test("loads, navigates, and exports a synthetic two-page PDF locally", async ({ 
   await page.locator('input[type="file"][accept*="application/pdf"]').setInputFiles({
     name: "Synthetic_Two_Page_Form.pdf",
     mimeType: "application/pdf",
-    buffer: await syntheticTwoPagePdf(),
+    buffer: privatePdf,
   });
 
   await expect(page.getByRole("status")).toHaveText("Document ready.");
@@ -38,5 +43,7 @@ test("loads, navigates, and exports a synthetic two-page PDF locally", async ({ 
   for (const request of requests) {
     expect(request.method).toBe("GET");
     expect(new URL(request.url).origin).toBe("http://127.0.0.1:4173");
+    expect(request.url).not.toContain(PRIVATE_DOCUMENT_SENTINEL);
+    expect(request.url).not.toContain(privatePdfBase64);
   }
 });

@@ -88,7 +88,7 @@ present; acceptance still depends on `evidence.md`.
 - [x] T056 Prevent a rejected import from overwriting current media when an
   incoming archive reuses a stable media identifier with different content.
   Reuse identical stored records and reject conflicting records before commit.
-- [ ] T057 Complete the fresh-context Reviewer gate for T056. Commit-scoped
-  evidence now exists at tested implementation commit
-  `3e73b4b3e3af2a4abca3ac8581f8fb6de1138870`; only independent fresh-context
-  review remains.
+- [x] T057 Complete the fresh-context Reviewer gate for T056. Commit-scoped
+  evidence exists at tested implementation commit
+  `3e73b4b3e3af2a4abca3ac8581f8fb6de1138870`; an independent Reviewer passed
+  the collision, reuse, atomic rollback, and legacy-read paths on 2026-07-26.

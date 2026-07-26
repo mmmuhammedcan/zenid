@@ -48,6 +48,9 @@ npm run dev
   paths to the generated shell (or use the included `404.html` fallback).
 - Passing either build proves a provider-ready artifact, not a successful
   external deployment or provider acceptance.
+- The repository-root `npm run build` is the hosting adapter: it installs the
+  locked frontend dependencies, runs the verified root Vite build, and copies
+  only the generated static output to the root `dist/` directory.
 - A future one-click publish may send only the reviewed public package directly
   from the browser to a provider account the user authorizes. It requires its
   own opt-in spec and decision; manual ZIP export remains the local default.

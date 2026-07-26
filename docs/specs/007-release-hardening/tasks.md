@@ -13,3 +13,5 @@
   defined by D-016.
 - [ ] T010 Choose a production host/address, deploy the tested artifact, and
   record the production smoke-test result.
+- [ ] T011 Provide and verify the repository-root static build adapter required
+  by the selected hosting source layout.

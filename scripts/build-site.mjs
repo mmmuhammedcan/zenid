@@ -7,6 +7,7 @@ const frontendOutput = resolve(frontendDirectory, "dist");
 const siteOutput = resolve("dist");
 const clientOutput = resolve(siteOutput, "client");
 const serverOutput = resolve(siteOutput, "server");
+const applicationRoutes = ["resume", "portfolio", "editor"];
 
 function run(command, args) {
   const result = spawnSync(command, args, {
@@ -27,10 +28,16 @@ await mkdir(resolve(siteOutput, ".openai"), { recursive: true });
 await cp(frontendOutput, clientOutput, { recursive: true });
 await copyFile(resolve("scripts/static-site-worker.js"), resolve(serverOutput, "index.js"));
 await copyFile(resolve(".openai/hosting.json"), resolve(siteOutput, ".openai/hosting.json"));
+for (const route of applicationRoutes) {
+  const routeDirectory = resolve(clientOutput, route);
+  await mkdir(routeDirectory, { recursive: true });
+  await copyFile(resolve(clientOutput, "index.html"), resolve(routeDirectory, "index.html"));
+}
 
 console.log(JSON.stringify({
   check: "site-build-adapter",
   source: "frontend/pdf-editor/dist",
   staticOutput: "dist/client",
   workerEntrypoint: "dist/server/index.js",
+  routeShells: applicationRoutes,
 }));

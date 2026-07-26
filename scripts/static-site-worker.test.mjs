@@ -51,6 +51,27 @@ test("serves the application shell for an unknown SPA route", async () => {
   ]);
 });
 
+test("replaces the provider root redirect with the SPA shell", async () => {
+  const fixture = assetEnvironment({
+    "/resume": new Response(null, {
+      status: 307,
+      headers: { location: "/" },
+    }),
+    "/index.html": new Response("<main>Resume route shell</main>", { status: 200 }),
+  });
+  const response = await worker.fetch(
+    new Request("https://zenid.example/resume"),
+    fixture.env
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(await response.text(), "<main>Resume route shell</main>");
+  assert.deepEqual(fixture.requests, [
+    { method: "GET", pathname: "/resume" },
+    { method: "GET", pathname: "/index.html" },
+  ]);
+});
+
 test("does not convert an unsupported write request into an application page", async () => {
   const fixture = assetEnvironment({});
   const response = await worker.fetch(

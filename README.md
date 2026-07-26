@@ -50,7 +50,9 @@ npm run dev
   external deployment or provider acceptance.
 - The repository-root `npm run build` is the hosting adapter: it installs the
   locked frontend dependencies, runs the verified root Vite build, and copies
-  only the generated static output to the root `dist/` directory.
+  only the generated static output to `dist/client/`. Its Worker entrypoint
+  serves those immutable application files and the SPA fallback; it is not a
+  project-data backend.
 - A future one-click publish may send only the reviewed public package directly
   from the browser to a provider account the user authorizes. It requires its
   own opt-in spec and decision; manual ZIP export remains the local default.

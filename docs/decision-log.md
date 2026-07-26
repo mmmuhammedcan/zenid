@@ -248,3 +248,17 @@ replacement so historical context remains explainable.
   but must not be described as real-device Safari or Apple-platform acceptance.
   The Apple platforms can be added through a later dated acceptance pass
   without changing the local-first product architecture.
+
+## D-017 — The hosting Worker is a stateless application-file router
+
+- Date: 2026-07-26
+- Status: Accepted
+- Decision owner: Engineering
+- Context: The selected Sites runtime requires a Worker entrypoint alongside
+  client assets even though ZenID is a client-only Vite application.
+- Decision: Keep the product client-only. The Worker may serve the built static
+  files and map unknown GET/HEAD routes to the SPA shell. It must not expose an
+  upload, profile, project, PDF, media, analytics, or persistence endpoint.
+- Consequence: The runtime adapter is hosting infrastructure rather than a
+  ZenID application backend. Private workspace data remains inside the user's
+  browser and public Portfolio publication remains a separate explicit export.

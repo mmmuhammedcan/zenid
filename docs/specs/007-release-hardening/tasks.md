@@ -15,3 +15,5 @@
   record the production smoke-test result.
 - [x] T011 Provide and verify the repository-root static build adapter required
   by the selected hosting source layout.
+- [ ] T012 Fit newly opened ZenPDF pages on narrow viewports without changing
+  the normal desktop initial scale, then run Developer, QA, and Reviewer gates.

@@ -12,7 +12,7 @@ async function syntheticTwoPagePdf() {
   return Buffer.from(await pdf.save());
 }
 
-test("loads, navigates, and exports a synthetic two-page PDF locally", async ({ page }) => {
+test("loads, navigates, and exports a synthetic two-page PDF locally", async ({ page }, testInfo) => {
   const requests = [];
   const privatePdf = await syntheticTwoPagePdf();
   const privatePdfBase64 = privatePdf.toString("base64");
@@ -29,6 +29,24 @@ test("loads, navigates, and exports a synthetic two-page PDF locally", async ({ 
 
   await expect(page.getByRole("status")).toHaveText("Document ready.");
   await expect(page.getByText("Page 1 of 2")).toBeVisible();
+
+  const pageCanvas = page.locator(".canvas-container");
+  const canvasBox = await pageCanvas.boundingBox();
+  expect(canvasBox).not.toBeNull();
+  if (testInfo.project.name === "mobile-chromium-release") {
+    const viewport = page.viewportSize();
+    expect(canvasBox.x).toBeGreaterThanOrEqual(0);
+    expect(canvasBox.x + canvasBox.width).toBeLessThanOrEqual(viewport.width);
+    await expect(page.getByText("42%")).toBeVisible();
+  } else {
+    await expect(page.getByText("100%")).toBeVisible();
+  }
+
+  await page.getByRole("button", { name: "Add Text" }).click();
+  await page.locator(".upper-canvas").click({ position: { x: canvasBox.width / 2, y: canvasBox.height / 3 } });
+  await expect(page.getByRole("status")).toContainText("Placed.");
+  await page.keyboard.press("Escape");
+
   await page.getByRole("button", { name: "Next page" }).click();
   await expect(page.getByText("Page 2 of 2")).toBeVisible();
   await page.getByRole("button", { name: "Previous page" }).click();

@@ -292,3 +292,21 @@ replacement so historical context remains explainable.
   has no project-data backend; each visitor's workspace remains inside that
   visitor's browser origin. Shared-device acceptance must use synthetic data
   and must save/remove its local test workspace deliberately.
+
+## D-020 — ZenPDF authoring is desktop-first with bounded mobile support
+
+- Date: 2026-07-26
+- Status: Accepted
+- Decision owner: Creator
+- Context: Physical Android acceptance found that a PDF opened at the desktop
+  default scale is difficult to navigate and annotate on a phone. The creator
+  wants ZenPDF to remain desktop-first and does not accept a mobile fix that
+  changes the established desktop behavior.
+- Decision: Preserve the 100% initial desktop canvas and existing desktop
+  authoring controls. On narrower viewports, initially fit a newly opened PDF
+  or image page within the available width and make the scaled layout box match
+  the visible page. Mobile must support opening, navigation, coarse placement,
+  and local export, but does not promise desktop-equivalent precision editing.
+- Consequence: The responsive fit is isolated from normal desktop viewports and
+  is covered by both mobile and desktop regression assertions. More extensive
+  touch-first authoring remains a separately scoped enhancement.

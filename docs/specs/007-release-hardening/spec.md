@@ -37,6 +37,9 @@ deferred by D-013.
   hard-coded root asset URLs.
 - BR-006: Deep links have a deployable SPA fallback artifact; a successful Vite
   build alone is not provider acceptance.
+- BR-007: ZenPDF remains desktop-first. A narrow viewport may change the initial
+  canvas scale and layout containment, but must not change the normal desktop
+  initial scale or authoring controls.
 
 ## Acceptance criteria
 
@@ -51,6 +54,9 @@ deferred by D-013.
   configured bases and contain an SPA fallback.
 - AC-006: Dependency audit findings are either fixed or explicitly mapped to
   unreachable application features with a dated decision.
+- AC-007: A newly opened ZenPDF page fits within a supported mobile viewport
+  without horizontal page clipping, while the desktop release viewport still
+  opens the page at 100%.
 
 ## Deployment decision
 

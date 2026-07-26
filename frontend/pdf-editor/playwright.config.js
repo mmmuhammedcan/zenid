@@ -29,7 +29,7 @@ export default defineConfig({
     },
     {
       name: "mobile-chromium-release",
-      testMatch: /release-hardening\.spec\.js/,
+      testMatch: /(?:release-hardening|zenpdf-regression)\.spec\.js/,
       use: { ...devices["Pixel 7"] },
     },
   ],

@@ -12,6 +12,7 @@ import FillToolsPopover from "./FillToolsPopover";
 import BottomBar from "./BottomBar";
 import useHistory from "./useHistory";
 import { restoreCanvasSnapshot } from "./canvasRestore";
+import { initialDocumentZoom } from "./responsiveZoom.js";
 import {
   LEGACY_INITIALS_KEY,
   LEGACY_SIGNATURE_KEY,
@@ -128,6 +129,7 @@ export default function PdfEditor() {
   const [currentPage, setCurrentPage] = useState(1);
   const [numPages, setNumPages] = useState(1);
   const [zoom, setZoom] = useState(100);
+  const [pageDimensions, setPageDimensions] = useState({ width: 0, height: 0 });
 
   const pdfCanvasRef = useRef(null); // the read-only canvas PDF.js renders into
   const fabricCanvasElRef = useRef(null); // the <canvas> element Fabric mounts on
@@ -246,7 +248,7 @@ export default function PdfEditor() {
       setSourceFileName(file.name || "document.pdf");
       setNumPages(pdf.numPages);
       setCurrentPage(1);
-      await renderPage(1);
+      await renderPage(1, { fitToViewport: true });
       const annotationsByPage = await Promise.all(
         Array.from({ length: pdf.numPages }, async (_unused, index) => {
           const page = await pdf.getPage(index + 1);
@@ -291,6 +293,8 @@ export default function PdfEditor() {
 
       const width = A4_WIDTH_PT * RENDER_SCALE;
       const height = A4_HEIGHT_PT * RENDER_SCALE;
+      setPageDimensions({ width, height });
+      setZoom(initialDocumentZoom({ viewportWidth: window.innerWidth, documentWidth: width }));
 
       // Blank white "paper" backing, kept for visual/export consistency with
       // the PDF flow — the real content lives on the fabric layer as a
@@ -355,6 +359,7 @@ export default function PdfEditor() {
     setNumPages(1);
     setInteractiveFieldCount(0);
     setZoom(100);
+    setPageDimensions({ width: 0, height: 0 });
     setSourceType(null);
     setDocumentReady(false);
     setPdfLoaded(false);
@@ -473,9 +478,16 @@ export default function PdfEditor() {
 
   // --- Render a given page number with PDF.js, then mount a fresh Fabric
   // overlay on top of it (restoring that page's saved annotations, if any) ---
-  const renderPage = async (pageNum) => {
+  const renderPage = async (pageNum, { fitToViewport = false } = {}) => {
     const page = await pdfDocRef.current.getPage(pageNum);
     const viewport = page.getViewport({ scale: RENDER_SCALE });
+    setPageDimensions({ width: viewport.width, height: viewport.height });
+    if (fitToViewport) {
+      setZoom(initialDocumentZoom({
+        viewportWidth: window.innerWidth,
+        documentWidth: viewport.width,
+      }));
+    }
 
     const pdfCanvas = pdfCanvasRef.current;
     pdfCanvas.width = viewport.width;
@@ -1027,13 +1039,27 @@ export default function PdfEditor() {
             resting on the dark desk. Kept mounted at all times (just visually hidden pre-load) so
             the refs are always valid when a file is dropped/selected — no mount-timing races. */}
         <div
-          className={`relative overflow-hidden rounded-xl border border-stone-800 bg-gray-50 shadow-2xl shadow-black/60 ${
+          data-testid="pdf-page-stage"
+          className={`relative shrink-0 ${
             pdfLoaded ? "inline-block" : "hidden"
           }`}
-          style={{ transform: `scale(${zoom / 100})`, transformOrigin: "top center" }}
+          style={{
+            width: pageDimensions.width * (zoom / 100),
+            height: pageDimensions.height * (zoom / 100),
+          }}
         >
-          <canvas ref={pdfCanvasRef} className="block" />
-          <canvas ref={fabricCanvasElRef} className="absolute left-0 top-0" />
+          <div
+            className="relative overflow-hidden rounded-xl border border-stone-800 bg-gray-50 shadow-2xl shadow-black/60"
+            style={{
+              width: pageDimensions.width,
+              height: pageDimensions.height,
+              transform: `scale(${zoom / 100})`,
+              transformOrigin: "top left",
+            }}
+          >
+            <canvas ref={pdfCanvasRef} className="block" />
+            <canvas ref={fabricCanvasElRef} className="absolute left-0 top-0" />
+          </div>
         </div>
       </div>
 

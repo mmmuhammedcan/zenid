@@ -57,8 +57,9 @@ From `frontend/pdf-editor`:
 
 ## Remaining manual/external gates
 
-- Keyboard, screen-reader, browser zoom, and real-device acceptance remain
-  manual; axe and viewport automation do not replace them.
+- D-016 limits the initial dated manual-acceptance matrix to Windows and
+  Android. The executable checklist is in `manual-acceptance.md`; macOS, iOS,
+  and iPadOS remain unaccepted rather than inferred from WebKit automation.
 - Q-001 still requires the creator to choose the production provider and
   domain before an external deploy.
 

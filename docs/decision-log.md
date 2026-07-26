@@ -233,3 +233,18 @@ replacement so historical context remains explainable.
 - Consequence: `npm audit` remains non-zero and must not be reported as clean.
   The finding is dispositioned as unreachable in this product architecture,
   while dependency updates remain a release-maintenance responsibility.
+
+## D-016 — Initial manual acceptance targets Windows and Android
+
+- Date: 2026-07-26
+- Status: Accepted
+- Decision owner: Creator
+- Context: The creator currently has access to Windows and Android devices but
+  not to suitable macOS, iPhone, or iPad acceptance devices.
+- Decision: The initial web release manual-acceptance matrix covers current
+  Chrome and Firefox on Windows and current Chrome with TalkBack on Android.
+  macOS, iOS, and iPadOS remain outside the manually accepted launch matrix.
+- Consequence: Automated WebKit results remain useful compatibility evidence
+  but must not be described as real-device Safari or Apple-platform acceptance.
+  The Apple platforms can be added through a later dated acceptance pass
+  without changing the local-first product architecture.

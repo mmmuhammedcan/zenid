@@ -329,3 +329,21 @@ replacement so historical context remains explainable.
   English reuse names, contacts, dates, links, companies, schools, and other
   shared facts while editing only the narrative fields that actually differ.
   Existing English projects remain valid.
+
+## D-022 — ZenID uses a creator-owned public domain and static host
+
+- Date: 2026-07-26
+- Status: Accepted
+- Decision owner: Creator
+- Context: The generated acceptance URL is operational but unsuitable as the
+  durable product identity. The deliberately chosen ZenID name has unrelated
+  uses online, while `zenid.com` is already registered.
+- Decision: Keep the ZenID product name and use “Your local identity
+  workspace.” as its strapline. Publish the accepted client-only application
+  from the creator's Cloudflare account, use `https://getzenid.com/` as the
+  canonical origin, and retain the Sites deployment as a rollback path until
+  custom-domain acceptance completes.
+- Consequence: Hosting and DNS remain replaceable infrastructure. Search
+  metadata must distinguish the local résumé, portfolio, and PDF workspace
+  without promising a ranking, introducing analytics, or weakening the
+  browser-only privacy boundary.

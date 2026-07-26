@@ -44,7 +44,10 @@ npm run dev
   hosting and keeps the private `.zenid` workspace separate.
 - `npm run build` produces the ZenID application bundle. The initial
   acceptance deployment uses ChatGPT Sites under D-018 and is temporarily
-  public for cross-device acceptance under D-019; no custom domain is selected.
+  public for cross-device acceptance under D-019. D-022 selects a
+  creator-owned Cloudflare Pages deployment and `https://getzenid.com/` as the
+  durable canonical origin; the accepted Sites deployment remains the rollback
+  path until custom-domain verification is complete.
   The root build includes a matching `404.html` SPA fallback and validates
   every entry-point asset path.
 - `npm run build:subpath` produces and validates the same application for the

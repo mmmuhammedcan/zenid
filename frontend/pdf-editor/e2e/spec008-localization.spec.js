@@ -13,10 +13,12 @@ async function extractPdfText(bytes) {
 
 test("remembers the accessible Turkish interface preference across core routes", async ({ page }) => {
   await page.goto("/");
+  await expect(page.getByText("Your local identity workspace.", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "TR", exact: true }).click();
 
   await expect(page.locator("html")).toHaveAttribute("lang", "tr");
   await expect(page.getByRole("heading", { name: "ZenID’ye Hoş Geldiniz" })).toBeVisible();
+  await expect(page.getByText("Yerel kimlik çalışma alanınız.", { exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByRole("heading", { name: "ZenID’ye Hoş Geldiniz" })).toBeVisible();
 
@@ -70,4 +72,3 @@ test("exports a Turkish résumé without rewriting authored profile content", as
   expect(pdfText).toContain("Devam ediyor");
   expect(pdfText).toContain("Kullanıcının özgün metni.");
 });
-

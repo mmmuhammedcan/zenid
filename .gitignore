@@ -12,6 +12,7 @@ dist-ssr/
 
 # Claude Code local settings (machine-specific, not for version control)
 .claude/
+.wrangler/
 
 # Editor/OS
 .vscode/*

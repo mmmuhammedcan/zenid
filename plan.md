@@ -1,6 +1,6 @@
 # ZenID Product Roadmap
 
-Last updated: 25 July 2026
+Last updated: 26 July 2026
 
 ## Product Direction
 
@@ -20,6 +20,13 @@ The central promise is:
 
 > Enter your information once. Create your resume and portfolio. Keep the project on your own
 > device. ZenID does not retain it.
+
+The public brand strapline is:
+
+> Your local identity workspace.
+
+`https://getzenid.com/` is the selected canonical public origin under D-022.
+The application remains provider-portable and client-only.
 
 The current frontend design should be preserved. The work below changes and stabilizes the data
 and export foundations behind the interface; it does not require a visual rewrite.

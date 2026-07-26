@@ -34,7 +34,8 @@ export default function Dashboard() {
         <h1 className="text-4xl font-semibold tracking-tight text-white">
           {t("Welcome to ZenID")}
         </h1>
-        <p className="mt-3 text-stone-400">{t("Pick a tool to get started.")}</p>
+        <p className="mt-3 text-base text-stone-300">{t("Your local identity workspace.")}</p>
+        <p className="mt-2 text-sm text-stone-500">{t("Pick a tool to get started.")}</p>
       </div>
 
       <div className="grid w-full max-w-5xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">

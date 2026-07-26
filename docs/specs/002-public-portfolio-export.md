@@ -44,8 +44,12 @@ outside ZenID.
   An uploaded résumé is an explicitly selected opaque public file whose contents
   ZenID does not rewrite.
 - BR-007: The publication review dialog includes static GitHub Pages publishing
-  steps. This is bundled text and one outbound documentation link; it triggers
-  no automatic request and requires no provider account or token.
+  steps. The steps distinguish the ZIP from its extracted contents, state the
+  public-repository requirement for GitHub Free, use the current
+  **Deploy from a branch** flow, and link to the matching official
+  configuration documentation. This is bundled text plus an outbound link; it
+  triggers no automatic request and ZenID receives no provider account or
+  token.
 - BR-008: The publication review dialog offers a copyable prompt, written for a
   non-technical user, that names GitHub Pages, Netlify, and Cloudflare Pages and
   asks the user's own external AI assistant to help choose one and walk through
@@ -64,7 +68,9 @@ outside ZenID.
   `index.html`, public assets, and the résumé when selected.
 - AC-005: Choosing **Keep editing** closes the review and creates no download.
 - AC-006: The review dialog shows GitHub Pages publishing steps before the ZIP
-  is downloaded.
+  is downloaded. The steps tell a GitHub Free user to create a public
+  repository, upload the extracted contents with `index.html` at the root, and
+  select **Deploy from a branch** plus `/(root)`.
 - AC-007: The review dialog offers a copyable AI-assistant prompt naming GitHub
   Pages, Netlify, and Cloudflare Pages, and copying it does not make a network
   request.
@@ -73,7 +79,8 @@ outside ZenID.
 
 - AC-001–AC-004: `portfolioSiteExport.test.js`.
 - AC-004 UI and AC-005: `e2e/spec002-public-portfolio-export.spec.js`.
-- AC-006, AC-007: `e2e/spec002-public-portfolio-export.spec.js`.
+- AC-006, AC-007: `e2e/spec002-public-portfolio-export.spec.js`; AC-007 records
+  every request initiated while copying, including requests without bodies.
 
 ## Delivery tasks
 
@@ -82,3 +89,7 @@ outside ZenID.
 - [x] Run the mapped checks and record exact commit evidence.
 - [x] Add static GitHub Pages publishing instructions to the review dialog.
 - [x] Add a copyable multi-provider AI-assistant prompt to the review dialog.
+- [x] Correct the GitHub Free/browser-upload instructions and observe all
+  request methods while verifying clipboard-only copying.
+- [ ] Record commit-scoped evidence for the 2026-07-26 instruction and network
+  test corrections.

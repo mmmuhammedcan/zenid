@@ -1,51 +1,13 @@
 import { createStableId } from "../resume/ids.js";
+import { ProjectCompatibilityError } from "../resume/projectSchema.js";
 import { userFacingError } from "../resume/projectOpenRecovery.js";
+import {
+  ASSET_STORE_NAME,
+  getZenidRecord,
+} from "../storage/browserDatabase.js";
 
-const DATABASE_NAME = "zenid-local-assets";
-const DATABASE_VERSION = 1;
-const STORE_NAME = "assets";
 export const MAX_MEDIA_FILE_BYTES = 8 * 1024 * 1024;
 export const SUPPORTED_MEDIA_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]);
-
-function openDatabase() {
-  if (typeof indexedDB === "undefined") {
-    return Promise.reject(new Error("This browser does not provide local media storage."));
-  }
-
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
-    request.onerror = () => reject(request.error || new Error("ZenID could not open local media storage."));
-    request.onupgradeneeded = () => {
-      const database = request.result;
-      if (!database.objectStoreNames.contains(STORE_NAME)) {
-        database.createObjectStore(STORE_NAME, { keyPath: "id" });
-      }
-    };
-    request.onsuccess = () => resolve(request.result);
-  });
-}
-
-async function runTransaction(mode, operation) {
-  const database = await openDatabase();
-  try {
-    return await new Promise((resolve, reject) => {
-      const transaction = database.transaction(STORE_NAME, mode);
-      const store = transaction.objectStore(STORE_NAME);
-      let result;
-      transaction.onerror = () => reject(transaction.error || new Error("Local media storage failed."));
-      transaction.onabort = () => reject(transaction.error || new Error("Local media storage was interrupted."));
-      transaction.oncomplete = () => resolve(result);
-      try {
-        result = operation(store);
-      } catch (error) {
-        transaction.abort();
-        reject(error);
-      }
-    });
-  } finally {
-    database.close();
-  }
-}
 
 async function validateMedia(file) {
   if (!file || !SUPPORTED_MEDIA_TYPES.has(file.type)) {
@@ -59,9 +21,9 @@ async function validateMedia(file) {
   }
 }
 
-export async function saveMediaFile(file, kind) {
+export async function createMediaRecord(file, kind) {
   await validateMedia(file);
-  const record = {
+  return {
     id: createStableId(),
     kind,
     name: file.name || "image",
@@ -69,55 +31,65 @@ export async function saveMediaFile(file, kind) {
     blob: file,
     updatedAt: new Date().toISOString(),
   };
-  await runTransaction("readwrite", (store) => store.put(record));
-  return record;
 }
 
-export async function importMediaAssets(assets = []) {
-  if (!assets.length) return;
+export async function mediaRecordMatchesArchiveAsset(record, asset) {
+  if (!record || !asset) return false;
+  const kind = asset.kind || "portfolio-media";
+  const name = asset.name || "image";
+  if (
+    record.id !== asset.id ||
+    record.kind !== kind ||
+    record.name !== name ||
+    record.mimeType !== asset.mimeType ||
+    record.blob?.size !== asset.bytes.byteLength
+  ) {
+    return false;
+  }
+
+  const storedBytes = new Uint8Array(await record.blob.arrayBuffer());
+  return storedBytes.every((byte, index) => byte === asset.bytes[index]);
+}
+
+export function archiveAssetToRecord(asset) {
+  return {
+    id: asset.id,
+    kind: asset.kind || "portfolio-media",
+    name: asset.name || "image",
+    mimeType: asset.mimeType,
+    blob: new Blob([asset.bytes], { type: asset.mimeType }),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+export async function prepareImportedMediaAssets(assets = []) {
+  if (!assets.length) return [];
   assets.forEach((asset) => {
     if (!asset?.id || !SUPPORTED_MEDIA_TYPES.has(asset.mimeType) || asset.bytes.byteLength > MAX_MEDIA_FILE_BYTES) {
       throw new Error("A project media asset is invalid or unsupported.");
     }
   });
-  await runTransaction("readwrite", (store) => {
-    assets.forEach((asset) => {
-      store.put({
-        id: asset.id,
-        kind: asset.kind || "portfolio-media",
-        name: asset.name || "image",
-        mimeType: asset.mimeType,
-        blob: new Blob([asset.bytes], { type: asset.mimeType }),
-        updatedAt: new Date().toISOString(),
-      });
-    });
-  });
-}
 
-export async function deleteMediaAsset(id) {
-  if (!id) return;
-  await runTransaction("readwrite", (store) => store.delete(id));
+  const existingRecords = await getMediaAssets(assets.map((asset) => asset.id));
+  const existingById = new Map(existingRecords.map((record) => [record.id, record]));
+  for (const asset of assets) {
+    const existing = existingById.get(asset.id);
+    if (existing && !await mediaRecordMatchesArchiveAsset(existing, asset)) {
+      throw new ProjectCompatibilityError(
+        "A project media identifier conflicts with media already stored in this browser.",
+        "MEDIA_ID_CONFLICT"
+      );
+    }
+  }
+
+  return assets.filter((asset) => !existingById.has(asset.id));
 }
 
 export async function getMediaAssets(ids) {
   const uniqueIds = [...new Set(ids.filter(Boolean))];
   if (!uniqueIds.length) return [];
-  const database = await openDatabase();
-  try {
-    return await Promise.all(
-      uniqueIds.map(
-        (id) =>
-          new Promise((resolve, reject) => {
-            const transaction = database.transaction(STORE_NAME, "readonly");
-            const request = transaction.objectStore(STORE_NAME).get(id);
-            request.onsuccess = () => resolve(request.result || null);
-            request.onerror = () => reject(request.error || new Error("A local media asset could not be read."));
-          })
-      )
-    ).then((records) => records.filter(Boolean));
-  } finally {
-    database.close();
-  }
+  return Promise.all(uniqueIds.map((id) => getZenidRecord(ASSET_STORE_NAME, id)))
+    .then((records) => records.filter(Boolean));
 }
 
 export function referencedAssetIds(project) {

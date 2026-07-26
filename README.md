@@ -34,6 +34,19 @@ npm run build
 npm run dev
 ```
 
+## Deployment boundaries
+
+- A portfolio ZIP exported from `/portfolio` is the provider-neutral,
+  deployable static artifact. It is verified for root and project-subpath
+  hosting and keeps the private `.zenid` workspace separate.
+- `npm run build` produces the ZenID application bundle, but the repository
+  does not yet select an application host, subpath base, or SPA fallback
+  policy. Do not treat a successful Vite build as provider deployment
+  configuration.
+- A future one-click publish may send only the reviewed public package directly
+  from the browser to a provider account the user authorizes. It requires its
+  own opt-in spec and decision; manual ZIP export remains the local default.
+
 ## Product and engineering documents
 
 - `plan.md` — product direction and roadmap.

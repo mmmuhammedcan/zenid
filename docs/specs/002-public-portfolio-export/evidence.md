@@ -1,7 +1,8 @@
 # SPEC-002 Evidence
 
-Status: Automatically verified; manual host acceptance open
-Last updated: 2026-07-25
+Status: Automatically verified; manually accepted on representative root and
+subpath hosts
+Last updated: 2026-07-26
 
 ## Evidence recorded
 
@@ -87,5 +88,22 @@ personal deployment details in a shared spec file.
 
 - Broader assistive-technology and mobile review of the publication dialog.
 
-No new automated evidence was recorded by this update; this is manual creator
-acceptance evidence.
+The creator reconfirmed this manual host acceptance on 2026-07-26.
+
+## Publishing-guidance correction — working-tree verification, 2026-07-26
+
+The GitHub Pages guidance now states the GitHub Free public-repository
+requirement, tells the user to extract and upload the ZIP contents rather than
+the ZIP file, names **Deploy from a branch** and `/(root)`, and links directly
+to GitHub's publishing-source documentation. The AI prompt no longer makes a
+volatile credit-card claim and instead asks the assistant to consult current
+official provider documentation.
+
+The SPEC-002 browser case waits for unrelated résumé-font loading to settle,
+then records every request method and URL during clipboard copying rather than
+only request bodies. It passed as part of the 12/12 Chromium working-tree run,
+along with `npm test`, lint, build, benchmark, and round-trip verification
+recorded in SPEC-001 evidence.
+
+This is not yet immutable commit-scoped evidence. The corresponding delivery
+task remains open until the tested source state is committed and identified.

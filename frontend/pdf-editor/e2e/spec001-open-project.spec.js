@@ -37,15 +37,43 @@ async function chooseProject(page, file) {
   await chooser.setFiles(file);
 }
 
+function observeImportRequests(page) {
+  const requests = [];
+  page.on("request", (request) => {
+    requests.push({
+      method: request.method(),
+      url: request.url(),
+    });
+  });
+  return requests;
+}
+
+function expectNoProjectUpload(requests, sensitiveMarkers = []) {
+  for (const request of requests) {
+    expect(request.method).toBe("GET");
+    const url = new URL(request.url);
+    expect(url.origin).toBe("http://127.0.0.1:4173");
+    for (const marker of sensitiveMarkers) {
+      expect(decodeURIComponent(url.href)).not.toContain(marker);
+    }
+  }
+}
+
 async function readAsset(page, id) {
   return page.evaluate(
     ({ databaseName, assetId }) =>
       new Promise((resolve, reject) => {
-        const request = indexedDB.open(databaseName, 1);
+        const request = indexedDB.open(databaseName, 2);
         request.onerror = () => reject(request.error);
         request.onupgradeneeded = () => {
           if (!request.result.objectStoreNames.contains("assets")) {
             request.result.createObjectStore("assets", { keyPath: "id" });
+          }
+          if (!request.result.objectStoreNames.contains("workspace")) {
+            request.result.createObjectStore("workspace", { keyPath: "id" });
+          }
+          if (!request.result.objectStoreNames.contains("private-data")) {
+            request.result.createObjectStore("private-data", { keyPath: "id" });
           }
         };
         request.onsuccess = () => {
@@ -54,7 +82,17 @@ async function readAsset(page, id) {
             const transaction = database.transaction("assets", "readonly");
             const getRequest = transaction.objectStore("assets").get(assetId);
             getRequest.onerror = () => reject(getRequest.error);
-            getRequest.onsuccess = () => resolve(getRequest.result || null);
+            getRequest.onsuccess = async () => {
+              const record = getRequest.result;
+              if (!record) {
+                resolve(null);
+                return;
+              }
+              resolve({
+                ...record,
+                bytes: [...new Uint8Array(await record.blob.arrayBuffer())],
+              });
+            };
             transaction.oncomplete = () => database.close();
           } catch (error) {
             database.close();
@@ -70,11 +108,17 @@ async function seedAsset(page, asset) {
   await page.evaluate(
     ({ databaseName, record }) =>
       new Promise((resolve, reject) => {
-        const request = indexedDB.open(databaseName, 1);
+        const request = indexedDB.open(databaseName, 2);
         request.onerror = () => reject(request.error);
         request.onupgradeneeded = () => {
           if (!request.result.objectStoreNames.contains("assets")) {
             request.result.createObjectStore("assets", { keyPath: "id" });
+          }
+          if (!request.result.objectStoreNames.contains("workspace")) {
+            request.result.createObjectStore("workspace", { keyPath: "id" });
+          }
+          if (!request.result.objectStoreNames.contains("private-data")) {
+            request.result.createObjectStore("private-data", { keyPath: "id" });
           }
         };
         request.onsuccess = () => {
@@ -100,23 +144,67 @@ async function seedAsset(page, asset) {
   );
 }
 
+async function readWorkspaceProject(page) {
+  return page.evaluate(
+    ({ databaseName }) =>
+      new Promise((resolve, reject) => {
+        const request = indexedDB.open(databaseName, 2);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const database = request.result;
+          const transaction = database.transaction("workspace", "readonly");
+          const getRequest = transaction.objectStore("workspace").get("current");
+          getRequest.onerror = () => reject(getRequest.error);
+          getRequest.onsuccess = () => resolve(getRequest.result?.project || null);
+          transaction.oncomplete = () => database.close();
+        };
+      }),
+    { databaseName: "zenid-local-assets" }
+  );
+}
+
 test("opens a valid project locally without transmitting project data", async ({ page }) => {
   const incoming = createEmptyProject();
   incoming.profile.personalInfo.fullName = "Synthetic Incoming User";
   incoming.resumes[0].template = "minimal";
 
   await page.goto("/resume");
-  const requestBodiesAfterSelection = [];
-  page.on("request", (request) => {
-    const body = request.postDataBuffer();
-    if (body?.byteLength) requestBodiesAfterSelection.push(body.toString("utf8"));
-  });
+  await page.waitForLoadState("networkidle");
+  const requestsAfterSelection = observeImportRequests(page);
 
   await chooseProject(page, projectFile(incoming));
 
   await expect(page.getByRole("status")).toContainText("Project opened locally");
   await expect(page.getByLabel("Full name")).toHaveValue("Synthetic Incoming User");
-  expect(requestBodiesAfterSelection).toEqual([]);
+  expectNoProjectUpload(requestsAfterSelection, ["Synthetic Incoming User"]);
+});
+
+test("reuses byte-identical media when reopening a project with stable identifiers", async ({ page }) => {
+  const incoming = createEmptyProject();
+  incoming.profile.personalInfo.fullName = "Reopened Local User";
+  incoming.resumes[0].template = "minimal";
+  incoming.portfolio.media.profileImageId = "stable-profile";
+  const stableProfile = {
+    id: "stable-profile",
+    kind: "profile-image",
+    name: "profile.png",
+    mimeType: "image/png",
+    bytes: [...PNG_FIXTURE],
+  };
+
+  await page.goto("/resume");
+  await seedAsset(page, stableProfile);
+  page.once("dialog", (dialog) => dialog.accept());
+  await chooseProject(page, projectFile(incoming, [{
+    ...stableProfile,
+    bytes: new Uint8Array(stableProfile.bytes),
+  }]));
+
+  await expect(page.getByRole("status")).toContainText("Project opened locally");
+  await expect(page.getByLabel("Full name")).toHaveValue("Reopened Local User");
+  const stored = await readAsset(page, "stable-profile");
+  expect(stored.name).toBe("profile.png");
+  expect(stored.bytes).toEqual(stableProfile.bytes);
 });
 
 test("guides recovery from a corrupt project and can open another local backup", async ({ page }) => {
@@ -129,11 +217,7 @@ test("guides recovery from a corrupt project and can open another local backup",
   );
   await page.goto("/resume");
 
-  const requestBodies = [];
-  page.on("request", (request) => {
-    const body = request.postDataBuffer();
-    if (body?.byteLength) requestBodies.push(body.toString("utf8"));
-  });
+  const requests = observeImportRequests(page);
   page.once("dialog", (dialog) => dialog.accept());
   await chooseProject(page, {
     name: "Corrupt_Project.zenid",
@@ -147,7 +231,7 @@ test("guides recovery from a corrupt project and can open another local backup",
   await expect(alert).toContainText("Your current workspace was not changed. Nothing was uploaded.");
   await expect(alert).toHaveAccessibleDescription(/Your current workspace was not changed\. Nothing was uploaded\./);
   await expect(page.getByLabel("Full name")).toHaveValue("Current Local User");
-  expect(requestBodies).toEqual([]);
+  expectNoProjectUpload(requests, ["Current Local User"]);
 
   const replacement = createEmptyProject();
   replacement.profile.personalInfo.fullName = "Recovered From Backup";
@@ -209,12 +293,12 @@ test("rolls back media and keeps the current project when IndexedDB persistence 
     { storageKey: PROJECT_STORAGE_KEY, project: current }
   );
   await page.addInitScript(() => {
-    const originalPut = IDBObjectStore.prototype.put;
-    IDBObjectStore.prototype.put = function injectedFailure(...args) {
+    const originalAdd = IDBObjectStore.prototype.add;
+    IDBObjectStore.prototype.add = function injectedFailure(...args) {
       if (args[0]?.id === "incoming-project") {
         throw new DOMException("Injected media write failure", "QuotaExceededError");
       }
-      return originalPut.apply(this, args);
+      return originalAdd.apply(this, args);
     };
   });
 
@@ -284,9 +368,8 @@ test("shows the shared recovery panel in Portfolio when referenced media is miss
   await expect(alert).toContainText("Your current workspace was not changed. Nothing was uploaded.");
   await expect(alert.getByRole("button", { name: /open another project/i })).toBeVisible();
   await expect(page.getByLabel("Full name")).toHaveValue("Current Portfolio User");
-  expect(
-    await page.evaluate((storageKey) => JSON.parse(localStorage.getItem(storageKey)).profile.personalInfo.fullName, PROJECT_STORAGE_KEY)
-  ).toBe("Current Portfolio User");
+  expect((await readWorkspaceProject(page)).profile.personalInfo.fullName).toBe("Current Portfolio User");
+  expect(await page.evaluate((storageKey) => localStorage.getItem(storageKey), PROJECT_STORAGE_KEY)).toBeNull();
 
   const valid = createEmptyProject();
   valid.profile.personalInfo.fullName = "Valid Portfolio Backup";
@@ -308,15 +391,15 @@ test("reports a blocked browser store instead of a false success", async ({ page
     ({ storageKey, project }) => localStorage.setItem(storageKey, JSON.stringify(project)),
     { storageKey: PROJECT_STORAGE_KEY, project: current }
   );
-  await page.addInitScript((storageKey) => {
-    const originalSetItem = Storage.prototype.setItem;
-    Storage.prototype.setItem = function injectedFailure(key, value) {
-      if (key === storageKey && String(value).includes("Storage Blocked Incoming")) {
-        throw new DOMException("Injected localStorage quota failure", "QuotaExceededError");
+  await page.addInitScript(() => {
+    const originalPut = IDBObjectStore.prototype.put;
+    IDBObjectStore.prototype.put = function injectedFailure(value, ...args) {
+      if (this.name === "workspace" && value?.project?.profile?.personalInfo?.fullName === "Storage Blocked Incoming") {
+        throw new DOMException("Injected IndexedDB quota failure", "QuotaExceededError");
       }
-      return originalSetItem.call(this, key, value);
+      return originalPut.call(this, value, ...args);
     };
-  }, PROJECT_STORAGE_KEY);
+  });
 
   const incoming = createEmptyProject();
   incoming.profile.personalInfo.fullName = "Storage Blocked Incoming";
@@ -329,15 +412,52 @@ test("reports a blocked browser store instead of a false success", async ({ page
   const alert = page.getByRole("alert");
   await expect(alert).toContainText("could not be opened locally");
   await expect(alert).toContainText("Your current workspace was not changed. Nothing was uploaded.");
-  await expect(alert).not.toContainText("Injected localStorage quota failure");
+  await expect(alert).not.toContainText("Injected IndexedDB quota failure");
   await expect(page.getByText("Project opened locally")).toHaveCount(0);
   await expect(page.getByLabel("Full name")).toHaveValue("Current Local User");
-  expect(
-    await page.evaluate(
-      (storageKey) => JSON.parse(localStorage.getItem(storageKey)).profile.personalInfo.fullName,
-      PROJECT_STORAGE_KEY
-    )
-  ).toBe("Current Local User");
+  expect((await readWorkspaceProject(page)).profile.personalInfo.fullName).toBe("Current Local User");
+});
+
+test("a rejected import cannot overwrite current media through an identifier collision", async ({ page }) => {
+  const current = createEmptyProject();
+  current.profile.personalInfo.fullName = "Current Local User";
+  current.resumes[0].template = "minimal";
+  current.portfolio.media.profileImageId = "shared-profile";
+  await page.addInitScript(
+    ({ storageKey, project }) => localStorage.setItem(storageKey, JSON.stringify(project)),
+    { storageKey: PROJECT_STORAGE_KEY, project: current }
+  );
+  const currentBytes = [...PNG_FIXTURE, 1];
+  const incomingBytes = new Uint8Array([...PNG_FIXTURE, 2]);
+  const incoming = createEmptyProject();
+  incoming.profile.personalInfo.fullName = "Conflicting Incoming User";
+  incoming.resumes[0].template = "minimal";
+  incoming.portfolio.media.profileImageId = "shared-profile";
+
+  await page.goto("/resume");
+  await seedAsset(page, {
+    id: "shared-profile",
+    kind: "profile-image",
+    name: "current.png",
+    mimeType: "image/png",
+    bytes: currentBytes,
+  });
+  page.once("dialog", (dialog) => dialog.accept());
+  await chooseProject(page, projectFile(incoming, [{
+    id: "shared-profile",
+    kind: "profile-image",
+    name: "incoming.png",
+    mimeType: "image/png",
+    bytes: incomingBytes,
+  }]));
+
+  const alert = page.getByRole("alert");
+  const stored = await readAsset(page, "shared-profile");
+  expect(stored.name).toBe("current.png");
+  expect(stored.bytes).toEqual(currentBytes);
+  await expect(alert).toContainText("damaged or incomplete");
+  await expect(alert).toContainText("Your current workspace was not changed. Nothing was uploaded.");
+  await expect(page.getByLabel("Full name")).toHaveValue("Current Local User");
 });
 
 test("clears an abandoned recovery panel when the user navigates the resume surfaces", async ({ page }) => {
@@ -371,15 +491,18 @@ test("clears an abandoned recovery panel when the user navigates the resume surf
 });
 
 test("warns about an unavailable browser store without stealing focus", async ({ page }) => {
-  await page.addInitScript((storageKey) => {
-    const originalSetItem = Storage.prototype.setItem;
-    Storage.prototype.setItem = function injectedFailure(key, value) {
-      if (key === storageKey) throw new DOMException("Injected autosave failure", "QuotaExceededError");
-      return originalSetItem.call(this, key, value);
-    };
-  }, PROJECT_STORAGE_KEY);
-
   await page.goto("/resume");
+  await expect(page.getByRole("heading", { name: /choose a starting point/i })).toBeVisible();
+  await page.evaluate(() => {
+    const originalPut = IDBObjectStore.prototype.put;
+    IDBObjectStore.prototype.put = function injectedFailure(value, ...args) {
+      if (this.name === "workspace") {
+        throw new DOMException("Injected autosave failure", "QuotaExceededError");
+      }
+      return originalPut.call(this, value, ...args);
+    };
+  });
+  await page.getByRole("button", { name: /minimal/i }).click();
 
   const alert = page.getByRole("alert");
   await expect(alert).toContainText("Browser autosave is unavailable");

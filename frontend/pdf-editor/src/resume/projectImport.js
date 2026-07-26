@@ -1,22 +1,13 @@
-export function commitProjectToBrowser({ persistProject, applyProject }) {
-  return (nextProject) => {
-    persistProject(nextProject);
-    applyProject(nextProject);
-  };
-}
-
 export async function openProjectFileAtomically(file, dependencies) {
-  const { readBundle, persistAssets, commitProject } = dependencies || {};
+  const { readBundle, commitBundle } = dependencies || {};
   if (
     typeof readBundle !== "function" ||
-    typeof persistAssets !== "function" ||
-    typeof commitProject !== "function"
+    typeof commitBundle !== "function"
   ) {
     throw new TypeError("Project import dependencies are incomplete.");
   }
 
   const bundle = await readBundle(file);
-  await persistAssets(bundle.assets);
-  commitProject(bundle.project);
+  await commitBundle(bundle);
   return bundle;
 }

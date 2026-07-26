@@ -1,9 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { commitProjectToBrowser, openProjectFileAtomically } from "./projectImport.js";
-import { saveProjectToBrowserStorage } from "./projectSchema.js";
+import { openProjectFileAtomically } from "./projectImport.js";
 
-test("project import prepares, persists, and commits in order", async () => {
+test("project import prepares then commits one bundle", async () => {
   const calls = [];
   const bundle = { project: { id: "incoming" }, assets: [{ id: "photo" }] };
 
@@ -12,19 +11,16 @@ test("project import prepares, persists, and commits in order", async () => {
       calls.push("prepare");
       return bundle;
     },
-    persistAssets: async (assets) => {
-      calls.push(`persist:${assets[0].id}`);
-    },
-    commitProject: (project) => {
-      calls.push(`commit:${project.id}`);
+    commitBundle: async (prepared) => {
+      calls.push(`commit:${prepared.project.id}:${prepared.assets[0].id}`);
     },
   });
 
   assert.equal(result, bundle);
-  assert.deepEqual(calls, ["prepare", "persist:photo", "commit:incoming"]);
+  assert.deepEqual(calls, ["prepare", "commit:incoming:photo"]);
 });
 
-test("project import does not persist or commit when preparation fails", async () => {
+test("project import does not commit when preparation fails", async () => {
   const calls = [];
 
   await assert.rejects(
@@ -33,8 +29,7 @@ test("project import does not persist or commit when preparation fails", async (
         calls.push("prepare");
         throw new Error("invalid archive");
       },
-      persistAssets: async () => calls.push("persist"),
-      commitProject: () => calls.push("commit"),
+      commitBundle: async () => calls.push("commit"),
     }),
     /invalid archive/
   );
@@ -42,7 +37,7 @@ test("project import does not persist or commit when preparation fails", async (
   assert.deepEqual(calls, ["prepare"]);
 });
 
-test("project import keeps the current project when media persistence fails", async () => {
+test("a failed atomic bundle commit never shows the incoming project", async () => {
   const currentProject = { id: "current" };
   let visibleProject = currentProject;
   const bundle = { project: { id: "incoming" }, assets: [{ id: "photo" }] };
@@ -50,72 +45,19 @@ test("project import keeps the current project when media persistence fails", as
   await assert.rejects(
     openProjectFileAtomically({ name: "project.zenid" }, {
       readBundle: async () => bundle,
-      persistAssets: async () => {
-        throw new Error("local media storage failed");
-      },
-      commitProject: (project) => {
-        visibleProject = project;
+      commitBundle: async () => {
+        throw new Error("atomic local transaction failed");
       },
     }),
-    /local media storage failed/
+    /atomic local transaction failed/
   );
 
   assert.equal(visibleProject, currentProject);
 });
 
-test("a project store that is absent rather than throwing still rejects the import", async () => {
-  const currentProject = { id: "current" };
-  let visibleProject = currentProject;
-  const bundle = { project: { id: "incoming" }, assets: [] };
-
+test("project import rejects incomplete dependencies", async () => {
   await assert.rejects(
-    openProjectFileAtomically({ name: "project.zenid" }, {
-      readBundle: async () => bundle,
-      persistAssets: async () => {},
-      commitProject: commitProjectToBrowser({
-        persistProject: (project) => saveProjectToBrowserStorage(project, null),
-        applyProject: (project) => {
-          visibleProject = project;
-        },
-      }),
-    })
+    openProjectFileAtomically({ name: "project.zenid" }, { readBundle: async () => ({}) }),
+    /dependencies are incomplete/
   );
-
-  assert.equal(visibleProject, currentProject);
-});
-
-test("browser commit persists the project before the visible workspace changes", () => {
-  const calls = [];
-  const commit = commitProjectToBrowser({
-    persistProject: (project) => calls.push(`persist:${project.id}`),
-    applyProject: (project) => calls.push(`apply:${project.id}`),
-  });
-
-  commit({ id: "incoming" });
-
-  assert.deepEqual(calls, ["persist:incoming", "apply:incoming"]);
-});
-
-test("a failed browser commit rejects the import and never shows the project as opened", async () => {
-  const currentProject = { id: "current" };
-  let visibleProject = currentProject;
-  const bundle = { project: { id: "incoming" }, assets: [] };
-
-  await assert.rejects(
-    openProjectFileAtomically({ name: "project.zenid" }, {
-      readBundle: async () => bundle,
-      persistAssets: async () => {},
-      commitProject: commitProjectToBrowser({
-        persistProject: () => {
-          throw new DOMException("Injected quota failure", "QuotaExceededError");
-        },
-        applyProject: (project) => {
-          visibleProject = project;
-        },
-      }),
-    }),
-    /Injected quota failure/
-  );
-
-  assert.equal(visibleProject, currentProject);
 });

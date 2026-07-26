@@ -101,8 +101,8 @@ Browser application
 │   ├── portfolio configuration
 │   └── schema migrations
 ├── Local persistence
-│   ├── localStorage: small recoverable draft state
-│   ├── IndexedDB: media and larger local assets
+│   ├── IndexedDB: canonical project, private images, and larger local assets
+│   ├── localStorage: one-time legacy migration source only
 │   └── .zenid: portable user-owned project
 ├── Local outputs
 │   ├── ATS-friendly resume PDF

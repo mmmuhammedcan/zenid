@@ -221,7 +221,8 @@ Preserve the existing interface and complete the Resume Builder before expanding
 
 - Define the canonical versioned project schema.
 - Move reusable facts into `profile` and resume-specific choices into `resumes[]`.
-- Migrate the current localStorage draft format without losing existing user data.
+- Migrate the former `localStorage` draft format into the canonical IndexedDB
+  workspace without losing existing user data.
 - Replace incrementing item IDs with stable UUIDs.
 - Support named resume versions within one project.
 - Add real multi-page preview matching PDF page breaks.
@@ -237,7 +238,10 @@ Preserve the existing interface and complete the Resume Builder before expanding
 - Save and open `.zenid` project files entirely in the browser.
 - Validate archive paths, file types, file sizes, JSON structure, and supported schema versions.
 - Add sequential migration and round-trip fixtures for old project versions.
-- Use IndexedDB for image/media autosave where localStorage is not suitable.
+- Use one versioned IndexedDB database for canonical project data and media so
+  project references and files can commit transactionally.
+- Allow one writable ZenID tab per browser origin with an exclusive Web Lock;
+  do not implement multi-tab merge or last-writer-wins behavior.
 - Provide clear success, error, and newer-version compatibility messages.
 - Verify through tests that opening a project causes no network upload.
 
@@ -264,7 +268,7 @@ Portfolio MVP delivery slices:
 1. [I] Add the route/dashboard entry, canonical portfolio defaults, five-step editor shell, local
    autosave, contact privacy controls, and a responsive live preview using existing profile facts.
 2. [I] Add IndexedDB-backed profile, project, and certificate media and package those assets inside
-   `.zenid` projects without storing large data URLs in localStorage.
+   `.zenid` projects. `localStorage` is a migration source only, not canonical storage.
 3. [I] Add per-item publish controls, rich project case studies, per-screenshot captions and
    galleries, certificate details and images, introduction video, a single non-duplicated contact
    area, and locally generated or uploaded résumé download.

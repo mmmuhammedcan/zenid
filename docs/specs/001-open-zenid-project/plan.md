@@ -6,9 +6,8 @@ Updated: 2026-07-25
 ## Technical context
 
 The active product is the browser-only React application under
-`frontend/pdf-editor`. Project metadata is stored in localStorage, larger media
-is stored in IndexedDB, and portable `.zenid` projects are ZIP archives parsed
-with `fflate`.
+`frontend/pdf-editor`. Project metadata and media use one versioned IndexedDB
+database, and portable `.zenid` projects are ZIP archives parsed with `fflate`.
 
 No backend endpoint participates in opening a project.
 
@@ -20,12 +19,12 @@ Opening a project has two explicit stages:
    limits, validate archive paths and content, parse every referenced JSON
    document, validate schema compatibility, and verify every referenced media
    asset.
-2. Commit: persist all imported media in one IndexedDB transaction, then replace
-   the in-memory project only after that transaction completes successfully.
+2. Commit: persist the imported project and all new media in one IndexedDB
+   transaction, then replace the in-memory project only after that transaction
+   completes successfully.
 
-Preparation must not mutate localStorage, IndexedDB, React state, or the source
-file. A preparation or media-transaction failure must leave the current
-workspace unchanged.
+Preparation must not mutate IndexedDB, React state, or the source file. A
+preparation or transaction failure must leave the current workspace unchanged.
 
 ## Security and privacy controls
 

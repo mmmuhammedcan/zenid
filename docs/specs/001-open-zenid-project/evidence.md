@@ -200,7 +200,8 @@ spec so the new behavior is contractual rather than incidental:
   authored publishing guidance survives while raw DOM exceptions fall back to a
   shared sentence.
 - Persist-before-commit ordering is accepted as D-009. The residual unreferenced
-  media a rejected import can leave is tracked as T054.
+  media a rejected import could leave was tracked as T054 and was eliminated by
+  the transactional SPEC-006 architecture.
 
 The two spec-local decisions previously numbered D-006 and D-007 collided with
 the decision-log entry D-006. They are now recorded in `docs/decision-log.md` as
@@ -295,14 +296,49 @@ Verified on 2026-07-25 on the same environment as above:
 - `npm run build` — passed; the existing large-chunk warning remains.
 - `npm run test:e2e` — 10/10 Chromium tests passed, unaffected by this change.
 
-T052 is closed. T053, T052, and T055 are all resolved; T054 and T046 remain the
-open items for this spec.
+T052 is closed. T053, T052, T054, and T055 are resolved; T046 remains the open
+physical-device item for this spec.
+
+## T056 — collision-safe media import, working-tree verification
+
+Implemented on 2026-07-26 on top of `f41c820`:
+
+- Existing media is reused only when its identifier, kind, name, MIME type, and
+  bytes match the imported record.
+- A conflicting stable identifier is classified as damaged/incomplete before
+  any imported media is written.
+- New records use IndexedDB `add`, so a concurrent identifier creation cannot
+  be overwritten.
+- The browser cases verify both byte-identical project reopening and preservation
+  of the current stored bytes when conflicting content is rejected.
+- The AC-004 browser instrumentation now examines every request's method,
+  origin, and URL instead of checking only requests with bodies.
+
+The collision browser case was added before the implementation and failed
+against the unconditional-`put` path. After implementation, the complete
+working-tree verification passed:
+
+- `npm test` — 11/11 test-file subtests passed.
+- `npm run lint` — passed.
+- `npm run build` — passed; the existing large-chunk warning remains.
+- `npm run test:e2e` — 12/12 Chromium tests passed.
+- `npm run benchmark:project-import` — passed; small p95 19.8 ms, typical p95
+  24.5 ms, near-limit measurement 288.9 ms, and maximum scheduler-delay proxy
+  10 ms.
+- `node scripts/zenid-roundtrip-check.mjs save` and `restore` — passed; schema
+  v3 and a one-page synthetic PDF were restored in a fresh process.
+- `git diff --check` — passed.
+
+This evidence describes an uncommitted working tree and therefore does not close
+the repository's commit-scoped evidence gate. T057 remains open for an immutable
+tested commit and fresh-context review.
 
 ## Missing evidence
 
 - Peak-memory/crash behavior and the resulting 75 MB limit decision on the
   minimum supported physical device. The Web Worker resolves the observed
   main-thread responsiveness problem but is not evidence of memory suitability.
+- Commit-scoped evidence and fresh-context review for T056 (T057).
 
 ## Acceptance status
 

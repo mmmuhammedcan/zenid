@@ -13,6 +13,14 @@ import BottomBar from "./BottomBar";
 import useHistory from "./useHistory";
 import { restoreCanvasSnapshot } from "./canvasRestore";
 import {
+  LEGACY_INITIALS_KEY,
+  LEGACY_SIGNATURE_KEY,
+  ZENPDF_INITIALS_ID,
+  ZENPDF_SIGNATURE_ID,
+  loadPrivateData,
+  savePrivateData,
+} from "./storage/privateDataStore.js";
+import {
   A4_HEIGHT_PT,
   A4_WIDTH_PT,
   applyOverlaysToOriginalPdf,
@@ -25,8 +33,6 @@ import {
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
-const SIGNATURE_STORAGE_KEY = "pdfEditorSignature";
-const INITIALS_STORAGE_KEY = "pdfEditorInitials";
 const RENDER_SCALE = 1.5; // PDF.js render scale — independent of the CSS zoom applied on top
 const MAX_SOURCE_FILE_BYTES = 50 * 1024 * 1024;
 
@@ -68,12 +74,30 @@ export default function PdfEditor() {
   const [interactiveFieldCount, setInteractiveFieldCount] = useState(0);
   const [documentBusy, setDocumentBusy] = useState(false);
   const [documentReady, setDocumentReady] = useState(false);
-  const [hasSavedSignature, setHasSavedSignature] = useState(
-    () => typeof window !== "undefined" && Boolean(window.localStorage.getItem(SIGNATURE_STORAGE_KEY))
-  );
-  const [hasSavedInitials, setHasSavedInitials] = useState(
-    () => typeof window !== "undefined" && Boolean(window.localStorage.getItem(INITIALS_STORAGE_KEY))
-  );
+  const [savedSignature, setSavedSignature] = useState(null);
+  const [savedInitials, setSavedInitials] = useState(null);
+  const hasSavedSignature = Boolean(savedSignature);
+  const hasSavedInitials = Boolean(savedInitials);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      loadPrivateData(ZENPDF_SIGNATURE_ID, LEGACY_SIGNATURE_KEY),
+      loadPrivateData(ZENPDF_INITIALS_ID, LEGACY_INITIALS_KEY),
+    ])
+      .then(([signature, initials]) => {
+        if (!active) return;
+        setSavedSignature(signature);
+        setSavedInitials(initials);
+      })
+      .catch((error) => {
+        console.warn("ZenPDF could not restore private local drawing data.", error);
+        if (active) setStatus("Saved signature data could not be restored.");
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Floating text toolbar
   const [activeText, setActiveText] = useState(null);
@@ -768,9 +792,8 @@ export default function PdfEditor() {
       setStatus("Load a PDF first.");
       return;
     }
-    const saved = localStorage.getItem(SIGNATURE_STORAGE_KEY);
-    if (saved) {
-      armImagePlacement(saved, 160, "signature", "signature");
+    if (savedSignature) {
+      armImagePlacement(savedSignature, 160, "signature", "signature");
     } else {
       setSignatureMode("signature");
       setShowSignaturePad(true);
@@ -783,9 +806,8 @@ export default function PdfEditor() {
       return;
     }
     setFillToolsOpen(false);
-    const saved = localStorage.getItem(INITIALS_STORAGE_KEY);
-    if (saved) {
-      armImagePlacement(saved, 90, "initials", "initials");
+    if (savedInitials) {
+      armImagePlacement(savedInitials, 90, "initials", "initials");
     } else {
       setSignatureMode("initials");
       setShowSignaturePad(true);
@@ -799,13 +821,19 @@ export default function PdfEditor() {
     setShowSignaturePad(true);
   };
 
-  const handleSignatureSave = (dataUrl) => {
+  const handleSignatureSave = async (dataUrl) => {
     const isInitials = signatureMode === "initials";
-    localStorage.setItem(isInitials ? INITIALS_STORAGE_KEY : SIGNATURE_STORAGE_KEY, dataUrl);
-    if (isInitials) {
-      setHasSavedInitials(true);
-    } else {
-      setHasSavedSignature(true);
+    try {
+      await savePrivateData(isInitials ? ZENPDF_INITIALS_ID : ZENPDF_SIGNATURE_ID, dataUrl);
+      if (isInitials) {
+        setSavedInitials(dataUrl);
+      } else {
+        setSavedSignature(dataUrl);
+      }
+    } catch (error) {
+      console.warn("ZenPDF could not save private drawing data.", error);
+      setStatus("Signature could not be saved in this browser.");
+      return;
     }
     setShowSignaturePad(false);
     armImagePlacement(

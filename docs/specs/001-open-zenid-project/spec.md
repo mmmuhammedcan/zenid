@@ -26,7 +26,9 @@ transfer, and automatic recovery of unsupported future schemas.
   normalized.
 - BR-004: A failed import leaves the current workspace unchanged.
 - BR-005: Imported media and project state commit atomically from the user's
-  perspective.
+  perspective. An imported media identifier that already exists is reused only
+  when its stored media is identical; conflicting content is rejected before
+  any existing media is overwritten.
 - BR-006: Opening a project performs no project-data network upload.
 - BR-007: A rejected project is never repaired or opened partially. ZenID
   classifies the failure, confirms the current workspace was not changed, and
@@ -102,13 +104,15 @@ one shared sentence on both surfaces.
   existing named-machine baseline showed a 250–280 ms near-limit scheduler
   delay on the main thread; the worker reduced the same proxy to 10 ms while
   preserving every archive limit and the prepare-then-commit boundary.
-- D-009: Media persists before the project is committed. A failed commit is a
-  rejected import that leaves `localStorage` and the visible workspace
-  untouched, and the already-written media is not rolled back because stable
-  identifiers make deletion destructive on a re-import.
+- D-009 and D-010 document the former split-store import architecture and its
+  collision mitigation. Both are superseded by D-011.
+- D-011: Project JSON and media now commit together in one native IndexedDB
+  transaction. Byte-identical records may be reused and identifier conflicts
+  still fail closed, but a rejected import cannot leave new orphan media.
 
-These were previously numbered D-006 and D-007 inside this spec, which collided
-with the decision-log entry D-006. They now match `docs/decision-log.md`.
+D-007 and D-008 were previously numbered D-006 and D-007 inside this spec,
+which collided with the decision-log entry D-006. They now match
+`docs/decision-log.md`.
 
 ## Open questions
 
@@ -128,8 +132,9 @@ with the decision-log entry D-006. They now match `docs/decision-log.md`.
 - AC-003: `projectFile.test.js` covers missing/invalid media, unsafe and
   duplicate paths, compressed/expanded limits, entry count, per-entry size, and
   inconsistent stored-entry metadata.
-- AC-004: `e2e/spec001-open-project.spec.js` observes request bodies during
-  local import.
+- AC-004: `e2e/spec001-open-project.spec.js` observes every request during
+  local import. It rejects non-GET methods, external origins, and sensitive
+  profile markers in request URLs while allowing only local runtime assets.
 - AC-005: `projectOpenRecovery.test.js` maps controlled error codes without
   exposing raw details and pins the authored-versus-raw notice rule.
   `e2e/spec001-open-project.spec.js` verifies the visible category in the
@@ -150,6 +155,9 @@ with the decision-log entry D-006. They now match `docs/decision-log.md`.
   visible workspace changes and that a failed store rejects the import;
   `e2e/spec001-open-project.spec.js` proves a blocked store reports recovery
   guidance instead of success.
+- BR-005/D-010: `e2e/spec001-open-project.spec.js` proves that a rejected import
+  with a conflicting stable media identifier preserves the current stored
+  media instead of overwriting it.
 - BR-010: `e2e/spec001-open-project.spec.js` proves a recovery panel is
   discarded across a resume surface swap and that an autosave warning neither
   takes focus nor lacks a dismiss control.

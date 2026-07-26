@@ -407,11 +407,6 @@ export function loadProjectFromBrowserStorage(storage = globalThis.localStorage)
   return createEmptyProject();
 }
 
-export function saveProjectToBrowserStorage(project, storage = globalThis.localStorage) {
-  if (!storage) throw new Error("This browser does not provide local project storage.");
-  storage.setItem(PROJECT_STORAGE_KEY, JSON.stringify(normalizeProject(project)));
-}
-
 export function getResumeDocument(project, resumeId) {
   return project.resumes.find((resume) => resume.id === resumeId) || project.resumes[0];
 }

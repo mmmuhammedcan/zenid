@@ -76,10 +76,16 @@ present; acceptance still depends on `evidence.md`.
   assurance to the panel's accessible description, remove raw `error.message`
   from the Portfolio save and publish paths, and record a decision on the
   persist-before-commit ordering.
-- [ ] T054 Reclaim media records left in the browser store by a rejected import.
-  D-009 keeps them deliberately, so this needs a reference-counted cleanup pass
-  rather than a rollback delete.
+- [x] T054 Reclaim media records left in the browser store by a rejected import.
+  Superseded by SPEC-006/D-011: project and new media now commit in one native
+  IndexedDB transaction, so a rejected import cannot create those orphans.
 - [x] T055 Resolve the two Low findings from the T052 gate: make
   `saveProjectToBrowserStorage` throw instead of silently discarding the
   project when no store exists, and correct the AC-005 mapping's claim about
   the browser-storage e2e case.
+- [x] T056 Prevent a rejected import from overwriting current media when an
+  incoming archive reuses a stable media identifier with different content.
+  Reuse identical stored records and reject conflicting records before commit.
+- [ ] T057 Record commit-scoped evidence for T056 and run a fresh-context
+  Reviewer gate. Working-tree verification is recorded in `evidence.md` but is
+  not immutable commit evidence.

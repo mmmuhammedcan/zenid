@@ -55,21 +55,27 @@ test("reviews only public portfolio data and Keep editing creates no download", 
   await expect(dialog).toContainText("Publishing this ZIP on GitHub Pages");
   await expect(dialog.getByRole("link", { name: /github pages documentation/i })).toHaveAttribute(
     "href",
-    "https://docs.github.com/en/pages/getting-started-with-github-pages"
+    "https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site"
   );
+  await expect(dialog).toContainText("GitHub Free publishes Pages sites from public repositories");
+  await expect(dialog).toContainText("Upload its contents—not the ZIP file itself");
+  await expect(dialog).toContainText("Deploy from a branch");
+  await expect(dialog).toContainText("/(root)");
 
   await expect(dialog).toContainText("Ask your AI assistant");
   await expect(dialog).toContainText("GitHub Pages, Netlify, and Cloudflare Pages");
-  const requestBodies = [];
+  await page.waitForLoadState("networkidle");
+  const requests = [];
   page.on("request", (request) => {
-    const body = request.postDataBuffer();
-    if (body?.byteLength) requestBodies.push(body.toString("utf8"));
+    requests.push({ method: request.method(), url: request.url() });
   });
   await dialog.getByRole("button", { name: /copy prompt for your ai assistant/i }).click();
   await expect(dialog.getByRole("button", { name: /^copied$/i })).toBeVisible();
+  await expect(dialog.getByRole("status")).toContainText("Prompt copied");
   const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
   expect(clipboardText).toBe(DEPLOYMENT_ASSISTANT_PROMPT);
-  expect(requestBodies).toEqual([]);
+  await page.waitForTimeout(100);
+  expect(requests).toEqual([]);
 
   await dialog.getByRole("button", { name: /keep editing/i }).click();
 

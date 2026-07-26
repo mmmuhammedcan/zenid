@@ -22,6 +22,7 @@ const CASES = [
   ["MISSING_PROJECT_FILE", "incomplete-or-corrupt"],
   ["MISSING_MEDIA_ASSET", "incomplete-or-corrupt"],
   ["INVALID_MEDIA_ASSET", "incomplete-or-corrupt"],
+  ["MEDIA_ID_CONFLICT", "incomplete-or-corrupt"],
   ["INVALID_GENERATED_PDF", "incomplete-or-corrupt"],
   ["INVALID_CONTENT_OVERRIDE", "incomplete-or-corrupt"],
   ["INVALID_LEGACY_DRAFT", "incomplete-or-corrupt"],

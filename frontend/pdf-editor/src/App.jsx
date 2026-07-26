@@ -4,10 +4,12 @@ import Dashboard from "./Dashboard";
 import PdfEditor from "./PdfEditor";
 import ResumeApp from "./resume/ResumeApp";
 import PortfolioApp from "./portfolio/PortfolioApp";
+import { WorkspaceProvider } from "./storage/WorkspaceContext";
 
 export default function App() {
   return (
     <BrowserRouter>
+      <WorkspaceProvider>
       <div className="min-h-screen text-stone-100" style={{
         backgroundColor: '#0c0a09',
         backgroundImage: 'radial-gradient(ellipse at top, rgba(180, 83, 9, 0.15), rgb(12, 10, 9))'
@@ -22,6 +24,7 @@ export default function App() {
         </Routes>
         </div>
       </div>
+      </WorkspaceProvider>
     </BrowserRouter>
   );
 }

@@ -1,15 +1,16 @@
 # ZenID Verification Matrix
 
-Last verified: 2026-07-25
+Last verified: 2026-07-26
 
 | Capability | Implemented | Automated evidence | Manual acceptance | Main gap |
 |---|---:|---:|---:|---|
-| Project schema and legacy migration | Yes | Yes | No | Unreferenced media left by a rejected import (T054) |
+| Project schema and legacy migration | Yes | Yes | No | Maintain release-age fixtures under D-007 |
 | `.zenid` ZIP round trip | Yes | Yes | Creator-only | 75 MB memory-budget validation on minimum supported physical device |
 | Resume PDF generation | Yes | Yes | Creator-only | Browser and assistive-tech checks |
 | Resume presentation variants | Yes | Yes | No | Other-section selection and wording fields |
 | Portfolio privacy/static ZIP | Yes | Yes | Yes (2026-07-25, GitHub Pages + Netlify) | Broader assistive-technology and mobile review |
-| IndexedDB media lifecycle | Yes | No | No | Integration and rollback tests |
+| Transactional IndexedDB workspace and media | Yes | Yes | No | Commit-scoped evidence |
+| Single-writer browser workspace | Yes | Yes | No | Commit-scoped evidence |
 | ZenPDF overlay export | Yes | Partial | No | Page/navigation/browser regressions |
 | React user journeys | Yes | Partial | No | Broader component and Playwright suites |
 | Python legacy backend | Legacy | No | No | Outside active roadmap |

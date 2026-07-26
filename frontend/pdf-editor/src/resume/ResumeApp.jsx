@@ -7,17 +7,15 @@ import {
   deleteResumeDocument,
   duplicateResumeDocument,
   getResumeDocument,
-  loadProjectFromBrowserStorage,
   materializeResumeEditorData,
   materializeResumeData,
   resetResumeContentOverride,
-  saveProjectToBrowserStorage,
   setResumeContentOverride,
   updateResumeDocument,
   updateResumeItemSelection,
 } from "./projectSchema.js";
 import { downloadProjectFile, readProjectBundleFile } from "./projectFile.js";
-import { commitProjectToBrowser, openProjectFileAtomically } from "./projectImport.js";
+import { openProjectFileAtomically } from "./projectImport.js";
 import { buildResumePdf } from "./resumePdfExport.js";
 import {
   BROWSER_AUTOSAVE_UNAVAILABLE,
@@ -25,7 +23,8 @@ import {
   noticeTextForError,
   PROJECT_SAVE_FAILED,
 } from "./projectOpenRecovery.js";
-import { getProjectMediaAssets, importMediaAssets, mediaRecordsToArchiveAssets } from "../portfolio/assetStore.js";
+import { getProjectMediaAssets, mediaRecordsToArchiveAssets } from "../portfolio/assetStore.js";
+import { useWorkspace } from "../storage/WorkspaceContext.jsx";
 
 function projectHasUserContent(project) {
   if (Object.values(project.profile.personalInfo || {}).some((value) => String(value || "").trim())) return true;
@@ -46,23 +45,35 @@ function projectHasUserContent(project) {
 }
 
 export default function ResumeApp() {
-  const [initialProject] = useState(loadProjectFromBrowserStorage);
-  const [project, setProject] = useState(initialProject);
-  const [activeResumeId, setActiveResumeId] = useState(initialProject.resumes[0].id);
+  const {
+    project,
+    setProject,
+    replaceProjectBundle,
+    storageError,
+  } = useWorkspace();
+  const [activeResumeId, setActiveResumeId] = useState(null);
   const [projectNotice, setProjectNotice] = useState(null);
+
+  useEffect(() => {
+    if (!project) return;
+    if (!project.resumes.some((resume) => resume.id === activeResumeId)) {
+      setActiveResumeId(project.resumes[0].id);
+    }
+  }, [activeResumeId, project]);
+
+  useEffect(() => {
+    if (storageError) {
+      setProjectNotice({ type: "error", text: BROWSER_AUTOSAVE_UNAVAILABLE });
+    }
+  }, [storageError]);
+
+  if (!project || !activeResumeId) {
+    return <div className="p-8 text-sm text-stone-400">Opening your local workspace…</div>;
+  }
 
   const activeResume = getResumeDocument(project, activeResumeId);
   const resumeData = materializeResumeEditorData(project, activeResume.id);
   const outputResumeData = materializeResumeData(project, activeResume.id);
-
-  useEffect(() => {
-    try {
-      saveProjectToBrowserStorage(project);
-    } catch (error) {
-      console.warn("ZenID could not autosave this project in the browser.", error);
-      setProjectNotice({ type: "error", text: BROWSER_AUTOSAVE_UNAVAILABLE });
-    }
-  }, [project]);
 
   const updateActiveResume = (updates) => {
     setProject((current) => updateResumeDocument(current, activeResume.id, updates));
@@ -106,14 +117,10 @@ export default function ResumeApp() {
     try {
       await openProjectFileAtomically(file, {
         readBundle: readProjectBundleFile,
-        persistAssets: importMediaAssets,
-        commitProject: commitProjectToBrowser({
-          persistProject: saveProjectToBrowserStorage,
-          applyProject: (nextProject) => {
-            setProject(nextProject);
-            setActiveResumeId(nextProject.resumes[0].id);
-          },
-        }),
+        commitBundle: async (bundle) => {
+          const nextProject = await replaceProjectBundle(bundle);
+          setActiveResumeId(nextProject.resumes[0].id);
+        },
       });
       setProjectNotice({ type: "success", text: "Project opened locally. No file was uploaded." });
     } catch (error) {

@@ -15,7 +15,6 @@ import {
   normalizeProject,
   normalizePortfolio,
   resetResumeContentOverride,
-  saveProjectToBrowserStorage,
   setResumeContentOverride,
   DEFAULT_PORTFOLIO_SECTION_ORDER,
   PROJECT_STORAGE_KEY,
@@ -158,10 +157,6 @@ test("browser loading falls back to a valid legacy draft when the current save i
   const storage = { getItem: (key) => values.get(key) || null };
   const project = loadProjectFromBrowserStorage(storage);
   assert.equal(project.profile.personalInfo.fullName, "Şule Işık");
-});
-
-test("saving to browser storage throws instead of silently discarding the project when no store exists", () => {
-  assert.throws(() => saveProjectToBrowserStorage(createEmptyProject(), null));
 });
 
 test("resume edits update shared facts while keeping document presentation separate", () => {

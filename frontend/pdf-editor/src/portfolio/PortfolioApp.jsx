@@ -16,8 +16,6 @@ import PortfolioEditor from "./PortfolioEditor";
 import PortfolioPreview from "./PortfolioPreview";
 import PublicationReviewDialog from "./PublicationReviewDialog";
 import {
-  loadProjectFromBrowserStorage,
-  saveProjectToBrowserStorage,
   updatePortfolio,
   updateProjectProfile,
 } from "../resume/projectSchema";
@@ -33,15 +31,13 @@ import {
   userFacingError,
 } from "../resume/projectOpenRecovery.js";
 import { downloadProjectFile, readProjectBundleFile } from "../resume/projectFile";
-import { commitProjectToBrowser, openProjectFileAtomically } from "../resume/projectImport.js";
+import { openProjectFileAtomically } from "../resume/projectImport.js";
 import {
-  deleteMediaAsset,
+  createMediaRecord,
   getMediaAssets,
   getProjectMediaAssets,
-  importMediaAssets,
   mediaRecordsToArchiveAssets,
   referencedAssetIds,
-  saveMediaFile,
 } from "./assetStore";
 import {
   buildPublicResumeData,
@@ -49,6 +45,7 @@ import {
   downloadPortfolioSite,
   getPublicPortfolioAssetIds,
 } from "./portfolioSiteExport";
+import { useWorkspace } from "../storage/WorkspaceContext.jsx";
 
 const STEPS = [
   { id: "profile", label: "Profile", Icon: UserRound },
@@ -59,7 +56,13 @@ const STEPS = [
 ];
 
 export default function PortfolioApp() {
-  const [project, setProject] = useState(loadProjectFromBrowserStorage);
+  const {
+    project,
+    setProject,
+    replaceProjectBundle,
+    commitMediaProject,
+    storageError,
+  } = useWorkspace();
   const [activeStep, setActiveStep] = useState("profile");
   const [mobileView, setMobileView] = useState("edit");
   const [notice, setNotice] = useState("Saved locally in this browser");
@@ -76,14 +79,8 @@ export default function PortfolioApp() {
   const mediaKey = JSON.stringify(referencedAssetIds(project));
 
   useEffect(() => {
-    try {
-      saveProjectToBrowserStorage(project);
-      setNotice("Saved locally in this browser");
-    } catch (error) {
-      console.warn("ZenID could not autosave the portfolio project.", error);
-      setNotice(BROWSER_AUTOSAVE_UNAVAILABLE);
-    }
-  }, [project]);
+    if (storageError) setNotice(BROWSER_AUTOSAVE_UNAVAILABLE);
+  }, [storageError]);
 
   useEffect(() => {
     let active = true;
@@ -163,11 +160,7 @@ export default function PortfolioApp() {
     try {
       const bundle = await openProjectFileAtomically(file, {
         readBundle: readProjectBundleFile,
-        persistAssets: importMediaAssets,
-        commitProject: commitProjectToBrowser({
-          persistProject: saveProjectToBrowserStorage,
-          applyProject: setProject,
-        }),
+        commitBundle: replaceProjectBundle,
       });
       setProjectNotice({
         type: "success",
@@ -273,9 +266,12 @@ export default function PortfolioApp() {
   const handleMediaSelect = async (descriptor) => {
     try {
       const oldId = descriptor.kind === "project-gallery" ? null : descriptorAssetId(descriptor);
-      const record = await saveMediaFile(descriptor.file, descriptor.kind);
-      setProject((current) => updateMediaReference(current, descriptor, record.id));
-      if (oldId) await deleteMediaAsset(oldId);
+      const record = await createMediaRecord(descriptor.file, descriptor.kind);
+      const nextProject = updateMediaReference(project, descriptor, record.id);
+      await commitMediaProject(nextProject, {
+        addRecords: [record],
+        deleteIds: oldId ? [oldId] : [],
+      });
       setNotice(descriptor.kind === "resume-pdf" ? "Résumé PDF saved locally in this browser" : "Image saved locally in this browser");
     } catch (error) {
       console.error("Portfolio media save failed", error);
@@ -285,12 +281,13 @@ export default function PortfolioApp() {
 
   const handleMediaRemove = async (descriptor) => {
     const assetId = descriptorAssetId(descriptor);
-    setProject((current) => removeMediaReference(current, descriptor));
     try {
-      await deleteMediaAsset(assetId);
+      const nextProject = removeMediaReference(project, descriptor);
+      await commitMediaProject(nextProject, { deleteIds: assetId ? [assetId] : [] });
       setNotice(descriptor.kind === "resume-pdf" ? "Résumé PDF removed from this local project" : "Image removed from this local project");
     } catch (error) {
-      console.warn("The unused local image could not be removed.", error);
+      console.warn("The local media change could not be committed.", error);
+      setNotice(noticeTextForError(error, MEDIA_SAVE_FAILED));
     }
   };
 

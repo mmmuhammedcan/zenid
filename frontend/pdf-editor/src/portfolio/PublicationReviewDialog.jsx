@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, ContactRound, Copy, Download, FileArchive, FolderGit2, LayoutTemplate, Sparkles, ShieldCheck, UserRound, X } from "lucide-react";
 import { DEPLOYMENT_ASSISTANT_PROMPT } from "./deploymentAssistantPrompt.js";
 
@@ -14,23 +14,27 @@ function ReviewGroup({ Icon, title, emptyMessage, children }) {
 }
 
 export default function PublicationReviewDialog({ review, busy, onCancel, onPublish }) {
-  const [promptCopied, setPromptCopied] = useState(false);
+  const [promptCopyState, setPromptCopyState] = useState("idle");
+  const copyResetTimerRef = useRef(null);
 
   useEffect(() => {
     const handleKey = (event) => {
       if (event.key === "Escape" && !busy) onCancel();
     };
     window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
+    return () => {
+      window.removeEventListener("keydown", handleKey);
+      if (copyResetTimerRef.current) window.clearTimeout(copyResetTimerRef.current);
+    };
   }, [busy, onCancel]);
 
   const copyDeploymentPrompt = async () => {
     try {
       await navigator.clipboard.writeText(DEPLOYMENT_ASSISTANT_PROMPT);
-      setPromptCopied(true);
-      window.setTimeout(() => setPromptCopied(false), 2500);
+      setPromptCopyState("copied");
+      copyResetTimerRef.current = window.setTimeout(() => setPromptCopyState("idle"), 2500);
     } catch {
-      // Clipboard access can be blocked; the prompt text below stays selectable by hand.
+      setPromptCopyState("failed");
     }
   };
 
@@ -70,13 +74,13 @@ export default function PublicationReviewDialog({ review, busy, onCancel, onPubl
             <FolderGit2 size={15} className="text-stone-400" /> Publishing this ZIP on GitHub Pages
           </div>
           <ol className="list-decimal space-y-1 pl-4">
-            <li>Create a new GitHub repository and add the contents of this ZIP to it, including <code>index.html</code> at the repository root.</li>
-            <li>Commit and push the files to the repository&apos;s default branch.</li>
-            <li>Open the repository&apos;s <strong>Settings → Pages</strong>, set Source to that branch and the root folder, then save.</li>
-            <li>Your site goes live at <code>your-username.github.io/repository-name</code> within a few minutes.</li>
+            <li>Sign in to GitHub and create a new <strong>public</strong> repository. GitHub Free publishes Pages sites from public repositories.</li>
+            <li>Extract this ZIP on your device. Upload its contents—not the ZIP file itself—using <strong>Add file → Upload files</strong>. Keep <code>index.html</code> at the repository root, then commit the upload.</li>
+            <li>Open <strong>Settings → Pages</strong>. Under Source choose <strong>Deploy from a branch</strong>, select the repository&apos;s default branch and <strong>/(root)</strong>, then save.</li>
+            <li>GitHub will show the public site address in Pages settings after deployment finishes.</li>
           </ol>
           <a
-            href="https://docs.github.com/en/pages/getting-started-with-github-pages"
+            href="https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site"
             target="_blank"
             rel="noreferrer"
             className="mt-2 inline-block text-amber-400 hover:underline"
@@ -104,8 +108,15 @@ export default function PublicationReviewDialog({ review, busy, onCancel, onPubl
             onClick={copyDeploymentPrompt}
             className="mt-3 flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-300 hover:bg-amber-500/15"
           >
-            {promptCopied ? <Check size={14} /> : <Copy size={14} />} {promptCopied ? "Copied" : "Copy prompt for your AI assistant"}
+            {promptCopyState === "copied" ? <Check size={14} /> : <Copy size={14} />} {promptCopyState === "copied" ? "Copied" : "Copy prompt for your AI assistant"}
           </button>
+          <p role="status" className="mt-2 min-h-5 text-[11px] text-stone-400">
+            {promptCopyState === "failed"
+              ? "Clipboard access was blocked. Select the prompt above and copy it manually."
+              : promptCopyState === "copied"
+                ? "Prompt copied to your clipboard."
+                : ""}
+          </p>
         </section>
 
         <footer className="sticky bottom-0 flex flex-col-reverse gap-2 border-t border-stone-800 bg-stone-950/95 p-5 backdrop-blur sm:flex-row sm:justify-end sm:p-6">

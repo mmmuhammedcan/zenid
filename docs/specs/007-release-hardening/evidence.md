@@ -75,8 +75,23 @@ From `frontend/pdf-editor`:
 The provider build accepted `dist/client/`, `dist/server/index.js`, and the
 hosting metadata produced by the repository-root adapter. The Worker behavior
 is unit-tested and constrained by D-017 to static application files and SPA
-fallback only. Creator smoke testing behind the owner-only sign-in remains
-open, so T010 is not yet complete.
+fallback only.
+
+## Owner-only production smoke acceptance
+
+The creator manually accepted the owner-only production deployment on
+2026-07-26 from Ubuntu. The browser name/version was not captured and is not
+inferred. The creator reported successful:
+
+- navigation across the application surfaces;
+- local `.zenid` project opening;
+- editing settings and project data;
+- PDF opening and export;
+- ZenPDF fill behavior.
+
+This closes T010 for the initial owner-only deployment. It does not close D-016
+Windows/Android accessibility acceptance, public-access acceptance, or the
+deferred Apple-platform matrix.
 
 ## Independent fresh-context review
 

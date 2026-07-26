@@ -11,9 +11,9 @@ Last verified: 2026-07-26
 | Portfolio privacy/static ZIP | Yes | Yes | Yes (2026-07-25, GitHub Pages + Netlify) | Broader assistive-technology and mobile review |
 | Transactional IndexedDB workspace and media | Yes | Yes | No | Cross-browser manual acceptance |
 | Single-writer browser workspace | Yes | Yes | No | Cross-browser manual acceptance |
-| ZenPDF overlay export | Yes | Yes | No | Manual form-field/signature acceptance |
-| React user journeys | Yes | Yes | No | Manual cross-browser acceptance |
-| Root/subpath application build | Yes | Yes | No | Production provider/domain decision |
+| ZenPDF overlay export | Yes | Yes | Creator-only (Ubuntu production smoke, 2026-07-26) | Windows/Android assistive-tech acceptance |
+| React user journeys | Yes | Yes | Partial (Ubuntu production smoke, 2026-07-26) | Windows/Android cross-browser acceptance |
+| Root/subpath application build | Yes | Yes | Owner-only production smoke (2026-07-26) | Public-access decision and Windows/Android acceptance |
 | Python legacy backend | Legacy | No | No | Outside active roadmap |
 | Mobile/accessibility | Partial | Yes | No | Dated keyboard/screen-reader/device checklist |
 

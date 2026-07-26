@@ -11,7 +11,7 @@
   review found no release-blocking correctness, security, or privacy issue.
 - [ ] T009 Complete the dated Windows and Android manual-acceptance checklist
   defined by D-016.
-- [ ] T010 Choose a production host/address, deploy the tested artifact, and
+- [x] T010 Choose a production host/address, deploy the tested artifact, and
   record the production smoke-test result.
 - [x] T011 Provide and verify the repository-root static build adapter required
   by the selected hosting source layout.

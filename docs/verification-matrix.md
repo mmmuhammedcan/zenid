@@ -9,8 +9,8 @@ Last verified: 2026-07-26
 | Resume PDF generation | Yes | Yes | Creator-only | Browser and assistive-tech checks |
 | Resume presentation variants | Yes | Yes | No | Other-section selection and wording fields |
 | Portfolio privacy/static ZIP | Yes | Yes | Yes (2026-07-25, GitHub Pages + Netlify) | Broader assistive-technology and mobile review |
-| Transactional IndexedDB workspace and media | Yes | Yes | No | Commit-scoped evidence |
-| Single-writer browser workspace | Yes | Yes | No | Commit-scoped evidence |
+| Transactional IndexedDB workspace and media | Yes | Yes | No | Cross-browser manual acceptance |
+| Single-writer browser workspace | Yes | Yes | No | Cross-browser manual acceptance |
 | ZenPDF overlay export | Yes | Partial | No | Page/navigation/browser regressions |
 | React user journeys | Yes | Partial | No | Broader component and Playwright suites |
 | Python legacy backend | Legacy | No | No | Outside active roadmap |

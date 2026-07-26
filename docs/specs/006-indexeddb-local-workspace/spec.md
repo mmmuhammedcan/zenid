@@ -1,6 +1,6 @@
 # SPEC-006 — Transactional Local Workspace Storage
 
-Status: Implemented and automatically verified; commit-scoped evidence pending
+Status: Implemented and automatically verified
 Owner: Creator
 Last clarified: 2026-07-26
 

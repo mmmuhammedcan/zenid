@@ -1,7 +1,8 @@
 # SPEC-006 Evidence
 
-Status: Working-tree verification complete; immutable commit evidence pending
+Status: Automatically verified against immutable implementation commit
 Date: 2026-07-26
+Tested commit: `3e73b4b3e3af2a4abca3ac8581f8fb6de1138870`
 
 ## Acceptance evidence
 
@@ -34,7 +35,7 @@ Date: 2026-07-26
   transfers ownership and hydrates Portfolio. A separate case removes Web Locks
   support and verifies that ZenID fails closed without rendering an editor.
 
-## Working-tree verification
+## Commit-scoped verification
 
 From `frontend/pdf-editor`:
 
@@ -44,17 +45,17 @@ From `frontend/pdf-editor`:
   warning remains: application entry about 1,487 kB minified / 455 kB gzip and
   PDF worker about 2,210 kB.
 - `npm run test:e2e` — final full run passed 19/19 Chromium cases.
-- `npm run benchmark:project-import` — passed: small p95 19.7 ms, typical p95
-  23.4 ms, near-limit measurement 262.3 ms, maximum scheduler-delay proxy
+- `npm run benchmark:project-import` — passed: small p95 19.2 ms, typical p95
+  23.4 ms, near-limit measurement 266.4 ms, maximum scheduler-delay proxy
   10 ms.
 - `node scripts/zenid-roundtrip-check.mjs save` and `restore` — passed in fresh
   processes; schema 3, synthetic Unicode identity, every profile collection,
   one résumé, and one restored PDF page survived.
 - `git diff --check` — passed.
 
-This is repeatable working-tree evidence, not acceptance for an immutable
-commit. T009 stays open until the final full suite, import benchmark, `.zenid`
-round trip, and fresh review are recorded against the resulting commit.
+The working tree was clean before and after these commands, so every result
+above maps to the tested implementation commit. This is automated evidence, not
+manual creator acceptance.
 
 ## Reviewer pass
 

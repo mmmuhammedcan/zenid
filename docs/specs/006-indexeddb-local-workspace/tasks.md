@@ -8,5 +8,5 @@
 - [x] T006 Add shared React workspace hydration and autosave.
 - [x] T007 Migrate ZenPDF signature and initials data.
 - [x] T008 Remove canonical project/image writes to `localStorage`.
-- [ ] T009 Run Reviewer and QA gates and record commit-scoped evidence.
+- [x] T009 Run Reviewer and QA gates and record commit-scoped evidence.
 - [x] T010 Enforce D-012 with an exclusive Web Lock and a two-tab browser test.

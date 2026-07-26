@@ -262,3 +262,17 @@ replacement so historical context remains explainable.
 - Consequence: The runtime adapter is hosting infrastructure rather than a
   ZenID application backend. Private workspace data remains inside the user's
   browser and public Portfolio publication remains a separate explicit export.
+
+## D-018 — Initial acceptance deploy uses an owner-only generated address
+
+- Date: 2026-07-26
+- Status: Accepted
+- Decision owner: Creator
+- Context: The creator wants to validate the real web deployment before buying
+  or attaching a custom domain.
+- Decision: Use the generated ChatGPT Sites address for the initial production
+  acceptance deployment and keep access owner-only until the dated smoke and
+  manual-acceptance checks pass. A custom domain is deferred.
+- Consequence: The generated address is a real production deployment but not a
+  public launch. Changing access to public or attaching a domain remains an
+  explicit later action.

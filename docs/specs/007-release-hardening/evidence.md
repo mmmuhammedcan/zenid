@@ -60,8 +60,23 @@ From `frontend/pdf-editor`:
 - D-016 limits the initial dated manual-acceptance matrix to Windows and
   Android. The executable checklist is in `manual-acceptance.md`; macOS, iOS,
   and iPadOS remain unaccepted rather than inferred from WebKit automation.
-- Q-001 still requires the creator to choose the production provider and
-  domain before an external deploy.
+- D-018 resolves Q-001 for initial acceptance with an owner-only generated
+  address. A custom domain and public access remain deferred.
+
+## Initial production deployment
+
+- Provider: ChatGPT Sites
+- Access: owner-only
+- Source commit: `5c5b79d6fc7b5f86439a133015d37669524aa34e`
+- Saved version: 3
+- Deployment status: succeeded on 2026-07-26
+- URL: `https://zenid-local-workspace.cosmican.chatgpt.site`
+
+The provider build accepted `dist/client/`, `dist/server/index.js`, and the
+hosting metadata produced by the repository-root adapter. The Worker behavior
+is unit-tested and constrained by D-017 to static application files and SPA
+fallback only. Creator smoke testing behind the owner-only sign-in remains
+open, so T010 is not yet complete.
 
 ## Independent fresh-context review
 

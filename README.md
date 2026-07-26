@@ -39,10 +39,10 @@ npm run dev
 - A portfolio ZIP exported from `/portfolio` is the provider-neutral,
   deployable static artifact. It is verified for root and project-subpath
   hosting and keeps the private `.zenid` workspace separate.
-- `npm run build` produces the ZenID application bundle, but the repository
-  does not select a production provider or domain. The root build now includes
-  a matching `404.html` SPA fallback and validates every entry-point asset
-  path.
+- `npm run build` produces the ZenID application bundle. The initial
+  owner-only acceptance deployment uses ChatGPT Sites under D-018; no custom
+  domain is selected. The root build includes a matching `404.html` SPA
+  fallback and validates every entry-point asset path.
 - `npm run build:subpath` produces and validates the same application for the
   example `/zenid/` base. Hosting configuration must route unknown application
   paths to the generated shell (or use the included `404.html` fallback).

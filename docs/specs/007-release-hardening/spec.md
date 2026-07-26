@@ -52,7 +52,9 @@ deferred by D-013.
 - AC-006: Dependency audit findings are either fixed or explicitly mapped to
   unreachable application features with a dated decision.
 
-## Open decisions
+## Deployment decision
 
-- Q-001: Choose the actual production provider and domain before deployment.
-  Provider-ready artifacts do not authorize an external production deploy.
+- Q-001: Resolved by D-018 for initial acceptance. ChatGPT Sites is the
+  provider, its generated owner-only address is the initial URL, and a custom
+  domain remains deferred. Provider-ready artifacts alone still do not prove
+  production acceptance.

@@ -1,6 +1,6 @@
 # SPEC-008 — Turkish and English Workspace Localization
 
-Status: Implemented and automatically verified
+Status: Implemented, automatically verified, and creator accepted
 Owner: Creator
 Last clarified: 2026-07-26
 

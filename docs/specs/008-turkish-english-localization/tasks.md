@@ -8,4 +8,4 @@
 - [x] T006 Localize portfolio preview/static ZIP chrome per portfolio.
 - [x] T007 Add lazy stable-ID localized content overrides without duplicate
   profiles or automatic translation.
-- [ ] T008 Run the required regression matrix and record commit-scoped evidence.
+- [x] T008 Run the required regression matrix and record commit-scoped evidence.

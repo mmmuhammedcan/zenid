@@ -11,6 +11,9 @@ and keeps the editable project on their own device.
 - `/portfolio` — portfolio editor with explicit publication controls and
   static-site ZIP export.
 - `/editor` — ZenPDF, a supporting local PDF fill-and-sign tool.
+- The interface, résumé output, and portfolio output support explicit Turkish
+  and English language choices without automatically translating user-authored
+  professional content.
 
 The React application is in `frontend/pdf-editor`.
 

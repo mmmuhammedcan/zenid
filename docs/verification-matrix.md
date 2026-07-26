@@ -16,6 +16,7 @@ Last verified: 2026-07-26
 | Root/subpath application build | Yes | Yes | Owner-only production smoke (2026-07-26) | Public-access decision and Windows/Android acceptance |
 | Python legacy backend | Legacy | No | No | Outside active roadmap |
 | Mobile/accessibility | Partial | Yes | No | Dated keyboard/screen-reader/device checklist |
+| Turkish/English interface and output locale | Yes | Yes | No | Dated native-speaker copy and generated-artifact review |
 
 ## Repeatable checks
 

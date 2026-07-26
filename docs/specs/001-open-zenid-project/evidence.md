@@ -342,6 +342,11 @@ Atomic and upgrade coverage passed in Chromium, Firefox, and WebKit. The
 Reviewer confirmed that the later Blob-to-`Uint8Array` storage change retains
 legacy Blob reads and does not weaken T056.
 
+The formal review closure and evidence correction were committed at
+`2ad6dac65a92cb3a6f491a17fb0dbdd0f14aa906`. That commit passed 70/70 unit
+tests, lint, and the strengthened ZenPDF privacy regression in Chromium,
+Firefox, and WebKit.
+
 ## Missing evidence
 
 - Peak-memory/crash behavior and the resulting 75 MB limit decision on the

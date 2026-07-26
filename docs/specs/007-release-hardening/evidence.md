@@ -77,3 +77,8 @@ describes the deploy checker as validating entry-point asset paths, and the
 ZenPDF privacy regression uses a document-specific sentinel to reject document
 content in same-origin request URLs as well as cross-origin or non-GET
 requests.
+
+Those review resolutions were committed at
+`2ad6dac65a92cb3a6f491a17fb0dbdd0f14aa906`. Commit-scoped follow-up
+verification passed 70/70 unit tests, lint, and 3/3 targeted ZenPDF cases in
+Chromium, Firefox, and WebKit.

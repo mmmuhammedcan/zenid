@@ -1,7 +1,9 @@
 # SPEC-007 Evidence
 
-Status: Working-tree verification complete; immutable commit evidence pending
+Status: Automatically verified at implementation commit
 Date: 2026-07-26
+Tested implementation commit:
+`98cc92c0a9606e59472016a0f008a087919839da`
 
 ## Acceptance mapping
 
@@ -22,7 +24,7 @@ Date: 2026-07-26
   action path is absent from ZenID's static client architecture; npm audit is
   explicitly not reported as clean.
 
-## Working-tree verification
+## Commit-scoped verification
 
 From `frontend/pdf-editor`:
 
@@ -33,7 +35,7 @@ From `frontend/pdf-editor`:
 - `npm run test:e2e` — 54 passed, 6 intentionally project-scoped skips, 0
   failures across 60 scheduled cases.
 - `npm run benchmark:project-import` — passed: small p95 20.2 ms, typical p95
-  23.2 ms, near-limit measurement 271.6 ms, scheduler-delay proxy max 10 ms.
+  25.7 ms, near-limit measurement 267.3 ms, scheduler-delay proxy max 10 ms.
 - `.zenid` save/restore scripts — passed in fresh processes with schema 3,
   Unicode synthetic identity, all profile collections, and one restored PDF
   page.
@@ -59,5 +61,7 @@ From `frontend/pdf-editor`:
   manual; axe and viewport automation do not replace them.
 - Q-001 still requires the creator to choose the production provider and
   domain before an external deploy.
+- SPEC-007 T008's independent fresh-context review remains open; the
+  implementation owner cannot self-attest this gate.
 - T057's independent fresh-context review remains open; commit evidence for its
   implementation already exists.

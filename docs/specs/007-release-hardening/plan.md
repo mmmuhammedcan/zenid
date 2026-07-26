@@ -1,6 +1,6 @@
 # SPEC-007 Implementation Plan
 
-Status: Implemented; commit-scoped evidence pending
+Status: Implemented and automatically verified
 Updated: 2026-07-26
 
 1. Add focused release tests before changing browser/deploy behavior.

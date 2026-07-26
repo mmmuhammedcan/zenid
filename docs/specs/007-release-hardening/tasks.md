@@ -6,4 +6,6 @@
 - [x] T004 Add synthetic ZenPDF multi-page export regression.
 - [x] T005 Add root/subpath production build and SPA fallback support.
 - [x] T006 Resolve or disposition dependency audit findings.
-- [ ] T007 Run Reviewer/QA and record commit-scoped evidence.
+- [x] T007 Run QA and record commit-scoped evidence.
+- [ ] T008 Run an independent fresh-context Reviewer gate. The implementation
+  owner cannot self-attest this gate.

@@ -47,6 +47,31 @@ test("resume filenames are safe and predictable", () => {
   assert.equal(getResumeFileName("  Şule Işık  "), "Şule_Işık_Resume.pdf");
   assert.equal(getResumeFileName("Jane / Doe"), "Jane__Doe_Resume.pdf");
   assert.equal(getResumeFileName(""), "Resume.pdf");
+  assert.equal(getResumeFileName("Şule Işık", "tr"), "Şule_Işık_CV.pdf");
+});
+
+test("Turkish résumé PDF localizes fixed labels and dates while preserving authored text", async () => {
+  const doc = await buildResumePdf({
+    language: "tr",
+    resumeData: {
+      personalInfo: { fullName: "Şule Işık", summary: "Kullanıcının yazdığı içerik." },
+      sectionOrder: ["experience"],
+      experience: [{
+        id: "experience",
+        company: "ZenID",
+        role: "Yazılım Geliştirici",
+        startDate: "2026-07",
+        isCurrentlyWorking: true,
+        tools: "React",
+      }],
+    },
+  });
+  const pageOperators = doc.internal.pages.slice(1).flat().join("\n");
+
+  assert.match(pageOperators, /Tem 2026/);
+  assert.match(pageOperators, /Devam ediyor/);
+  assert.match(pageOperators, /Araçlar: React/);
+  assert.doesNotMatch(pageOperators, /Professional Experience/);
 });
 
 test("ATS PDF rendering uses the active resume variant item selection", async () => {

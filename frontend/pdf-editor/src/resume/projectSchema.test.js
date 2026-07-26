@@ -53,6 +53,25 @@ test("new projects use the current schema and portable string IDs", () => {
   assert.deepEqual(project.portfolio.sectionOrder, DEFAULT_PORTFOLIO_SECTION_ORDER);
 });
 
+test("normalizes document languages without rewriting profile content", () => {
+  const project = createEmptyProject();
+  project.profile.personalInfo.summary = "User-authored text stays exact.";
+  project.resumes[0].language = "tr-TR";
+  project.portfolio.language = "tr";
+
+  const normalized = normalizeProject(project);
+
+  assert.equal(normalized.resumes[0].language, "tr");
+  assert.equal(normalized.portfolio.language, "tr");
+  assert.equal(normalized.profile.personalInfo.summary, "User-authored text stays exact.");
+
+  project.resumes[0].language = "unsupported";
+  project.portfolio.language = "unsupported";
+  const fallback = normalizeProject(project);
+  assert.equal(fallback.resumes[0].language, "en");
+  assert.equal(fallback.portfolio.language, "en");
+});
+
 test("schema v1 projects migrate with every resume item included", () => {
   const current = createEmptyProject();
   current.profile.experience.push({ id: "second-experience", company: "Store", role: "Retail" });

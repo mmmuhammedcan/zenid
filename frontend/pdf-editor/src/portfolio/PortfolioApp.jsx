@@ -46,6 +46,7 @@ import {
   getPublicPortfolioAssetIds,
 } from "./portfolioSiteExport";
 import { useWorkspace } from "../storage/WorkspaceContext.jsx";
+import { useI18n } from "../I18nContext.jsx";
 
 const STEPS = [
   { id: "profile", label: "Profile", Icon: UserRound },
@@ -56,6 +57,7 @@ const STEPS = [
 ];
 
 export default function PortfolioApp() {
+  const { t } = useI18n();
   const {
     project,
     setProject,
@@ -132,6 +134,7 @@ export default function PortfolioApp() {
         const pdf = await buildResumePdf({
           resumeData: buildPublicResumeData(project, resume.id),
           accentColor: resume.accentColor,
+          language: resume.language,
         });
         if (!active) return;
         const nextUrl = URL.createObjectURL(pdf.output("blob"));
@@ -203,6 +206,7 @@ export default function PortfolioApp() {
         const pdf = await buildResumePdf({
           resumeData: buildPublicResumeData(project, resume.id),
           accentColor: resume.accentColor,
+          language: resume.language,
         });
         resumePdfBytes = new Uint8Array(pdf.output("arraybuffer"));
       }
@@ -302,22 +306,34 @@ export default function PortfolioApp() {
         <div className="mx-auto flex max-w-[1800px] flex-wrap items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-semibold tracking-tight">Portfolio Builder</h1>
-              <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">Local</span>
+              <h1 className="text-xl font-semibold tracking-tight">{t("Portfolio Builder")}</h1>
+              <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">{t("Local")}</span>
             </div>
             <p className="mt-1 text-xs text-stone-400">{notice}</p>
           </div>
           <div className="flex w-full flex-wrap gap-2 sm:w-auto">
             <input ref={openInputRef} type="file" accept=".zenid,application/json" onChange={handleOpenProject} className="hidden" />
             <button ref={openProjectButtonRef} type="button" onClick={() => openInputRef.current?.click()} className="flex items-center gap-2 rounded-lg border border-stone-800 px-3 py-2 text-xs font-medium text-stone-300 transition-colors hover:bg-stone-900">
-              <FolderOpen size={14} /> Open Project
+              <FolderOpen size={14} /> {t("Open Project")}
             </button>
             <button type="button" onClick={handleSaveProject} className="flex items-center gap-2 rounded-lg bg-amber-700 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-amber-600">
-              <FileArchive size={14} /> Save Project
+              <FileArchive size={14} /> {t("Save Project")}
             </button>
             <button type="button" onClick={() => setShowPublicationReview(true)} className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-300 transition-colors hover:bg-emerald-500/15">
-              <Globe2 size={14} /> Export Website
+              <Globe2 size={14} /> {t("Export Website")}
             </button>
+            <label className="flex items-center gap-2 text-xs text-stone-400">
+              <span className="sr-only">{t("Output language")}</span>
+              <select
+                value={project.portfolio.language}
+                onChange={(event) => changePortfolio({ language: event.target.value })}
+                aria-label={t("Output language")}
+                className="rounded-lg border border-stone-800 bg-stone-900 px-3 py-2 text-xs text-stone-200"
+              >
+                <option value="en">{t("English")}</option>
+                <option value="tr">{t("Turkish")}</option>
+              </select>
+            </label>
           </div>
         </div>
       </header>
@@ -344,7 +360,7 @@ export default function PortfolioApp() {
                 className={`flex min-w-max flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-3 text-xs font-medium transition-colors ${active ? "border-amber-600 bg-amber-600/10 text-amber-400" : "border-stone-800 bg-stone-900/40 text-stone-400 hover:border-stone-700 hover:text-stone-200"}`}
               >
                 {visited ? <Check size={14} className="text-emerald-500" /> : <Icon size={14} />}
-                {label}
+                {t(label)}
               </button>
             );
           })}
@@ -353,8 +369,8 @@ export default function PortfolioApp() {
 
       <div className="border-b border-stone-800 p-2 lg:hidden">
         <div className="mx-auto grid max-w-sm grid-cols-2 rounded-xl bg-stone-900 p-1">
-          <button type="button" onClick={() => setMobileView("edit")} className={`rounded-lg px-3 py-2 text-xs font-medium ${mobileView === "edit" ? "bg-stone-700 text-white" : "text-stone-500"}`}>Edit</button>
-          <button type="button" onClick={() => setMobileView("preview")} className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium ${mobileView === "preview" ? "bg-stone-700 text-white" : "text-stone-500"}`}><Eye size={14} /> Preview</button>
+          <button type="button" onClick={() => setMobileView("edit")} className={`rounded-lg px-3 py-2 text-xs font-medium ${mobileView === "edit" ? "bg-stone-700 text-white" : "text-stone-500"}`}>{t("Edit")}</button>
+          <button type="button" onClick={() => setMobileView("preview")} className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium ${mobileView === "preview" ? "bg-stone-700 text-white" : "text-stone-500"}`}><Eye size={14} /> {t("Preview")}</button>
         </div>
       </div>
 
@@ -371,17 +387,17 @@ export default function PortfolioApp() {
               onMediaRemove={handleMediaRemove}
             />
             <div className="mt-10 flex items-center justify-between border-t border-stone-800 pt-5">
-              <button type="button" onClick={() => goTo(activeIndex - 1)} disabled={activeIndex === 0} className="flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-medium text-stone-400 hover:bg-stone-900 disabled:cursor-not-allowed disabled:opacity-30"><ChevronLeft size={14} /> Previous</button>
+              <button type="button" onClick={() => goTo(activeIndex - 1)} disabled={activeIndex === 0} className="flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-medium text-stone-400 hover:bg-stone-900 disabled:cursor-not-allowed disabled:opacity-30"><ChevronLeft size={14} /> {t("Previous")}</button>
               {activeIndex < STEPS.length - 1 ? (
-                <button type="button" onClick={() => goTo(activeIndex + 1)} className="flex items-center gap-1 rounded-lg bg-amber-700 px-3 py-2 text-xs font-medium text-white hover:bg-amber-600">Next <ChevronRight size={14} /></button>
+                <button type="button" onClick={() => goTo(activeIndex + 1)} className="flex items-center gap-1 rounded-lg bg-amber-700 px-3 py-2 text-xs font-medium text-white hover:bg-amber-600">{t("Next")} <ChevronRight size={14} /></button>
               ) : (
-                <button type="button" onClick={() => setMobileView("preview")} className="flex items-center gap-2 rounded-lg bg-amber-700 px-3 py-2 text-xs font-medium text-white hover:bg-amber-600"><Eye size={14} /> Review preview</button>
+                <button type="button" onClick={() => setMobileView("preview")} className="flex items-center gap-2 rounded-lg bg-amber-700 px-3 py-2 text-xs font-medium text-white hover:bg-amber-600"><Eye size={14} /> {t("Review preview")}</button>
               )}
             </div>
           </div>
         </aside>
 
-        <section className={`${mobileView === "preview" ? "block" : "hidden"} overflow-y-auto bg-stone-900/60 p-3 sm:p-5 lg:block`} aria-label="Live portfolio preview">
+        <section className={`${mobileView === "preview" ? "block" : "hidden"} overflow-y-auto bg-stone-900/60 p-3 sm:p-5 lg:block`} aria-label={t("Live portfolio preview")}>
           <div className="mx-auto min-h-full max-w-6xl shadow-2xl shadow-black/40">
             <PortfolioPreview
               project={project}

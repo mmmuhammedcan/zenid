@@ -1,8 +1,9 @@
 import { jsPDF } from "jspdf";
 import { DEFAULT_ACCENT } from "./themes.js";
 import { DEFAULT_SECTION_ORDER } from "./data.js";
-import { formatDate, getFilledSections } from "./resumeSections.js";
+import { getFilledSections } from "./resumeSections.js";
 import { loadLetterheadLogo, drawLetterhead, LETTERHEAD_HEIGHT_PT } from "../pdfLetterhead.js";
+import { formatDocumentDate, getResumeCopy, normalizeLocale, uppercaseDocumentLabel } from "../localization.js";
 
 // Deliberately renders real, selectable jsPDF text (not a rasterized image of
 // the on-screen preview) — a resume exported as a flattened picture would
@@ -83,7 +84,9 @@ function tokenizeInline(line) {
   return tokens;
 }
 
-export async function buildResumePdf({ resumeData, accentColor = DEFAULT_ACCENT, letterhead = false, fontData }) {
+export async function buildResumePdf({ resumeData, accentColor = DEFAULT_ACCENT, letterhead = false, fontData, language = "en" }) {
+  const normalizedLanguage = normalizeLocale(language);
+  const copy = getResumeCopy(normalizedLanguage);
   const doc = new jsPDF({ unit: "pt", format: [A4_WIDTH_PT, A4_HEIGHT_PT], putOnlyUsedFonts: true });
   const fontFamily = await registerResumeFonts(doc, fontData);
   const [ar, ag, ab] = hexToRgb(accentColor);
@@ -188,7 +191,7 @@ export async function buildResumePdf({ resumeData, accentColor = DEFAULT_ACCENT,
     doc.setFont(fontFamily, "bold");
     doc.setFontSize(10.5);
     setAccent();
-    doc.text(label.toUpperCase(), MARGIN, y);
+    doc.text(uppercaseDocumentLabel(label, normalizedLanguage), MARGIN, y);
     y += 3;
     doc.setDrawColor(ar, ag, ab);
     doc.setLineWidth(0.75);
@@ -261,14 +264,14 @@ export async function buildResumePdf({ resumeData, accentColor = DEFAULT_ACCENT,
     switch (key) {
       case "domains": {
         if (filled.domains.length === 0) return;
-        sectionHeading("Domain/Functional Areas");
+        sectionHeading(copy.sections.domains);
         wrappedText(filled.domains.map((d) => d.text).join("  •  "), MARGIN, CONTENT_WIDTH, 12);
         y += 6;
         return;
       }
       case "skills": {
         if (filled.skills.length === 0) return;
-        sectionHeading("Key Skills");
+        sectionHeading(copy.sections.skills);
         filled.skills.forEach((skill) => {
           ensureSpace(12);
           doc.setFontSize(9);
@@ -292,15 +295,15 @@ export async function buildResumePdf({ resumeData, accentColor = DEFAULT_ACCENT,
       }
       case "experience": {
         if (filled.experience.length === 0) return;
-        sectionHeading("Professional Experience");
+        sectionHeading(copy.sections.experience);
         filled.experience.forEach((item) => {
           ensureSpace(26);
           titleDateRow(
             [{ text: item.role || "", bold: true }],
-            `${formatDate(item.startDate)} – ${item.isCurrentlyWorking ? "Present" : formatDate(item.endDate)}`
+            `${formatDocumentDate(item.startDate, normalizedLanguage)} – ${item.isCurrentlyWorking ? copy.present : formatDocumentDate(item.endDate, normalizedLanguage)}`
           );
           subLine(item.company);
-          if (item.tools) subLine(`Tools: ${item.tools}`, { italic: true });
+          if (item.tools) subLine(`${copy.tools}: ${item.tools}`, { italic: true });
           if (item.description) bulletList(item.description, MARGIN, CONTENT_WIDTH, 12);
           y += 6;
         });
@@ -308,15 +311,15 @@ export async function buildResumePdf({ resumeData, accentColor = DEFAULT_ACCENT,
       }
       case "projects": {
         if (filled.projects.length === 0) return;
-        sectionHeading("Projects");
+        sectionHeading(copy.sections.projects);
         filled.projects.forEach((project) => {
           ensureSpace(26);
           const titleSegs = [{ text: project.name || "", bold: true }];
           if (project.techStack) titleSegs.push({ text: ` | ${project.techStack}`, bold: false, color: [90, 90, 90] });
-          if (project.link) titleSegs.push({ text: "  [Link]", bold: false, link: project.link });
+          if (project.link) titleSegs.push({ text: `  [${copy.link}]`, bold: false, link: project.link });
           const dateText =
             project.startDate || project.endDate
-              ? `${formatDate(project.startDate)} – ${project.isCurrentProject ? "Present" : formatDate(project.endDate)}`
+              ? `${formatDocumentDate(project.startDate, normalizedLanguage)} – ${project.isCurrentProject ? copy.present : formatDocumentDate(project.endDate, normalizedLanguage)}`
               : "";
           titleDateRow(titleSegs, dateText);
           if (project.description) bulletList(project.description, MARGIN, CONTENT_WIDTH, 12);
@@ -326,7 +329,7 @@ export async function buildResumePdf({ resumeData, accentColor = DEFAULT_ACCENT,
       }
       case "achievements": {
         if (filled.achievements.length === 0) return;
-        sectionHeading("Achievements");
+        sectionHeading(copy.sections.achievements);
         filled.achievements.forEach((item) => {
           ensureSpace(20);
           titleDateRow([{ text: item.title || "", bold: true }], item.date || "");
@@ -341,11 +344,11 @@ export async function buildResumePdf({ resumeData, accentColor = DEFAULT_ACCENT,
         // together. This also prevents a continuation page from beginning
         // with an unlabeled certificate row.
         ensureSpace(20 + filled.certifications.length * 29);
-        sectionHeading("Certifications");
+        sectionHeading(copy.sections.certifications);
         filled.certifications.forEach((cert) => {
           ensureSpace(20);
           const titleSegs = [{ text: cert.title || "", bold: true }];
-          if (cert.link) titleSegs.push({ text: "  [Link]", bold: false, link: cert.link });
+          if (cert.link) titleSegs.push({ text: `  [${copy.link}]`, bold: false, link: cert.link });
           titleDateRow(titleSegs, cert.date || "");
           if (cert.issuer) subLine(cert.issuer);
           y += 4;
@@ -354,17 +357,17 @@ export async function buildResumePdf({ resumeData, accentColor = DEFAULT_ACCENT,
       }
       case "education": {
         if (filled.education.length === 0) return;
-        sectionHeading("Education");
+        sectionHeading(copy.sections.education);
         filled.education.forEach((edu) => {
           ensureSpace(26);
-          const degreeLine = [edu.degree, edu.field && `in ${edu.field}`].filter(Boolean).join(" ");
+          const degreeLine = [edu.degree, edu.field && `${copy.fieldConnector} ${edu.field}`].filter(Boolean).join(" ");
           const dateText =
             edu.startDate || edu.endDate
-              ? `${formatDate(edu.startDate)} – ${edu.isCurrentlyStudying ? "Present" : formatDate(edu.endDate)}`
+              ? `${formatDocumentDate(edu.startDate, normalizedLanguage)} – ${edu.isCurrentlyStudying ? copy.present : formatDocumentDate(edu.endDate, normalizedLanguage)}`
               : "";
           titleDateRow([{ text: degreeLine, bold: true }], dateText);
           subLine(edu.institution);
-          if (edu.gpa) subLine(`GPA: ${edu.gpa}`);
+          if (edu.gpa) subLine(`${copy.gpa}: ${edu.gpa}`);
           y += 4;
         });
         return;
@@ -443,16 +446,17 @@ export async function buildResumePdf({ resumeData, accentColor = DEFAULT_ACCENT,
   return doc;
 }
 
-export function getResumeFileName(fullName) {
+export function getResumeFileName(fullName, language = "en") {
   const safeName = (fullName || "")
     .trim()
     .replace(/\s+/g, "_")
     .replace(/[\\/:*?"<>|]/g, "")
     .replace(/^\.+|\.+$/g, "");
-  return safeName ? `${safeName}_Resume.pdf` : "Resume.pdf";
+  const suffix = normalizeLocale(language) === "tr" ? "CV" : "Resume";
+  return safeName ? `${safeName}_${suffix}.pdf` : `${suffix}.pdf`;
 }
 
 export async function exportResumeToPdf(options) {
   const doc = await buildResumePdf(options);
-  doc.save(getResumeFileName(options.resumeData?.personalInfo?.fullName));
+  doc.save(getResumeFileName(options.resumeData?.personalInfo?.fullName, options.language));
 }

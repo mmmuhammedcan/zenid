@@ -1,10 +1,14 @@
+import { useI18n } from "../I18nContext.jsx";
+
 export function Field({ label, type, ...props }) {
+  const { t } = useI18n();
+  const localizedProps = props.placeholder ? { ...props, placeholder: t(props.placeholder) } : props;
   return (
     <label className="flex flex-col gap-2">
-      <span className="text-sm font-medium text-stone-400">{label}</span>
+      <span className="text-sm font-medium text-stone-400">{t(label)}</span>
       <input
         type={type || "text"}
-        {...props}
+        {...localizedProps}
         className="rounded-lg border border-stone-800 bg-stone-900 px-3 py-2 text-sm text-stone-200 outline-none transition-colors focus:border-amber-600 focus:ring-1 focus:ring-amber-600/20"
       />
     </label>
@@ -12,9 +16,10 @@ export function Field({ label, type, ...props }) {
 }
 
 export function DateField({ label, ...props }) {
+  const { t } = useI18n();
   return (
     <label className="flex flex-col gap-2">
-      <span className="text-sm font-medium text-stone-400">{label}</span>
+      <span className="text-sm font-medium text-stone-400">{t(label)}</span>
       <input
         type="month"
         {...props}
@@ -26,12 +31,14 @@ export function DateField({ label, ...props }) {
 }
 
 export function TextAreaField({ label, rows = 4, ...props }) {
+  const { t } = useI18n();
+  const localizedProps = props.placeholder ? { ...props, placeholder: t(props.placeholder) } : props;
   return (
     <label className="flex flex-col gap-2">
-      <span className="text-sm font-medium text-stone-400">{label}</span>
+      <span className="text-sm font-medium text-stone-400">{t(label)}</span>
       <textarea
         rows={rows}
-        {...props}
+        {...localizedProps}
         className="resize-none rounded-lg border border-stone-800 bg-stone-900 px-3 py-2 text-sm text-stone-200 outline-none transition-colors focus:border-amber-600 focus:ring-1 focus:ring-amber-600/20"
       />
     </label>
@@ -39,6 +46,7 @@ export function TextAreaField({ label, rows = 4, ...props }) {
 }
 
 export function CheckboxField({ label, ...props }) {
+  const { t } = useI18n();
   return (
     <label className="flex items-center gap-2">
       <input
@@ -46,7 +54,7 @@ export function CheckboxField({ label, ...props }) {
         {...props}
         className="h-4 w-4 rounded border-stone-800 bg-stone-900 text-amber-600 accent-amber-600"
       />
-      <span className="text-sm text-stone-400">{label}</span>
+      <span className="text-sm text-stone-400">{t(label)}</span>
     </label>
   );
 }

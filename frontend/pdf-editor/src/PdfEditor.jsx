@@ -31,6 +31,7 @@ import {
   renderSavedOverlayToPngDataUrl,
   renderSavedPageToDataUrl,
 } from "./pdfExport";
+import { useI18n } from "./I18nContext.jsx";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
@@ -64,6 +65,7 @@ function computeToolbarPosition(fCanvas, obj) {
 }
 
 export default function PdfEditor() {
+  const { t } = useI18n();
   const [status, setStatus] = useState("Choose a PDF or image.");
   const [pdfLoaded, setPdfLoaded] = useState(false); // controls Dropzone vs. Canvas view
   const [sourceType, setSourceType] = useState(null); // 'pdf' | 'image' — which export path to use
@@ -919,7 +921,7 @@ export default function PdfEditor() {
           className="flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-amber-600/20 transition-all hover:bg-amber-500 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Download size={16} />
-          Export PDF
+          {t("Export PDF")}
         </button>
       </header>
 
@@ -984,13 +986,13 @@ export default function PdfEditor() {
         {!pdfLoaded && (
           <>
             <div className="max-w-2xl text-center">
-              <h1 className="text-2xl font-semibold tracking-tight text-stone-100">Fill and sign application forms privately</h1>
+              <h1 className="text-2xl font-semibold tracking-tight text-stone-100">{t("Fill and sign application forms privately")}</h1>
               <p className="mt-2 text-sm leading-relaxed text-stone-400">
-                Add text, dates, checkmarks, initials, and a visual signature. Your document stays in this browser.
+                {t("Add text, dates, checkmarks, initials, and a visual signature. Your document stays in this browser.")}
               </p>
             </div>
             <Dropzone onFileSelected={loadFile} />
-            {status !== "Choose a PDF or image." && <p className="text-sm text-stone-400">{status}</p>}
+            {status !== "Choose a PDF or image." && <p className="text-sm text-stone-400">{t(status)}</p>}
           </>
         )}
 
@@ -1001,9 +1003,9 @@ export default function PdfEditor() {
               disabled={documentBusy}
               className="text-sm text-stone-400 underline decoration-zinc-600 underline-offset-2 transition-all hover:text-stone-200 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Change file
+              {t("Change file")}
             </button>
-            <span className="text-sm text-stone-400" role="status" aria-live="polite">{status}</span>
+            <span className="text-sm text-stone-400" role="status" aria-live="polite">{t(status)}</span>
 
             {hasSavedSignature && (
               <button
@@ -1013,7 +1015,7 @@ export default function PdfEditor() {
                 }}
                 className="text-sm text-stone-400 underline decoration-zinc-600 underline-offset-2 transition-all hover:text-stone-200"
               >
-                Redraw signature
+                {t("Redraw signature")}
               </button>
             )}
             {hasSavedInitials && (

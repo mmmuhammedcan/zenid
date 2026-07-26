@@ -5,6 +5,7 @@ import ExperienceForm from "../resume/ExperienceForm";
 import CertificationsForm from "../resume/CertificationsForm";
 import MediaField from "./MediaField";
 import PortfolioProjectsEditor from "./PortfolioProjectsEditor";
+import { useI18n } from "../I18nContext.jsx";
 
 const ACCENTS = ["#d97706", "#2563eb", "#059669", "#7c3aed", "#e11d48"];
 const ORDERABLE_SECTIONS = [
@@ -16,11 +17,12 @@ const ORDERABLE_SECTIONS = [
 ];
 
 function EditorSection({ title, description, children }) {
+  const { t } = useI18n();
   return (
     <section>
       <div className="mb-5">
-        <h2 className="text-lg font-semibold tracking-tight text-stone-100">{title}</h2>
-        {description && <p className="mt-1 text-sm leading-6 text-stone-400">{description}</p>}
+        <h2 className="text-lg font-semibold tracking-tight text-stone-100">{t(title)}</h2>
+        {description && <p className="mt-1 text-sm leading-6 text-stone-400">{t(description)}</p>}
       </div>
       {children}
     </section>
@@ -28,11 +30,12 @@ function EditorSection({ title, description, children }) {
 }
 
 function VisibilityRow({ label, description, checked, onChange }) {
+  const { t } = useI18n();
   return (
     <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-stone-800 bg-stone-900/50 p-4">
       <span>
-        <span className="block text-sm font-medium text-stone-200">{label}</span>
-        <span className="mt-1 block text-xs leading-5 text-stone-400">{description}</span>
+        <span className="block text-sm font-medium text-stone-200">{t(label)}</span>
+        <span className="mt-1 block text-xs leading-5 text-stone-400">{t(description)}</span>
       </span>
       <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${checked ? "bg-amber-600/15 text-amber-500" : "bg-stone-800 text-stone-500"}`}>
         {checked ? <Eye size={16} /> : <EyeOff size={16} />}
@@ -43,6 +46,7 @@ function VisibilityRow({ label, description, checked, onChange }) {
 }
 
 function SectionOrderEditor({ sectionOrder = [], onChange }) {
+  const { t } = useI18n();
   const knownIds = new Set(ORDERABLE_SECTIONS.map(({ id }) => id));
   const knownOrder = [
     ...sectionOrder.filter((id) => knownIds.has(id)),
@@ -66,8 +70,8 @@ function SectionOrderEditor({ sectionOrder = [], onChange }) {
           <div key={id} className="flex items-center gap-3 rounded-xl border border-stone-800 bg-stone-900/50 p-3">
             <GripVertical size={16} className="shrink-0 text-stone-600" aria-hidden="true" />
             <span className="min-w-0 flex-1">
-              <span className="block text-sm font-medium text-stone-200">{section.label}</span>
-              <span className="mt-0.5 block text-xs leading-5 text-stone-400">{section.description}</span>
+              <span className="block text-sm font-medium text-stone-200">{t(section.label)}</span>
+              <span className="mt-0.5 block text-xs leading-5 text-stone-400">{t(section.description)}</span>
             </span>
             <div className="flex shrink-0 gap-1">
               <button
@@ -97,6 +101,7 @@ function SectionOrderEditor({ sectionOrder = [], onChange }) {
 }
 
 function PublishControls({ label, field, items, portfolio, onPortfolioChange }) {
+  const { t } = useI18n();
   const namedItems = items.filter((item) => String(item.name || item.title || item.role || item.company || "").trim());
   if (!namedItems.length) return null;
   const hidden = new Set(portfolio.hiddenItems[field] || []);
@@ -108,8 +113,8 @@ function PublishControls({ label, field, items, portfolio, onPortfolioChange }) 
   };
   return (
     <div className="rounded-xl border border-stone-800 bg-stone-900/30 p-4">
-      <p className="text-sm font-semibold text-stone-300">Publish {label}</p>
-      <p className="mt-1 text-xs text-stone-400">Hidden items remain safely stored in your private profile.</p>
+      <p className="text-sm font-semibold text-stone-300">{t("Publish")} {t(label)}</p>
+      <p className="mt-1 text-xs text-stone-400">{t("Hidden items remain safely stored in your private profile.")}</p>
       <div className="mt-3 grid gap-2">
         {namedItems.map((item) => {
           const name = item.name || item.title || [item.role, item.company].filter(Boolean).join(" — ");

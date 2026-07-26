@@ -1,8 +1,10 @@
 import { Plus, Trash2 } from "lucide-react";
 import { Field, TextAreaField } from "./Field";
 import { emptyAchievement } from "./data";
+import { useI18n } from "../I18nContext.jsx";
 
 export default function AchievementsForm({ items, onChange }) {
+  const { t } = useI18n();
   const updateItem = (id, key, value) => {
     onChange(items.map((item) => (item.id === id ? { ...item, [key]: value } : item)));
   };
@@ -15,13 +17,13 @@ export default function AchievementsForm({ items, onChange }) {
       {items.map((item, i) => (
         <div key={item.id} className="flex flex-col gap-3 rounded-lg border border-stone-800 bg-stone-900/40 p-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-stone-400">Achievement {i + 1}</span>
+            <span className="text-xs font-medium text-stone-400">{t("Achievement")} {i + 1}</span>
             {items.length > 1 && (
               <button
                 type="button"
                 onClick={() => removeItem(item.id)}
                 className="flex h-6 w-6 items-center justify-center rounded-md text-stone-400 transition-colors hover:bg-red-500/10 hover:text-red-500"
-                title="Remove"
+                title={t("Remove")}
               >
                 <Trash2 size={14} />
               </button>
@@ -53,7 +55,7 @@ export default function AchievementsForm({ items, onChange }) {
         onClick={addItem}
         className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-stone-700 py-2.5 text-sm text-stone-500 transition-colors hover:border-amber-600 hover:text-amber-600"
       >
-        <Plus size={14} /> Add achievement
+        <Plus size={14} /> {t("Add achievement")}
       </button>
     </div>
   );

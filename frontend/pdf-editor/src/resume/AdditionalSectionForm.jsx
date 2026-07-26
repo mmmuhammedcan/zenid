@@ -1,7 +1,9 @@
 import { Field } from "./Field";
 import RichTextEditor from "./RichTextEditor";
+import { useI18n } from "../I18nContext.jsx";
 
 export default function AdditionalSectionForm({ data, onChange }) {
+  const { t } = useI18n();
   const setTitle = (e) => onChange({ ...data, title: e.target.value });
   const setContent = (html) => onChange({ ...data, content: html });
   const setLink = (e) => onChange({ ...data, link: e.target.value });
@@ -16,7 +18,7 @@ export default function AdditionalSectionForm({ data, onChange }) {
       />
 
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium text-stone-400">Additional Information</label>
+        <label className="text-sm font-medium text-stone-400">{t("Additional Information")}</label>
         <RichTextEditor
           value={data.content}
           onChange={setContent}

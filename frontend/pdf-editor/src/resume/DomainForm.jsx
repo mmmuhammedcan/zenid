@@ -1,8 +1,10 @@
 import { Plus, Trash2 } from "lucide-react";
 import { Field } from "./Field";
 import { emptyDomain } from "./data";
+import { useI18n } from "../I18nContext.jsx";
 
 export default function DomainForm({ items, onChange }) {
+  const { t } = useI18n();
   const updateItem = (id, text) => {
     onChange(items.map((item) => (item.id === id ? { ...item, text } : item)));
   };
@@ -27,7 +29,7 @@ export default function DomainForm({ items, onChange }) {
               type="button"
               onClick={() => removeItem(item.id)}
               className="flex h-10 w-10 items-center justify-center rounded-lg text-stone-400 transition-colors hover:bg-red-500/10 hover:text-red-500"
-              title="Remove"
+              title={t("Remove")}
             >
               <Trash2 size={16} />
             </button>
@@ -39,7 +41,7 @@ export default function DomainForm({ items, onChange }) {
         onClick={addItem}
         className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-stone-700 py-2.5 text-sm text-stone-500 transition-colors hover:border-amber-600 hover:text-amber-600"
       >
-        <Plus size={14} /> Add area
+        <Plus size={14} /> {t("Add area")}
       </button>
     </div>
   );

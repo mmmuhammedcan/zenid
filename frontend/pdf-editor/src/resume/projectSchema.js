@@ -1,6 +1,7 @@
 import { createInitialResumeData, DEFAULT_SECTION_ORDER } from "./data.js";
 import { createStableId } from "./ids.js";
 import { DEFAULT_ACCENT } from "./themes.js";
+import { normalizeLocale } from "../localization.js";
 
 export const CURRENT_SCHEMA_VERSION = 3;
 // The storage location is stable; schemaVersion inside the payload controls
@@ -133,6 +134,7 @@ export function normalizePortfolio(source = {}) {
   return {
     ...clone(DEFAULT_PORTFOLIO_CONFIG),
     ...portfolio,
+    language: normalizeLocale(portfolio.language),
     visibleSections: {
       ...DEFAULT_PORTFOLIO_CONFIG.visibleSections,
       ...(isRecord(portfolio.visibleSections) ? portfolio.visibleSections : {}),
@@ -246,7 +248,7 @@ export function createResumeDocument(overrides = {}) {
     ...clone(overrides),
     id: overrides.id || createStableId(),
     name: typeof overrides.name === "string" ? overrides.name : "General Resume",
-    language: overrides.language || "en",
+    language: normalizeLocale(overrides.language),
     template: overrides.template ?? null,
     pendingTemplate: overrides.pendingTemplate || overrides.template || "minimal",
     accentColor: overrides.accentColor || DEFAULT_ACCENT,

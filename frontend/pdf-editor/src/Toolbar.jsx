@@ -1,4 +1,5 @@
 import { Eraser as ClearIcon, ImagePlus, ListChecks, PenTool, Pencil, Redo2, Type, Undo2 } from "lucide-react";
+import { useI18n } from "./I18nContext.jsx";
 
 export default function Toolbar({
   onAddText,
@@ -15,6 +16,7 @@ export default function Toolbar({
   canRedo,
   onClearPage,
 }) {
+  const { t } = useI18n();
   const creationItems = [
     { key: "text", label: "Add Text", Icon: Type, onClick: onAddText, active: placementSource === "text" },
     { key: "signature", label: "Add Visual Signature", Icon: PenTool, onClick: onAddSignature, active: placementSource === "signature" },
@@ -40,8 +42,8 @@ export default function Toolbar({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      title={label}
-      aria-label={label}
+      title={t(label)}
+      aria-label={t(label)}
       aria-pressed={active}
       className={`flex h-11 w-11 items-center justify-center rounded-xl transition-all hover:scale-105 active:scale-95 disabled:pointer-events-none disabled:opacity-30 disabled:hover:scale-100 ${
         active

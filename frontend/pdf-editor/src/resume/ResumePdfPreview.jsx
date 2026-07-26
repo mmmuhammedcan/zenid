@@ -8,7 +8,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 const PREVIEW_SCALE = 1.5;
 const PREVIEW_DEBOUNCE_MS = 350;
 
-export default function ResumePdfPreview({ resumeData, accentColor }) {
+export default function ResumePdfPreview({ resumeData, accentColor, language = "en" }) {
   const [pages, setPages] = useState([]);
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
@@ -22,7 +22,7 @@ export default function ResumePdfPreview({ resumeData, accentColor }) {
 
     const timeoutId = window.setTimeout(async () => {
       try {
-        const resumePdf = await buildResumePdf({ resumeData, accentColor });
+        const resumePdf = await buildResumePdf({ resumeData, accentColor, language });
         if (cancelled) return;
 
         const bytes = new Uint8Array(resumePdf.output("arraybuffer"));
@@ -64,7 +64,7 @@ export default function ResumePdfPreview({ resumeData, accentColor }) {
       window.clearTimeout(timeoutId);
       pdfDocument?.destroy();
     };
-  }, [resumeData, accentColor]);
+  }, [resumeData, accentColor, language]);
 
   if (status === "loading") {
     return (

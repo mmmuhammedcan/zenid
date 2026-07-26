@@ -141,6 +141,7 @@ export default function ResumeApp() {
         const pdf = await buildResumePdf({
           resumeData: resumeDataForDocument,
           accentColor: resume.accentColor,
+          language: resume.language,
         });
         generatedPdfs.push({
           resumeId: resume.id,
@@ -217,6 +218,7 @@ export default function ResumeApp() {
       activeResume={activeResume}
       onSelectResume={(resumeId) => navigateWithin(() => setActiveResumeId(resumeId))}
       onRenameResume={(name) => updateActiveResume({ name })}
+      onChangeResumeLanguage={(language) => updateActiveResume({ language })}
       onDuplicateResume={handleDuplicateResume}
       onDeleteResume={handleDeleteResume}
       onSaveProject={handleSaveProject}

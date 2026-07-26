@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { Check, FolderOpen } from "lucide-react";
 import { ACCENT_THEMES } from "./themes";
 import ProjectOpenNotice from "./ProjectOpenNotice";
+import { useI18n } from "../I18nContext.jsx";
 
 const TEMPLATES = [
   {
@@ -63,6 +64,7 @@ export default function TemplateSelector({
   projectNotice,
   onDismissProjectNotice,
 }) {
+  const { t } = useI18n();
   const projectInputRef = useRef(null);
   const openProjectButtonRef = useRef(null);
 
@@ -75,8 +77,8 @@ export default function TemplateSelector({
   return (
     <div className="flex min-h-screen flex-col items-center px-6 py-16">
       <div className="mb-12 text-center">
-        <h1 className="text-3xl font-medium tracking-tight text-stone-100">Choose a starting point</h1>
-        <p className="mt-2 text-stone-400">You can change the layout and color later without losing your content.</p>
+        <h1 className="text-3xl font-medium tracking-tight text-stone-100">{t("Choose a starting point")}</h1>
+        <p className="mt-2 text-stone-400">{t("You can change the layout and color later without losing your content.")}</p>
         <input
           ref={projectInputRef}
           type="file"
@@ -90,9 +92,9 @@ export default function TemplateSelector({
           onClick={() => projectInputRef.current?.click()}
           className="mt-5 inline-flex items-center gap-2 rounded-lg border border-stone-700 px-3 py-2 text-sm font-medium text-stone-200 transition-colors hover:border-amber-600 hover:bg-amber-600/10 hover:text-amber-400"
         >
-          <FolderOpen size={16} /> Open ZenID Project
+          <FolderOpen size={16} /> {t("Open ZenID Project")}
         </button>
-        <p className="mt-2 text-xs text-stone-500">Opened locally in your browser—nothing is uploaded.</p>
+        <p className="mt-2 text-xs text-stone-500">{t("Opened locally in your browser—nothing is uploaded.")}</p>
       </div>
 
       <ProjectOpenNotice
@@ -124,8 +126,8 @@ export default function TemplateSelector({
               </div>
               <div className="flex items-center justify-between px-5 py-4">
                 <div>
-                  <p className="font-medium text-stone-900">{tpl.name}</p>
-                  <p className="mt-0.5 text-sm text-stone-600">{tpl.description}</p>
+                  <p className="font-medium text-stone-900">{t(tpl.name)}</p>
+                  <p className="mt-0.5 text-sm text-stone-600">{t(tpl.description)}</p>
                 </div>
                 {isSelected && (
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-600 text-white">
@@ -139,7 +141,7 @@ export default function TemplateSelector({
       </div>
 
       <div className="mt-10 flex flex-col items-center gap-3">
-        <p className="text-xs font-medium uppercase tracking-wider text-stone-400">Accent color</p>
+        <p className="text-xs font-medium uppercase tracking-wider text-stone-400">{t("Accent color")}</p>
         <div className="flex items-center gap-3">
           {ACCENT_THEMES.map((theme) => {
             const isActive = accentColor === theme.hex;
@@ -167,7 +169,7 @@ export default function TemplateSelector({
         onClick={onContinue}
         className="mt-10 rounded-full bg-amber-700 px-8 py-3 text-sm font-medium text-white transition-all hover:bg-amber-600 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-500"
       >
-        Continue
+        {t("Continue")}
       </button>
     </div>
   );

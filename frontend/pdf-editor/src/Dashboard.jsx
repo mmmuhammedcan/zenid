@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, FileEdit, PanelsTopLeft, UserRound } from "lucide-react";
+import { useI18n } from "./I18nContext.jsx";
 
 const TOOLS = [
   {
@@ -26,13 +27,14 @@ const TOOLS = [
 ];
 
 export default function Dashboard() {
+  const { t } = useI18n();
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-6 py-16 text-stone-100">
       <div className="mb-14 text-center">
         <h1 className="text-4xl font-semibold tracking-tight text-white">
-          Welcome to ZenID
+          {t("Welcome to ZenID")}
         </h1>
-        <p className="mt-3 text-stone-400">Pick a tool to get started.</p>
+        <p className="mt-3 text-stone-400">{t("Pick a tool to get started.")}</p>
       </div>
 
       <div className="grid w-full max-w-5xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -47,18 +49,18 @@ export default function Dashboard() {
                 <Icon size={20} />
               </div>
               <p className="mt-5 text-xs font-medium uppercase tracking-wider text-stone-500 group-hover:text-stone-400">
-                {subtitle}
+                {t(subtitle)}
               </p>
               <h2 className="mt-1 text-xl font-medium tracking-tight text-stone-100 group-hover:text-white">
-                {name}
+                {t(name)}
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-stone-400">
-                {description}
+                {t(description)}
               </p>
             </div>
 
             <div className="mt-8 flex items-center gap-1.5 text-sm font-medium text-amber-500 transition-all group-hover:translate-x-1">
-              Open <ArrowRight size={15} />
+              {t("Open")} <ArrowRight size={15} />
             </div>
           </Link>
         ))}

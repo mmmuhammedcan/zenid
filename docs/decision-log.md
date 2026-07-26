@@ -310,3 +310,22 @@ replacement so historical context remains explainable.
 - Consequence: The responsive fit is isolated from normal desktop viewports and
   is covered by both mobile and desktop regression assertions. More extensive
   touch-first authoring remains a separately scoped enhancement.
+
+## D-021 — Localization uses lazy document overlays on one shared profile
+
+- Date: 2026-07-26
+- Status: Accepted
+- Decision owner: Creator
+- Context: A Turkish/English product must preserve ZenID's “enter information
+  once” promise without forcing every user to fill both languages or pretending
+  that application language selection translates professional claims.
+- Decision: Keep language-neutral facts in the canonical profile. Each résumé
+  and the portfolio select their own output language and may store
+  language-dependent text overrides keyed by stable profile item identifiers.
+  Show those overrides only when the user chooses to customize that output.
+  ZenID localizes its own interface, labels, dates, and generated chrome but
+  never automatically translates or rejects user-authored text.
+- Consequence: A one-language workflow stays simple. Users who need Turkish and
+  English reuse names, contacts, dates, links, companies, schools, and other
+  shared facts while editing only the narrative fields that actually differ.
+  Existing English projects remain valid.

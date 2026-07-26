@@ -4,6 +4,7 @@ import {
   materializeResumeData,
   normalizeProject,
 } from "../resume/projectSchema.js";
+import { getPortfolioCopy, normalizeLocale } from "../localization.js";
 
 export const PORTFOLIO_ZIP_MIME = "application/zip";
 export const MAX_PORTFOLIO_ZIP_BYTES = 25 * 1024 * 1024;
@@ -87,13 +88,14 @@ function publishedItems(items, hiddenIds, nameFields) {
   );
 }
 
-function publicContacts(project) {
+function publicContacts(project, locale = "en") {
   const { profile, portfolio } = project;
+  const isTurkish = normalizeLocale(locale) === "tr";
   if (!portfolio.visibleSections.contact) return [];
   const info = profile.personalInfo;
   return [
-    portfolio.contactPrivacy.email && text(info.email) && { label: "Email", value: info.email, href: `mailto:${info.email}` },
-    portfolio.contactPrivacy.phone && text(info.phone) && { label: "Phone", value: info.phone, href: `tel:${info.phone}` },
+    portfolio.contactPrivacy.email && text(info.email) && { label: isTurkish ? "E-posta" : "Email", value: info.email, href: `mailto:${info.email}` },
+    portfolio.contactPrivacy.phone && text(info.phone) && { label: isTurkish ? "Telefon" : "Phone", value: info.phone, href: `tel:${info.phone}` },
     portfolio.contactPrivacy.linkedin && text(info.linkedin) && { label: "LinkedIn", value: info.linkedin, href: safeExternalUrl(info.linkedin) },
     portfolio.contactPrivacy.github && text(info.github) && { label: "GitHub", value: info.github, href: safeExternalUrl(info.github) },
   ].filter((entry) => entry && entry.href);
@@ -316,7 +318,9 @@ function renderPortfolioHtml(project, paths) {
   const experiences = publishedItems(profile.experience, portfolio.hiddenItems.experience, ["company", "role"]);
   const projects = publishedItems(profile.projects, portfolio.hiddenItems.projects, ["name"]);
   const certifications = publishedItems(profile.certifications, portfolio.hiddenItems.certifications, ["title"]);
-  const contacts = publicContacts(project);
+  const language = normalizeLocale(portfolio.language);
+  const copy = getPortfolioCopy(language);
+  const contacts = publicContacts(project, language);
   const sectionOrder = normalizedSectionOrder(portfolio);
   const accent = /^#[0-9a-f]{6}$/i.test(portfolio.accentColor) ? portfolio.accentColor : "#d97706";
   const light = portfolio.theme === "light";
@@ -328,19 +332,19 @@ function renderPortfolioHtml(project, paths) {
 
   const renderAbout = () => (visible.about || visible.skills) ? `<section id="about">
     <div class="container">
-      ${visible.about ? `${sectionHeading("Profile", "About me")}<div class="prose lead">${paragraphs(about)}</div>` : ""}
-      ${visible.skills ? `<div class="skills-block">${sectionHeading("Capabilities", "Key skills")}<div class="tags">${(skills.length ? skills : ["Add your skills"]).map((skill) => `<span>${escapeHtml(skill)}</span>`).join("")}</div></div>` : ""}
+      ${visible.about ? `${sectionHeading(copy.headings.profileEyebrow, copy.headings.about)}<div class="prose lead">${paragraphs(about)}</div>` : ""}
+      ${visible.skills ? `<div class="skills-block">${sectionHeading(copy.headings.skillsEyebrow, copy.headings.skills)}<div class="tags">${(skills.length ? skills : [language === "tr" ? "Yeteneklerinizi ekleyin" : "Add your skills"]).map((skill) => `<span>${escapeHtml(skill)}</span>`).join("")}</div></div>` : ""}
     </div>
   </section>` : "";
 
   const renderExperience = () => visible.experience ? `<section id="experience"><div class="container">
-    ${sectionHeading("Journey", "Experience", "Roles, responsibilities, and the work that shaped my practice.")}
-    <div class="stack">${(experiences.length ? experiences : [{ id: "empty", role: "Experience coming soon" }]).map((item) => `<article class="card experience-card"><div><h3>${escapeHtml(item.role || "Role")}</h3><p class="muted">${escapeHtml(item.company)}</p><small>${escapeHtml([item.startDate, item.isCurrentlyWorking ? "Present" : item.endDate].filter(Boolean).join(" — "))}</small></div><div class="prose">${paragraphs(item.description)}${text(item.tools) ? `<p class="accent-text">${escapeHtml(item.tools)}</p>` : ""}</div></article>`).join("")}</div>
+    ${sectionHeading(copy.headings.experienceEyebrow, copy.headings.experience, copy.headings.experienceCopy)}
+    <div class="stack">${(experiences.length ? experiences : [{ id: "empty", role: copy.empty.experience }]).map((item) => `<article class="card experience-card"><div><h3>${escapeHtml(item.role || copy.role)}</h3><p class="muted">${escapeHtml(item.company)}</p><small>${escapeHtml([item.startDate, item.isCurrentlyWorking ? copy.present : item.endDate].filter(Boolean).join(" — "))}</small></div><div class="prose">${paragraphs(item.description)}${text(item.tools) ? `<p class="accent-text">${escapeHtml(item.tools)}</p>` : ""}</div></article>`).join("")}</div>
   </div></section>` : "";
 
   const renderProjects = () => visible.projects ? `<section id="projects"><div class="container">
-    ${sectionHeading("Selected work", "Projects", "Case studies, implementation details, and project links.")}
-    <div class="project-grid">${(projects.length ? projects : [{ id: "empty", name: "Projects coming soon" }]).map((item, index) => {
+    ${sectionHeading(copy.headings.projectsEyebrow, copy.headings.projects, copy.headings.projectsCopy)}
+    <div class="project-grid">${(projects.length ? projects : [{ id: "empty", name: copy.empty.projects }]).map((item, index) => {
       const study = caseStudy(item.id);
       const images = paths.projects[item.id] || [];
       const links = [
@@ -350,18 +354,18 @@ function renderPortfolioHtml(project, paths) {
         ["Video", safeExternalUrl(study.videoUrl)],
         ["LinkedIn", safeExternalUrl(study.linkedinUrl)],
       ].filter(([, href]) => href);
-      return `<article class="card project-card">${images[0] ? `<img src="${escapeHtml(images[0].path)}" alt="${escapeHtml(item.name)} preview">` : ""}<div class="card-body"><small>0${index + 1}${text(study.projectType || item.domain) ? ` · ${escapeHtml(study.projectType || item.domain)}` : ""}</small><h3>${escapeHtml(item.name)}</h3><div class="prose">${paragraphs(study.shortDescription || item.description)}</div>${text(item.techStack) ? `<p class="accent-text">${escapeHtml(item.techStack)}</p>` : ""}${links.length ? `<div class="links">${links.map(([label, href]) => `<a href="${escapeHtml(href)}" target="_blank" rel="noreferrer">${escapeHtml(label)} ↗</a>`).join("")}</div>` : ""}${text(study.fullDescription) || images.length > 1 ? `<details><summary>View case study</summary><div class="case-study">${paragraphs(study.fullDescription)}${images.length > 1 ? `<div class="gallery">${images.slice(1).map(({ id, path }, imageIndex) => `<figure><img src="${escapeHtml(path)}" alt="${escapeHtml(item.name)} screenshot ${imageIndex + 2}"><figcaption>${escapeHtml(study.screenshotCaptions?.[id] || "")}</figcaption></figure>`).join("")}</div>` : ""}</div></details>` : ""}</div></article>`;
+      return `<article class="card project-card">${images[0] ? `<img src="${escapeHtml(images[0].path)}" alt="${escapeHtml(item.name)} preview">` : ""}<div class="card-body"><small>0${index + 1}${text(study.projectType || item.domain) ? ` · ${escapeHtml(study.projectType || item.domain)}` : ""}</small><h3>${escapeHtml(item.name)}</h3><div class="prose">${paragraphs(study.shortDescription || item.description)}</div>${text(item.techStack) ? `<p class="accent-text">${escapeHtml(item.techStack)}</p>` : ""}${links.length ? `<div class="links">${links.map(([label, href]) => `<a href="${escapeHtml(href)}" target="_blank" rel="noreferrer">${escapeHtml(label)} ↗</a>`).join("")}</div>` : ""}${text(study.fullDescription) || images.length > 1 ? `<details><summary>${escapeHtml(copy.viewCaseStudy)}</summary><div class="case-study">${paragraphs(study.fullDescription)}${images.length > 1 ? `<div class="gallery">${images.slice(1).map(({ id, path }, imageIndex) => `<figure><img src="${escapeHtml(path)}" alt="${escapeHtml(item.name)} screenshot ${imageIndex + 2}"><figcaption>${escapeHtml(study.screenshotCaptions?.[id] || "")}</figcaption></figure>`).join("")}</div>` : ""}</div></details>` : ""}</div></article>`;
     }).join("")}</div>
   </div></section>` : "";
 
   const renderCertifications = () => visible.certifications ? `<section id="certifications"><div class="container">
-    ${sectionHeading("Learning", "Certificates & awards", "Credentials with context and direct verification.")}
-    <div class="certificate-grid">${(certifications.length ? certifications : [{ id: "empty", title: "Credentials coming soon" }]).map((item) => `<article class="card certificate-card">${paths.certificates[item.id] ? `<img src="${escapeHtml(paths.certificates[item.id])}" alt="${escapeHtml(item.title)} certificate">` : ""}<h3>${escapeHtml(item.title)}</h3><p class="muted">${escapeHtml([item.issuer, item.date].filter(Boolean).join(" · "))}</p>${text(item.credentialId) ? `<small>Credential: ${escapeHtml(item.credentialId)}</small>` : ""}<div class="prose">${paragraphs(item.description)}</div>${safeExternalUrl(item.link) ? `<a href="${escapeHtml(safeExternalUrl(item.link))}" target="_blank" rel="noreferrer">Verify credential ↗</a>` : ""}</article>`).join("")}</div>
+    ${sectionHeading(copy.headings.certificationsEyebrow, copy.headings.certifications, copy.headings.certificationsCopy)}
+    <div class="certificate-grid">${(certifications.length ? certifications : [{ id: "empty", title: copy.empty.certificates }]).map((item) => `<article class="card certificate-card">${paths.certificates[item.id] ? `<img src="${escapeHtml(paths.certificates[item.id])}" alt="${escapeHtml(item.title)} certificate">` : ""}<h3>${escapeHtml(item.title)}</h3><p class="muted">${escapeHtml([item.issuer, item.date].filter(Boolean).join(" · "))}</p>${text(item.credentialId) ? `<small>${escapeHtml(copy.credential)}: ${escapeHtml(item.credentialId)}</small>` : ""}<div class="prose">${paragraphs(item.description)}</div>${safeExternalUrl(item.link) ? `<a href="${escapeHtml(safeExternalUrl(item.link))}" target="_blank" rel="noreferrer">${escapeHtml(copy.verifyCredential)} ↗</a>` : ""}</article>`).join("")}</div>
   </div></section>` : "";
 
   const renderContact = () => visible.contact ? `<section id="contact"><div class="container">
-    ${sectionHeading("Contact", "Let’s connect", portfolio.contactMessage)}
-    <div class="contact-grid">${contacts.length ? contacts.map(({ label, value, href }) => `<a class="card contact-card" href="${escapeHtml(href)}"${href.startsWith("http") ? ' target="_blank" rel="noreferrer"' : ""}><small>${escapeHtml(label)}</small><strong>${escapeHtml(value)}</strong></a>`).join("") : `<p class="muted">No public contact methods have been selected.</p>`}</div>
+    ${sectionHeading(copy.headings.contactEyebrow, copy.headings.contact, portfolio.contactMessage)}
+    <div class="contact-grid">${contacts.length ? contacts.map(({ label, value, href }) => `<a class="card contact-card" href="${escapeHtml(href)}"${href.startsWith("http") ? ' target="_blank" rel="noreferrer"' : ""}><small>${escapeHtml(label)}</small><strong>${escapeHtml(value)}</strong></a>`).join("") : `<p class="muted">${escapeHtml(copy.empty.contacts)}</p>`}</div>
   </div></section>` : "";
 
   const renderers = { about: renderAbout, experience: renderExperience, projects: renderProjects, certifications: renderCertifications, contact: renderContact };
@@ -369,18 +373,18 @@ function renderPortfolioHtml(project, paths) {
   const nav = sectionOrder.filter((id) => {
     if (id === "about") return visible.about || visible.skills;
     return visible[id];
-  }).map((id) => `<a href="#${id}">${escapeHtml(SECTION_LABELS[id].replace(" & skills", ""))}</a>`).join("");
+  }).map((id) => `<a href="#${id}">${escapeHtml(copy.navigation[id])}</a>`).join("");
 
   return `<!doctype html>
-<html lang="${escapeHtml(portfolio.language || "en")}">
+<html lang="${escapeHtml(language)}">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="${escapeHtml(`${info.fullName || "Professional"} portfolio`)}"><title>${escapeHtml(info.fullName || "Portfolio")}</title>
 <style>
 :root{--accent:${accent};--bg:${light ? "#fafaf9" : "#0d0c0b"};--surface:${light ? "#fff" : "#171513"};--text:${light ? "#1c1917" : "#f5f5f4"};--muted:${light ? "#57534e" : "#a8a29e"};--border:${light ? "#e7e5e4" : "rgba(255,255,255,.1)"}}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.65 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:inherit}.container{width:min(1120px,calc(100% - 40px));margin:auto}.site-header{position:sticky;top:0;z-index:10;border-bottom:1px solid var(--border);background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(18px)}.header-inner{display:flex;align-items:center;justify-content:space-between;min-height:68px}.brand{display:flex;align-items:center;gap:12px;text-decoration:none;font-weight:700}.avatar,.portrait-placeholder{display:grid;place-items:center;background:linear-gradient(145deg,var(--accent),#292524);color:#fff;font-weight:800}.avatar{width:38px;height:38px;border-radius:12px}.nav{display:flex;gap:24px}.nav a{text-decoration:none;color:var(--muted);font-size:13px}.hero{position:relative;overflow:hidden;padding:100px 0}.hero:before{content:"";position:absolute;width:420px;height:420px;right:-130px;top:-190px;border-radius:50%;background:var(--accent);opacity:.16;filter:blur(70px)}.hero-grid{position:relative;display:grid;grid-template-columns:1.25fr .75fr;gap:70px;align-items:center}.pill,.tag{display:inline-flex;border:1px solid var(--border);background:var(--surface);border-radius:999px}.pill{padding:6px 12px;font-size:12px}.hero h1{font-size:clamp(48px,8vw,78px);line-height:.98;letter-spacing:-.055em;margin:18px 0}.title,.accent-text{color:var(--accent);font-weight:650}.title{font-size:22px}.hero-copy{max-width:680px;color:var(--muted);font-size:16px}.actions,.links,.tags{display:flex;flex-wrap:wrap;gap:10px}.actions{margin-top:28px}.button,.links a{border:1px solid var(--border);border-radius:12px;padding:10px 14px;text-decoration:none;font-weight:650;font-size:13px}.button.primary{background:var(--accent);border-color:var(--accent);color:#fff}.portrait{aspect-ratio:1;border:1px solid var(--border);padding:18px;border-radius:40px;background:var(--surface);box-shadow:0 24px 80px rgba(0,0,0,.2)}.portrait img,.portrait-placeholder{width:100%;height:100%;border-radius:30px;object-fit:cover}.portrait-placeholder{font-size:72px}section{border-top:1px solid var(--border);padding:84px 0}.section-heading{max-width:690px;margin-bottom:34px}.section-heading span{color:var(--accent);font-size:12px;font-weight:750;text-transform:uppercase;letter-spacing:.2em}.section-heading h2{font-size:clamp(32px,5vw,45px);line-height:1.1;letter-spacing:-.035em;margin:8px 0}.section-heading p,.muted{color:var(--muted)}.lead{font-size:19px;max-width:880px}.skills-block{margin-top:42px}.tag,.tags span{padding:8px 13px;border:1px solid var(--border);border-radius:12px;background:var(--surface);font-size:13px}.stack,.project-grid,.certificate-grid,.contact-grid{display:grid;gap:16px}.project-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.certificate-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.contact-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.card{border:1px solid var(--border);border-radius:22px;background:var(--surface);overflow:hidden}.experience-card{display:grid;grid-template-columns:.35fr .65fr;gap:28px;padding:24px}.card h3{margin:0 0 8px;font-size:19px}.card small{color:var(--muted)}.card-body,.certificate-card{padding:24px}.project-card>img{width:100%;aspect-ratio:16/9;object-fit:cover}.project-card h3{margin-top:26px}.prose p{margin:8px 0}.links{margin-top:20px}.links a,.certificate-card>a{color:var(--accent)}details{margin-top:20px;border-top:1px solid var(--border);padding-top:16px}summary{cursor:pointer;font-weight:700}.case-study{padding-top:14px}.gallery{display:grid;gap:12px;margin-top:18px}.gallery img,.certificate-card img{display:block;width:100%;border-radius:12px}.gallery figure{margin:0}.gallery figcaption{color:var(--muted);font-size:12px}.certificate-card{display:flex;flex-direction:column}.certificate-card .prose{flex:1}.contact-card{display:flex;flex-direction:column;padding:22px;text-decoration:none}.contact-card strong{overflow-wrap:anywhere}.footer{border-top:1px solid var(--border);padding:30px 0;color:var(--muted);font-size:12px}.footer-inner{display:flex;justify-content:space-between;gap:16px}
 @media(max-width:760px){.nav{display:none}.hero{padding:68px 0}.hero-grid{grid-template-columns:1fr;gap:44px}.portrait{max-width:340px}.project-grid,.certificate-grid,.contact-grid,.experience-card{grid-template-columns:1fr}section{padding:64px 0}}
 </style></head>
 <body><header class="site-header"><div class="container header-inner"><a class="brand" href="#home"><span class="avatar">${escapeHtml(initials)}</span>${escapeHtml(info.fullName || "Portfolio")}</a><nav class="nav" aria-label="Portfolio sections">${nav}</nav></div></header>
-<main id="home"><div class="hero"><div class="container hero-grid"><div><span class="pill">${escapeHtml(portfolio.availability || "Portfolio")}</span><h1>${escapeHtml(info.fullName || "Your name")}</h1><p class="title">${escapeHtml(info.title || "Professional portfolio")}</p>${visible.about ? `<div class="hero-copy">${paragraphs(about)}</div>` : ""}<div class="actions">${paths.resume ? `<a class="button primary" href="${paths.resume}" download>Download résumé</a>` : ""}${introVideo ? `<a class="button" href="${escapeHtml(introVideo)}" target="_blank" rel="noreferrer">Watch introduction ↗</a>` : ""}${visible.contact ? '<a class="button" href="#contact">Contact me</a>' : ""}${visible.about && location ? `<span class="button">${escapeHtml(location)}</span>` : ""}</div></div><div class="portrait">${paths.profile ? `<img src="${escapeHtml(paths.profile)}" alt="${escapeHtml(info.fullName || "Portfolio profile")}">` : `<div class="portrait-placeholder">${escapeHtml(initials)}</div>`}</div></div></div>${sections}</main>
-<footer class="footer"><div class="container footer-inner"><span>© ${new Date().getFullYear()} ${escapeHtml(info.fullName || "Portfolio owner")}</span><span>Built locally with ZenID</span></div></footer></body></html>`;
+<main id="home"><div class="hero"><div class="container hero-grid"><div><span class="pill">${escapeHtml(portfolio.availability || "Portfolio")}</span><h1>${escapeHtml(info.fullName || copy.yourName)}</h1><p class="title">${escapeHtml(info.title || copy.professionalPortfolio)}</p>${visible.about ? `<div class="hero-copy">${paragraphs(about)}</div>` : ""}<div class="actions">${paths.resume ? `<a class="button primary" href="${paths.resume}" download>${escapeHtml(copy.downloadResume)}</a>` : ""}${introVideo ? `<a class="button" href="${escapeHtml(introVideo)}" target="_blank" rel="noreferrer">${escapeHtml(copy.watchIntroduction)} ↗</a>` : ""}${visible.contact ? `<a class="button" href="#contact">${escapeHtml(copy.contactMe)}</a>` : ""}${visible.about && location ? `<span class="button">${escapeHtml(location)}</span>` : ""}</div></div><div class="portrait">${paths.profile ? `<img src="${escapeHtml(paths.profile)}" alt="${escapeHtml(info.fullName || copy.profileAlt)}">` : `<div class="portrait-placeholder">${escapeHtml(initials)}</div>`}</div></div></div>${sections}</main>
+<footer class="footer"><div class="container footer-inner"><span>© ${new Date().getFullYear()} ${escapeHtml(info.fullName || copy.portfolioOwner)}</span><span>${escapeHtml(copy.builtLocally)}</span></div></footer></body></html>`;
 }
 
 export function serializePortfolioSite(input, options = {}) {

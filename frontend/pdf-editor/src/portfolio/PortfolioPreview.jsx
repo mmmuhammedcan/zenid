@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { contrastTextColor } from "./accessibleColor.js";
 import { DEFAULT_PORTFOLIO_SECTION_ORDER } from "../resume/projectSchema";
+import { getPortfolioCopy, normalizeLocale } from "../localization.js";
 
 function nonEmpty(value) {
   return String(value || "").trim();
@@ -179,6 +180,8 @@ export default function PortfolioPreview({ project, assetUrls = {}, resumeUrl })
   const [activeProject, setActiveProject] = useState(null);
   const [showVideo, setShowVideo] = useState(false);
   const { profile, portfolio } = project;
+  const language = normalizeLocale(portfolio.language);
+  const copy = getPortfolioCopy(language);
   const info = profile.personalInfo;
   const accent = portfolio.accentColor || "#d97706";
   const accentText = contrastTextColor(accent);
@@ -197,15 +200,15 @@ export default function PortfolioPreview({ project, assetUrls = {}, resumeUrl })
   const location = [info.city, info.state].map(nonEmpty).filter(Boolean).join(", ");
   const videoEmbed = safeVideoEmbed(portfolio.introVideoUrl);
   const contacts = [
-    privacy.email && nonEmpty(info.email) && { label: "Email", value: info.email, href: `mailto:${info.email}`, Icon: Mail },
-    privacy.phone && nonEmpty(info.phone) && { label: "Phone", value: info.phone, href: `tel:${info.phone}`, Icon: Phone },
+    privacy.email && nonEmpty(info.email) && { label: language === "tr" ? "E-posta" : "Email", value: info.email, href: `mailto:${info.email}`, Icon: Mail },
+    privacy.phone && nonEmpty(info.phone) && { label: language === "tr" ? "Telefon" : "Phone", value: info.phone, href: `tel:${info.phone}`, Icon: Phone },
     privacy.linkedin && nonEmpty(info.linkedin) && { label: "LinkedIn", value: info.linkedin, href: externalHref(info.linkedin), Icon: ContactRound },
     privacy.github && nonEmpty(info.github) && { label: "GitHub", value: info.github, href: externalHref(info.github), Icon: Code2 },
   ].filter(Boolean);
   const profileImageUrl = assetUrls[portfolio.media?.profileImageId];
   const resumeName = portfolio.resume.source === "uploaded" && nonEmpty(portfolio.resume.uploadedFileName)
     ? portfolio.resume.uploadedFileName
-    : `${nonEmpty(info.fullName).replace(/\s+/g, "_") || "My"}_Resume.pdf`;
+    : `${nonEmpty(info.fullName).replace(/\s+/g, "_") || (language === "tr" ? "CV" : "My")}_${language === "tr" ? "CV" : "Resume"}.pdf`;
   const orderedSectionIds = [
     ...(portfolio.sectionOrder || []).filter(
       (id, index, order) => DEFAULT_PORTFOLIO_SECTION_ORDER.includes(id) && order.indexOf(id) === index
@@ -213,11 +216,11 @@ export default function PortfolioPreview({ project, assetUrls = {}, resumeUrl })
     ...DEFAULT_PORTFOLIO_SECTION_ORDER.filter((id) => !(portfolio.sectionOrder || []).includes(id)),
   ];
   const navigationSections = {
-    about: { visible: visible.about || visible.skills, href: "#portfolio-about", label: visible.about ? "About" : "Skills" },
-    experience: { visible: visible.experience, href: "#portfolio-experience", label: "Experience" },
-    projects: { visible: visible.projects, href: "#portfolio-projects", label: "Projects" },
-    certifications: { visible: visible.certifications, href: "#portfolio-certifications", label: "Certificates" },
-    contact: { visible: visible.contact, href: "#portfolio-contact", label: "Contact" },
+    about: { visible: visible.about || visible.skills, href: "#portfolio-about", label: visible.about ? copy.navigation.about : copy.headings.skills },
+    experience: { visible: visible.experience, href: "#portfolio-experience", label: copy.navigation.experience },
+    projects: { visible: visible.projects, href: "#portfolio-projects", label: copy.navigation.projects },
+    certifications: { visible: visible.certifications, href: "#portfolio-certifications", label: copy.navigation.certifications },
+    contact: { visible: visible.contact, href: "#portfolio-contact", label: copy.navigation.contact },
   };
 
   const projectImages = (item) => {
@@ -249,7 +252,7 @@ export default function PortfolioPreview({ project, assetUrls = {}, resumeUrl })
   };
 
   return (
-    <article className={`min-h-full overflow-hidden rounded-2xl ${surface}`} style={{ colorScheme: isLight ? "light" : "dark" }}>
+    <article lang={language} className={`min-h-full overflow-hidden rounded-2xl ${surface}`} style={{ colorScheme: isLight ? "light" : "dark" }}>
       <header className={`sticky top-0 z-10 border-b backdrop-blur-xl ${isLight ? "border-stone-200 bg-stone-50/85" : "border-white/10 bg-[#0d0c0b]/85"}`}>
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
           <a href="#portfolio-home" className="flex items-center gap-3 text-sm font-semibold">
@@ -270,14 +273,14 @@ export default function PortfolioPreview({ project, assetUrls = {}, resumeUrl })
           <div className="relative mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1.25fr_0.75fr] lg:items-center">
             <div>
               <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs ${card}`}><span className="h-2 w-2 rounded-full" style={{ backgroundColor: accent }} />{nonEmpty(portfolio.availability) || "Portfolio"}</div>
-              <p className={`mt-7 text-sm font-medium ${muted}`}>Hello, I’m</p>
+              <p className={`mt-7 text-sm font-medium ${muted}`}>{copy.greeting}</p>
               <h1 className="mt-2 max-w-3xl text-5xl font-semibold leading-[0.98] tracking-[-0.05em] sm:text-7xl">{nonEmpty(info.fullName) || "Your name"}</h1>
               <p className="mt-5 text-xl font-medium sm:text-2xl" style={{ color: accent }}>{nonEmpty(info.title) || "Your professional title"}</p>
               {visible.about && <p className={`mt-6 max-w-2xl text-base leading-7 ${muted}`}>{about}</p>}
               <div className="mt-8 flex flex-wrap items-center gap-3">
-                {portfolio.resume.enabled && resumeUrl && <a href={resumeUrl} download={resumeName} className="flex h-11 items-center gap-2 rounded-xl px-4 text-xs font-semibold" style={{ backgroundColor: accent, color: accentText }}><Download size={15} /> Download résumé</a>}
-                {videoEmbed && <button type="button" onClick={() => setShowVideo(true)} className={`flex h-11 items-center gap-2 rounded-xl border px-4 text-xs font-semibold ${card}`}><Play size={15} /> Watch introduction</button>}
-                {visible.contact && <a href="#portfolio-contact" className={`flex h-11 items-center gap-2 rounded-xl border px-4 text-xs font-semibold ${card}`}><Mail size={15} /> Contact me</a>}
+                {portfolio.resume.enabled && resumeUrl && <a href={resumeUrl} download={resumeName} className="flex h-11 items-center gap-2 rounded-xl px-4 text-xs font-semibold" style={{ backgroundColor: accent, color: accentText }}><Download size={15} /> {copy.downloadResume}</a>}
+                {videoEmbed && <button type="button" onClick={() => setShowVideo(true)} className={`flex h-11 items-center gap-2 rounded-xl border px-4 text-xs font-semibold ${card}`}><Play size={15} /> {copy.watchIntroduction}</button>}
+                {visible.contact && <a href="#portfolio-contact" className={`flex h-11 items-center gap-2 rounded-xl border px-4 text-xs font-semibold ${card}`}><Mail size={15} /> {copy.contactMe}</a>}
                 {visible.about && location && <span className={`flex items-center gap-2 px-2 text-xs ${muted}`}><MapPin size={14} /> {location}</span>}
               </div>
             </div>
@@ -286,7 +289,7 @@ export default function PortfolioPreview({ project, assetUrls = {}, resumeUrl })
               <div className={`aspect-square rounded-[2.5rem] border p-5 shadow-2xl ${card}`}>
                 {profileImageUrl ? <img src={profileImageUrl} alt={nonEmpty(info.fullName) || "Portfolio profile"} className="h-full w-full rounded-[2rem] object-cover" /> : <div className="flex h-full items-center justify-center rounded-[2rem] text-7xl font-semibold text-white" style={{ background: `linear-gradient(145deg, ${accent}, #292524)` }}>{initials(info.fullName)}</div>}
               </div>
-              <div className={`absolute -bottom-5 -left-5 flex items-center gap-3 rounded-2xl border px-4 py-3 shadow-xl ${card}`}><Sparkles size={18} style={{ color: accent }} /><div><strong className="block text-lg">{projects.length}</strong><span className={`text-[11px] ${muted}`}>Published projects</span></div></div>
+              <div className={`absolute -bottom-5 -left-5 flex items-center gap-3 rounded-2xl border px-4 py-3 shadow-xl ${card}`}><Sparkles size={18} style={{ color: accent }} /><div><strong className="block text-lg">{projects.length}</strong><span className={`text-[11px] ${muted}`}>{copy.publishedProjects}</span></div></div>
             </div>
           </div>
         </section>
@@ -296,22 +299,22 @@ export default function PortfolioPreview({ project, assetUrls = {}, resumeUrl })
         {sectionId === "about" && (visible.about || visible.skills) && (
           <section id="portfolio-about" className={`border-t px-5 py-16 sm:px-8 sm:py-20 ${isLight ? "border-stone-200" : "border-white/10"}`}>
             <div className="mx-auto max-w-6xl">
-              {visible.about && <><SectionHeading eyebrow="Profile" title="About me" accent={accent} /><p className="max-w-4xl text-lg leading-8 opacity-80">{about}</p></>}
-              {visible.skills && <div className={visible.about ? "mt-10" : ""}><SectionHeading eyebrow="Capabilities" title="Key skills" accent={accent} /><div className="flex flex-wrap gap-2">{(skills.length ? skills : ["Add", "your", "skills"]).map((skill) => <span key={skill} className={`rounded-xl border px-3 py-2 text-xs font-medium ${card}`}>{skill}</span>)}</div></div>}
+              {visible.about && <><SectionHeading eyebrow={copy.headings.profileEyebrow} title={copy.headings.about} accent={accent} /><p className="max-w-4xl text-lg leading-8 opacity-80">{about}</p></>}
+              {visible.skills && <div className={visible.about ? "mt-10" : ""}><SectionHeading eyebrow={copy.headings.skillsEyebrow} title={copy.headings.skills} accent={accent} /><div className="flex flex-wrap gap-2">{(skills.length ? skills : [language === "tr" ? "Yeteneklerinizi ekleyin" : "Add your skills"]).map((skill) => <span key={skill} className={`rounded-xl border px-3 py-2 text-xs font-medium ${card}`}>{skill}</span>)}</div></div>}
             </div>
           </section>
         )}
 
         {sectionId === "experience" && visible.experience && (
           <section id="portfolio-experience" className={`border-t px-5 py-16 sm:px-8 sm:py-20 ${isLight ? "border-stone-200" : "border-white/10"}`}>
-            <div className="mx-auto max-w-6xl"><SectionHeading eyebrow="Journey" title="Experience" copy="Roles, responsibilities, and the work that shaped my practice." accent={accent} /><div className="grid gap-4">{(experiences.length ? experiences : [{ id: "empty", role: "Add experience in the editor", company: "Your professional journey will appear here." }]).map((item) => <div key={item.id} className={`grid gap-3 rounded-2xl border p-5 sm:grid-cols-[0.35fr_0.65fr] sm:p-6 ${card}`}><div><p className="font-semibold">{item.role || "Role"}</p><p className={`mt-1 text-sm ${muted}`}>{item.company}</p>{(item.startDate || item.endDate) && <p className={`mt-3 text-xs ${muted}`}>{item.startDate} — {item.isCurrentlyWorking ? "Present" : item.endDate}</p>}</div><div className={`space-y-2 text-sm leading-6 ${muted}`}>{descriptionLines(item.description, 6).map((line) => <p key={line}>• {line}</p>)}{item.tools && <p className="text-xs font-medium" style={{ color: accent }}>{item.tools}</p>}</div></div>)}</div></div>
+            <div className="mx-auto max-w-6xl"><SectionHeading eyebrow={copy.headings.experienceEyebrow} title={copy.headings.experience} copy={copy.headings.experienceCopy} accent={accent} /><div className="grid gap-4">{(experiences.length ? experiences : [{ id: "empty", role: copy.empty.experience, company: "" }]).map((item) => <div key={item.id} className={`grid gap-3 rounded-2xl border p-5 sm:grid-cols-[0.35fr_0.65fr] sm:p-6 ${card}`}><div><p className="font-semibold">{item.role || copy.role}</p><p className={`mt-1 text-sm ${muted}`}>{item.company}</p>{(item.startDate || item.endDate) && <p className={`mt-3 text-xs ${muted}`}>{item.startDate} — {item.isCurrentlyWorking ? copy.present : item.endDate}</p>}</div><div className={`space-y-2 text-sm leading-6 ${muted}`}>{descriptionLines(item.description, 6).map((line) => <p key={line}>• {line}</p>)}{item.tools && <p className="text-xs font-medium" style={{ color: accent }}>{item.tools}</p>}</div></div>)}</div></div>
           </section>
         )}
 
         {sectionId === "projects" && visible.projects && (
           <section id="portfolio-projects" className={`border-t px-5 py-16 sm:px-8 sm:py-20 ${isLight ? "border-stone-200" : "border-white/10"}`}>
             <div className="mx-auto max-w-6xl">
-              <SectionHeading eyebrow="Selected work" title="Projects" copy="Open a project to explore its problem, implementation, source code, live demo, and screenshots." accent={accent} />
+              <SectionHeading eyebrow={copy.headings.projectsEyebrow} title={copy.headings.projects} copy={copy.headings.projectsCopy} accent={accent} />
               <div className="grid gap-4 md:grid-cols-2">
                 {(projects.length ? projects : [{ id: "empty", name: "Your first project", description: "Add a project to turn this placeholder into a real case study." }]).map((item, index) => {
                   const images = projectImages(item);
@@ -326,13 +329,13 @@ export default function PortfolioPreview({ project, assetUrls = {}, resumeUrl })
 
         {sectionId === "certifications" && visible.certifications && (
           <section id="portfolio-certifications" className={`border-t px-5 py-16 sm:px-8 sm:py-20 ${isLight ? "border-stone-200" : "border-white/10"}`}>
-            <div className="mx-auto max-w-6xl"><SectionHeading eyebrow="Learning" title="Certificates & awards" copy="Credentials with context, evidence, and direct verification." accent={accent} /><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{(certifications.length ? certifications : [{ id: "empty", title: "Your certificates", issuer: "Add credentials in the editor." }]).map((item) => <article key={item.id} className={`flex flex-col rounded-2xl border p-5 ${card}`}>{assetUrls[portfolio.media?.certificateImageIds?.[item.id]] ? <img src={assetUrls[portfolio.media.certificateImageIds[item.id]]} alt={`${item.title} certificate`} className="aspect-video w-full rounded-xl bg-white object-contain" /> : <Award size={20} style={{ color: accent }} />}<h3 className="mt-6 font-semibold leading-5">{item.title}</h3><p className={`mt-2 text-xs ${muted}`}>{[item.issuer, item.date].filter(Boolean).join(" · ")}</p>{item.credentialId && <p className={`mt-2 text-[11px] ${muted}`}>Credential: {item.credentialId}</p>}{item.description && <p className={`mt-4 flex-1 text-xs leading-5 ${muted}`}>{item.description}</p>}{item.link && <a href={externalHref(item.link)} target="_blank" rel="noreferrer" className="mt-5 flex items-center gap-2 text-xs font-semibold" style={{ color: accent }}><BadgeCheck size={15} /> Verify credential</a>}</article>)}</div></div>
+            <div className="mx-auto max-w-6xl"><SectionHeading eyebrow={copy.headings.certificationsEyebrow} title={copy.headings.certifications} copy={copy.headings.certificationsCopy} accent={accent} /><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{(certifications.length ? certifications : [{ id: "empty", title: copy.empty.certificates, issuer: "" }]).map((item) => <article key={item.id} className={`flex flex-col rounded-2xl border p-5 ${card}`}>{assetUrls[portfolio.media?.certificateImageIds?.[item.id]] ? <img src={assetUrls[portfolio.media.certificateImageIds[item.id]]} alt={`${item.title} certificate`} className="aspect-video w-full rounded-xl bg-white object-contain" /> : <Award size={20} style={{ color: accent }} />}<h3 className="mt-6 font-semibold leading-5">{item.title}</h3><p className={`mt-2 text-xs ${muted}`}>{[item.issuer, item.date].filter(Boolean).join(" · ")}</p>{item.credentialId && <p className={`mt-2 text-[11px] ${muted}`}>{copy.credential}: {item.credentialId}</p>}{item.description && <p className={`mt-4 flex-1 text-xs leading-5 ${muted}`}>{item.description}</p>}{item.link && <a href={externalHref(item.link)} target="_blank" rel="noreferrer" className="mt-5 flex items-center gap-2 text-xs font-semibold" style={{ color: accent }}><BadgeCheck size={15} /> {copy.verifyCredential}</a>}</article>)}</div></div>
           </section>
         )}
 
         {sectionId === "contact" && visible.contact && (
           <section id="portfolio-contact" className={`border-t px-5 py-16 sm:px-8 sm:py-20 ${isLight ? "border-stone-200" : "border-white/10"}`}>
-            <div className="mx-auto max-w-6xl"><SectionHeading eyebrow="Contact" title="Let’s connect" copy={portfolio.contactMessage} accent={accent} /><div className="grid gap-3 sm:grid-cols-2">{contacts.length ? contacts.map(({ label, value, href, Icon }) => <a key={label} href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noreferrer" className={`flex min-w-0 items-start gap-4 rounded-2xl border p-5 ${card}`}><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: `${accent}20`, color: accent }}><Icon size={18} /></span><span className="min-w-0"><span className={`block text-xs ${muted}`}>{label}</span><span className="mt-1 block break-all text-sm font-semibold">{value}</span></span></a>) : <p className={`text-sm ${muted}`}>Enable at least one public contact method in Style & Privacy.</p>}</div></div>
+            <div className="mx-auto max-w-6xl"><SectionHeading eyebrow={copy.headings.contactEyebrow} title={copy.headings.contact} copy={portfolio.contactMessage} accent={accent} /><div className="grid gap-3 sm:grid-cols-2">{contacts.length ? contacts.map(({ label, value, href, Icon }) => <a key={label} href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noreferrer" className={`flex min-w-0 items-start gap-4 rounded-2xl border p-5 ${card}`}><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: `${accent}20`, color: accent }}><Icon size={18} /></span><span className="min-w-0"><span className={`block text-xs ${muted}`}>{label}</span><span className="mt-1 block break-all text-sm font-semibold">{value}</span></span></a>) : <p className={`text-sm ${muted}`}>{copy.empty.contacts}</p>}</div></div>
           </section>
         )}
           </Fragment>

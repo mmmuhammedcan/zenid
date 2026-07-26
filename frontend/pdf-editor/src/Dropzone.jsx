@@ -1,7 +1,9 @@
 import { useRef, useState } from "react";
 import { FileUp } from "lucide-react";
+import { useI18n } from "./I18nContext.jsx";
 
 export default function Dropzone({ onFileSelected }) {
+  const { t } = useI18n();
   const [isDragActive, setIsDragActive] = useState(false);
   const inputRef = useRef(null);
 
@@ -46,8 +48,8 @@ export default function Dropzone({ onFileSelected }) {
     >
       <FileUp size={36} className={isDragActive ? "text-amber-500" : "text-stone-500"} />
       <div>
-        <p className="text-base font-medium text-stone-200">Drag & drop a PDF or image here</p>
-        <p className="mt-1 text-sm text-stone-500">PDF, JPG, or PNG — or click to browse</p>
+        <p className="text-base font-medium text-stone-200">{t("Drag & drop a PDF or image here")}</p>
+        <p className="mt-1 text-sm text-stone-500">{t("PDF, JPG, or PNG — or click to browse")}</p>
       </div>
       <input
         ref={inputRef}

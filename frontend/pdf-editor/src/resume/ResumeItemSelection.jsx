@@ -18,14 +18,15 @@ function includesItem(selectedItems, field, itemId) {
 }
 
 export default function ResumeItemSelection({ resumeData, selectedItems, onChange }) {
+  const { t } = useI18n();
   return (
     <div className="space-y-5">
       <p className="text-xs leading-5 text-stone-500">
-        Choose what appears in this resume version. Your profile and other resume versions stay unchanged.
+        {t("Choose what appears in this resume version. Your profile and other resume versions stay unchanged.")}
       </p>
       {GROUPS.map(({ field, title, label }) => (
         <fieldset key={field} className="space-y-2">
-          <legend className="text-xs font-semibold uppercase tracking-wide text-stone-400">{title}</legend>
+          <legend className="text-xs font-semibold uppercase tracking-wide text-stone-400">{t(title)}</legend>
           {resumeData[field].map((item, index) => {
             const itemLabel = label(item, index);
             return (
@@ -49,3 +50,4 @@ export default function ResumeItemSelection({ resumeData, selectedItems, onChang
     </div>
   );
 }
+import { useI18n } from "../I18nContext.jsx";

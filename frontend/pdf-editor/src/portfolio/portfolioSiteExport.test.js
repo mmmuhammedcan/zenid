@@ -139,6 +139,19 @@ test("static portfolio ZIP contains only explicitly published content and works 
   assert.ok(html.indexOf('id="projects"') < html.indexOf('id="about"'));
 });
 
+test("Turkish portfolio ZIP declares and renders Turkish output chrome", () => {
+  const project = fixture();
+  project.portfolio.language = "tr";
+  const files = unzipSync(serializePortfolioSite(project, { assets }));
+  const html = strFromU8(files["index.html"]);
+
+  assert.match(html, /<html lang="tr">/);
+  assert.match(html, />Projeler</);
+  assert.match(html, /CV’yi indir/);
+  assert.match(html, /İletişime geçelim/);
+  assert.doesNotMatch(html, />Download résumé</);
+});
+
 test("hidden About content is not leaked and published text is HTML escaped", () => {
   const project = fixture();
   project.portfolio.visibleSections.about = false;

@@ -31,14 +31,15 @@ export default function TargetedWording({
   onSet,
   onReset,
 }) {
+  const { t } = useI18n();
   return (
     <div className="space-y-6">
       <p className="text-xs leading-5 text-stone-500">
-        Shared wording remains part of your profile. Targeted wording changes only this resume version and must stay factual.
+        {t("Shared wording remains part of your profile. Targeted wording changes only this resume version and must stay factual.")}
       </p>
       {GROUPS.map(({ field, title, label }) => (
         <section key={field} className="space-y-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-400">{title}</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-stone-400">{t(title)}</h3>
           {resumeData[field].map((item, index) => {
             const itemLabel = label(item, index);
             const customized = hasOverride(contentOverrides, field, item.id);
@@ -51,20 +52,20 @@ export default function TargetedWording({
                   <p className="text-sm font-medium text-stone-300">{itemLabel}</p>
                   {!included && (
                     <span className="rounded-full bg-stone-800 px-2 py-0.5 text-[10px] font-medium text-stone-500">
-                      Excluded from this resume
+                      {t("Excluded from this resume")}
                     </span>
                   )}
                 </div>
                 <div>
-                  <p className="text-[11px] font-medium uppercase tracking-wide text-stone-500">Shared description</p>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-stone-500">{t("Shared description")}</p>
                   <p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-stone-400">
-                    {item.description || "No shared description yet."}
+                    {item.description || t("No shared description yet.")}
                   </p>
                 </div>
                 {customized ? (
                   <div className="space-y-2">
                     <label className="block text-xs font-medium text-amber-400">
-                      Wording for this resume
+                      {t("Wording for this resume")}
                       <textarea
                         value={targeted}
                         onChange={(event) => onSet(field, item.id, event.target.value)}
@@ -79,7 +80,7 @@ export default function TargetedWording({
                       aria-label={`Use shared wording for ${itemLabel}`}
                       className="text-xs font-medium text-stone-400 underline decoration-stone-700 underline-offset-4 hover:text-stone-200"
                     >
-                      Use shared wording
+                      {t("Use shared wording")}
                     </button>
                   </div>
                 ) : (
@@ -89,7 +90,7 @@ export default function TargetedWording({
                     aria-label={`Customize wording for ${itemLabel}`}
                     className="rounded-lg border border-stone-700 px-3 py-2 text-xs font-medium text-stone-300 hover:border-amber-600 hover:text-amber-400"
                   >
-                    Customize for this resume
+                    {t("Customize for this resume")}
                   </button>
                 )}
               </div>
@@ -100,3 +101,4 @@ export default function TargetedWording({
     </div>
   );
 }
+import { useI18n } from "../I18nContext.jsx";

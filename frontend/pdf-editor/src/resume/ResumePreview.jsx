@@ -1,7 +1,8 @@
 import { DEFAULT_ACCENT } from "./themes";
 import { markdownLiteToHtml } from "./markdownLite";
-import { formatDate, getFilledSections } from "./resumeSections";
+import { getFilledSections } from "./resumeSections";
 import { DEFAULT_SECTION_ORDER } from "./data";
+import { formatDocumentDate, getResumeCopy, normalizeLocale } from "../localization.js";
 
 const A4_WIDTH_PT = 595;
 const A4_HEIGHT_PT = 842;
@@ -61,11 +62,11 @@ function SectionHeading({ children, accentColor, variant }) {
   );
 }
 
-function DomainsBlock({ items, accentColor, variant }) {
+function DomainsBlock({ items, accentColor, variant, copy }) {
   return (
     <div className={variant === "modern" ? "mb-3" : undefined}>
       <SectionHeading accentColor={accentColor} variant={variant}>
-        Domain/Functional Areas
+        {copy.sections.domains}
       </SectionHeading>
       <div className="py-1 text-xs text-stone-800">
         {items.map((domain, idx) => (
@@ -79,11 +80,11 @@ function DomainsBlock({ items, accentColor, variant }) {
   );
 }
 
-function SkillsBlock({ items, accentColor, variant }) {
+function SkillsBlock({ items, accentColor, variant, copy }) {
   return (
     <div className={variant === "modern" ? "mb-3" : undefined}>
       <SectionHeading accentColor={accentColor} variant={variant}>
-        Key Skills
+        {copy.sections.skills}
       </SectionHeading>
       <div className="space-y-0.5 py-1">
         {items.map((skill) => (
@@ -96,11 +97,11 @@ function SkillsBlock({ items, accentColor, variant }) {
   );
 }
 
-function ExperienceBlock({ items, accentColor, variant }) {
+function ExperienceBlock({ items, accentColor, variant, copy, language }) {
   return (
     <div className={variant === "modern" ? "mb-3" : undefined}>
       <SectionHeading accentColor={accentColor} variant={variant}>
-        Professional Experience
+        {copy.sections.experience}
       </SectionHeading>
       <div className="space-y-1 py-1">
         {items.map((item) => (
@@ -109,10 +110,10 @@ function ExperienceBlock({ items, accentColor, variant }) {
               <div className="flex-1">
                 <p className="font-semibold text-stone-900">{item.role}</p>
                 <p className="text-stone-700">{item.company}</p>
-                {item.tools && <p className="italic text-stone-600">Tools: {item.tools}</p>}
+                {item.tools && <p className="italic text-stone-600">{copy.tools}: {item.tools}</p>}
               </div>
               <p className="shrink-0 text-stone-600">
-                {formatDate(item.startDate)} – {item.isCurrentlyWorking ? "Present" : formatDate(item.endDate)}
+                {formatDocumentDate(item.startDate, language)} – {item.isCurrentlyWorking ? copy.present : formatDocumentDate(item.endDate, language)}
               </p>
             </div>
             {item.description && (
@@ -131,11 +132,11 @@ function ExperienceBlock({ items, accentColor, variant }) {
   );
 }
 
-function ProjectsBlock({ items, accentColor, variant }) {
+function ProjectsBlock({ items, accentColor, variant, copy, language }) {
   return (
     <div className={variant === "modern" ? "mb-3" : undefined}>
       <SectionHeading accentColor={accentColor} variant={variant}>
-        Projects
+        {copy.sections.projects}
       </SectionHeading>
       <div className="space-y-1 py-1">
         {items.map((project) => (
@@ -152,14 +153,14 @@ function ProjectsBlock({ items, accentColor, variant }) {
                       rel="noopener noreferrer"
                       className="ml-1 font-normal text-blue-600"
                     >
-                      [Link]
+                      [{copy.link}]
                     </a>
                   )}
                 </p>
               </div>
               {(project.startDate || project.endDate) && (
                 <p className="shrink-0 text-stone-600">
-                  {formatDate(project.startDate)} – {project.isCurrentProject ? "Present" : formatDate(project.endDate)}
+                  {formatDocumentDate(project.startDate, language)} – {project.isCurrentProject ? copy.present : formatDocumentDate(project.endDate, language)}
                 </p>
               )}
             </div>
@@ -179,11 +180,11 @@ function ProjectsBlock({ items, accentColor, variant }) {
   );
 }
 
-function AchievementsBlock({ items, accentColor, variant }) {
+function AchievementsBlock({ items, accentColor, variant, copy }) {
   return (
     <div className={variant === "modern" ? "mb-3" : undefined}>
       <SectionHeading accentColor={accentColor} variant={variant}>
-        Achievements
+        {copy.sections.achievements}
       </SectionHeading>
       <div className="space-y-1 py-1">
         {items.map((item) => (
@@ -200,11 +201,11 @@ function AchievementsBlock({ items, accentColor, variant }) {
   );
 }
 
-function CertificationsBlock({ items, accentColor, variant }) {
+function CertificationsBlock({ items, accentColor, variant, copy }) {
   return (
     <div className={variant === "modern" ? "mb-3" : undefined}>
       <SectionHeading accentColor={accentColor} variant={variant}>
-        Certifications
+        {copy.sections.certifications}
       </SectionHeading>
       <div className="space-y-1 py-1">
         {items.map((cert) => (
@@ -219,7 +220,7 @@ function CertificationsBlock({ items, accentColor, variant }) {
                     rel="noopener noreferrer"
                     className="ml-1 font-normal text-blue-600"
                   >
-                    [Link]
+                    [{copy.link}]
                   </a>
                 )}
               </p>
@@ -233,25 +234,25 @@ function CertificationsBlock({ items, accentColor, variant }) {
   );
 }
 
-function EducationBlock({ items, accentColor, variant }) {
+function EducationBlock({ items, accentColor, variant, copy, language }) {
   return (
     <div className={variant === "modern" ? "mb-3" : undefined}>
       <SectionHeading accentColor={accentColor} variant={variant}>
-        Education
+        {copy.sections.education}
       </SectionHeading>
       <div className="space-y-1 py-1">
         {items.map((edu) => (
           <div key={edu.id} className="flex justify-between gap-2 text-xs">
             <div className="flex-1">
               <p className="font-semibold text-stone-900">
-                {edu.degree} {edu.field && `in ${edu.field}`}
+                {edu.degree} {edu.field && `${copy.fieldConnector} ${edu.field}`}
               </p>
               <p className="text-stone-700">{edu.institution}</p>
-              {edu.gpa && <p className="text-stone-600">GPA: {edu.gpa}</p>}
+              {edu.gpa && <p className="text-stone-600">{copy.gpa}: {edu.gpa}</p>}
             </div>
             {(edu.startDate || edu.endDate) && (
               <p className="shrink-0 text-stone-600">
-                {formatDate(edu.startDate)} – {edu.isCurrentlyStudying ? "Present" : formatDate(edu.endDate)}
+                {formatDocumentDate(edu.startDate, language)} – {edu.isCurrentlyStudying ? copy.present : formatDocumentDate(edu.endDate, language)}
               </p>
             )}
           </div>
@@ -285,7 +286,7 @@ function AdditionalBlock({ data, accentColor, variant }) {
 
 // Renders whichever of the reorderable sections actually have content, in the
 // order the user configured (resumeData.sectionOrder), for a given key set.
-function OrderedSections({ sectionKeys, resumeData, filled, accentColor, variant }) {
+function OrderedSections({ sectionKeys, resumeData, filled, accentColor, variant, copy, language }) {
   const order = resumeData.sectionOrder && resumeData.sectionOrder.length ? resumeData.sectionOrder : DEFAULT_SECTION_ORDER;
   const visibleOrder = order.filter((key) => sectionKeys.includes(key));
 
@@ -293,31 +294,31 @@ function OrderedSections({ sectionKeys, resumeData, filled, accentColor, variant
     switch (key) {
       case "domains":
         return filled.domains.length > 0 && (
-          <DomainsBlock key={key} items={filled.domains} accentColor={accentColor} variant={variant} />
+          <DomainsBlock key={key} items={filled.domains} accentColor={accentColor} variant={variant} copy={copy} />
         );
       case "skills":
         return filled.skills.length > 0 && (
-          <SkillsBlock key={key} items={filled.skills} accentColor={accentColor} variant={variant} />
+          <SkillsBlock key={key} items={filled.skills} accentColor={accentColor} variant={variant} copy={copy} />
         );
       case "experience":
         return filled.experience.length > 0 && (
-          <ExperienceBlock key={key} items={filled.experience} accentColor={accentColor} variant={variant} />
+          <ExperienceBlock key={key} items={filled.experience} accentColor={accentColor} variant={variant} copy={copy} language={language} />
         );
       case "projects":
         return filled.projects.length > 0 && (
-          <ProjectsBlock key={key} items={filled.projects} accentColor={accentColor} variant={variant} />
+          <ProjectsBlock key={key} items={filled.projects} accentColor={accentColor} variant={variant} copy={copy} language={language} />
         );
       case "achievements":
         return filled.achievements.length > 0 && (
-          <AchievementsBlock key={key} items={filled.achievements} accentColor={accentColor} variant={variant} />
+          <AchievementsBlock key={key} items={filled.achievements} accentColor={accentColor} variant={variant} copy={copy} />
         );
       case "certifications":
         return filled.certifications.length > 0 && (
-          <CertificationsBlock key={key} items={filled.certifications} accentColor={accentColor} variant={variant} />
+          <CertificationsBlock key={key} items={filled.certifications} accentColor={accentColor} variant={variant} copy={copy} />
         );
       case "education":
         return filled.education.length > 0 && (
-          <EducationBlock key={key} items={filled.education} accentColor={accentColor} variant={variant} />
+          <EducationBlock key={key} items={filled.education} accentColor={accentColor} variant={variant} copy={copy} language={language} />
         );
       case "additionalSection":
         return filled.hasAdditional && (
@@ -329,7 +330,7 @@ function OrderedSections({ sectionKeys, resumeData, filled, accentColor, variant
   });
 }
 
-function MinimalLayout({ resumeData, accentColor }) {
+function MinimalLayout({ resumeData, accentColor, language, copy }) {
   const personalInfo = resumeData.personalInfo || {};
   const filled = getFilledSections(resumeData);
   const allKeys = ["domains", "skills", "experience", "projects", "achievements", "certifications", "education", "additionalSection"];
@@ -360,12 +361,14 @@ function MinimalLayout({ resumeData, accentColor }) {
         filled={filled}
         accentColor={accentColor}
         variant="minimal"
+        language={language}
+        copy={copy}
       />
     </div>
   );
 }
 
-function ModernLayout({ resumeData, accentColor }) {
+function ModernLayout({ resumeData, accentColor, language, copy }) {
   const personalInfo = resumeData.personalInfo || {};
   const filled = getFilledSections(resumeData);
   const mainKeys = ["experience", "projects", "achievements", "certifications", "education", "additionalSection"];
@@ -381,25 +384,25 @@ function ModernLayout({ resumeData, accentColor }) {
         <div className="space-y-2 text-xs text-white/90">
           {personalInfo.email && (
             <div>
-              <p className="font-semibold text-white/60">Email</p>
+              <p className="font-semibold text-white/60">{copy.contact.email}</p>
               <p className="break-all">{personalInfo.email}</p>
             </div>
           )}
           {personalInfo.phone && (
             <div>
-              <p className="font-semibold text-white/60">Phone</p>
+              <p className="font-semibold text-white/60">{copy.contact.phone}</p>
               <p>{personalInfo.phone}</p>
             </div>
           )}
           {(personalInfo.city || personalInfo.state) && (
             <div>
-              <p className="font-semibold text-white/60">Location</p>
+              <p className="font-semibold text-white/60">{copy.contact.location}</p>
               <p>{[personalInfo.city, personalInfo.state].filter(Boolean).join(", ")}</p>
             </div>
           )}
           {personalInfo.portfolio && (
             <div>
-              <p className="font-semibold text-white/60">Portfolio</p>
+              <p className="font-semibold text-white/60">{copy.contact.portfolio}</p>
               <a href={personalInfo.portfolio} target="_blank" rel="noopener noreferrer" className="break-all underline">
                 {personalInfo.portfolio}
               </a>
@@ -431,14 +434,14 @@ function ModernLayout({ resumeData, accentColor }) {
 
         {filled.domains.length > 0 && (
           <div className="border-t border-white/20 pt-2">
-            <h3 className="mb-1 text-xs font-semibold text-white">Domain/Functional Areas</h3>
+            <h3 className="mb-1 text-xs font-semibold text-white">{copy.sections.domains}</h3>
             <p className="text-xs leading-snug text-white/90">{filled.domains.map((d) => d.text).join(" • ")}</p>
           </div>
         )}
 
         {filled.skills.length > 0 && (
           <div className="border-t border-white/20 pt-2">
-            <h3 className="mb-1 text-xs font-semibold text-white">Key Skills</h3>
+            <h3 className="mb-1 text-xs font-semibold text-white">{copy.sections.skills}</h3>
             <div className="space-y-0.5 text-xs text-white/90">
               {filled.skills.map((skill) => (
                 <div key={skill.id}>
@@ -458,13 +461,17 @@ function ModernLayout({ resumeData, accentColor }) {
           filled={filled}
           accentColor={accentColor}
           variant="modern"
+          language={language}
+          copy={copy}
         />
       </div>
     </div>
   );
 }
 
-export default function ResumePreview({ template, resumeData, accentColor = DEFAULT_ACCENT }) {
+export default function ResumePreview({ template, resumeData, accentColor = DEFAULT_ACCENT, language = "en" }) {
+  const normalizedLanguage = normalizeLocale(language);
+  const copy = getResumeCopy(normalizedLanguage);
   return (
     <div
       aria-label="Resume design preview"
@@ -472,9 +479,9 @@ export default function ResumePreview({ template, resumeData, accentColor = DEFA
       style={{ width: A4_WIDTH_PT, height: A4_HEIGHT_PT, boxShadow: "0 0 60px -15px rgba(0, 0, 0, 0.7)" }}
     >
       {template === "modern" ? (
-        <ModernLayout resumeData={resumeData} accentColor={accentColor} />
+        <ModernLayout resumeData={resumeData} accentColor={accentColor} language={normalizedLanguage} copy={copy} />
       ) : (
-        <MinimalLayout resumeData={resumeData} accentColor={accentColor} />
+        <MinimalLayout resumeData={resumeData} accentColor={accentColor} language={normalizedLanguage} copy={copy} />
       )}
     </div>
   );

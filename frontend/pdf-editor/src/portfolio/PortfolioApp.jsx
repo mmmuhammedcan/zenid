@@ -305,14 +305,14 @@ export default function PortfolioApp() {
               <h1 className="text-xl font-semibold tracking-tight">Portfolio Builder</h1>
               <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">Local</span>
             </div>
-            <p className="mt-1 text-xs text-stone-500">{notice}</p>
+            <p className="mt-1 text-xs text-stone-400">{notice}</p>
           </div>
           <div className="flex w-full flex-wrap gap-2 sm:w-auto">
             <input ref={openInputRef} type="file" accept=".zenid,application/json" onChange={handleOpenProject} className="hidden" />
             <button ref={openProjectButtonRef} type="button" onClick={() => openInputRef.current?.click()} className="flex items-center gap-2 rounded-lg border border-stone-800 px-3 py-2 text-xs font-medium text-stone-300 transition-colors hover:bg-stone-900">
               <FolderOpen size={14} /> Open Project
             </button>
-            <button type="button" onClick={handleSaveProject} className="flex items-center gap-2 rounded-lg bg-amber-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-amber-500">
+            <button type="button" onClick={handleSaveProject} className="flex items-center gap-2 rounded-lg bg-amber-700 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-amber-600">
               <FileArchive size={14} /> Save Project
             </button>
             <button type="button" onClick={() => setShowPublicationReview(true)} className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-300 transition-colors hover:bg-emerald-500/15">
@@ -373,9 +373,9 @@ export default function PortfolioApp() {
             <div className="mt-10 flex items-center justify-between border-t border-stone-800 pt-5">
               <button type="button" onClick={() => goTo(activeIndex - 1)} disabled={activeIndex === 0} className="flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-medium text-stone-400 hover:bg-stone-900 disabled:cursor-not-allowed disabled:opacity-30"><ChevronLeft size={14} /> Previous</button>
               {activeIndex < STEPS.length - 1 ? (
-                <button type="button" onClick={() => goTo(activeIndex + 1)} className="flex items-center gap-1 rounded-lg bg-amber-600 px-3 py-2 text-xs font-medium text-white hover:bg-amber-500">Next <ChevronRight size={14} /></button>
+                <button type="button" onClick={() => goTo(activeIndex + 1)} className="flex items-center gap-1 rounded-lg bg-amber-700 px-3 py-2 text-xs font-medium text-white hover:bg-amber-600">Next <ChevronRight size={14} /></button>
               ) : (
-                <button type="button" onClick={() => setMobileView("preview")} className="flex items-center gap-2 rounded-lg bg-amber-600 px-3 py-2 text-xs font-medium text-white hover:bg-amber-500"><Eye size={14} /> Review preview</button>
+                <button type="button" onClick={() => setMobileView("preview")} className="flex items-center gap-2 rounded-lg bg-amber-700 px-3 py-2 text-xs font-medium text-white hover:bg-amber-600"><Eye size={14} /> Review preview</button>
               )}
             </div>
           </div>

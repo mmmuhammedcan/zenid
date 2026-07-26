@@ -40,9 +40,13 @@ npm run dev
   deployable static artifact. It is verified for root and project-subpath
   hosting and keeps the private `.zenid` workspace separate.
 - `npm run build` produces the ZenID application bundle, but the repository
-  does not yet select an application host, subpath base, or SPA fallback
-  policy. Do not treat a successful Vite build as provider deployment
-  configuration.
+  does not select a production provider or domain. The root build now includes
+  a matching `404.html` SPA fallback and validates every generated asset path.
+- `npm run build:subpath` produces and validates the same application for the
+  example `/zenid/` base. Hosting configuration must route unknown application
+  paths to the generated shell (or use the included `404.html` fallback).
+- Passing either build proves a provider-ready artifact, not a successful
+  external deployment or provider acceptance.
 - A future one-click publish may send only the reviewed public package directly
   from the browser to a provider account the user authorizes. It requires its
   own opt-in spec and decision; manual ZIP export remains the local default.

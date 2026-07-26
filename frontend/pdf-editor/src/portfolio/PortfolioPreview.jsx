@@ -18,6 +18,7 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
+import { contrastTextColor } from "./accessibleColor.js";
 import { DEFAULT_PORTFOLIO_SECTION_ORDER } from "../resume/projectSchema";
 
 function nonEmpty(value) {
@@ -125,7 +126,7 @@ function ProjectModal({ project, caseStudy, images, accent, isLight, onClose }) 
     <ModalShell title={project.name} onClose={onClose} isLight={isLight}>
       <div className="grid gap-8 p-5 sm:p-7 lg:grid-cols-5">
         <div className="lg:col-span-2">
-          {(caseStudy.projectType || project.domain) && <span className="inline-flex rounded-full px-3 py-1.5 text-xs font-medium text-white" style={{ backgroundColor: accent }}>{caseStudy.projectType || project.domain}</span>}
+          {(caseStudy.projectType || project.domain) && <span className="inline-flex rounded-full px-3 py-1.5 text-xs font-medium" style={{ backgroundColor: accent, color: contrastTextColor(accent) }}>{caseStudy.projectType || project.domain}</span>}
           <h3 className="mt-5 text-3xl font-semibold tracking-tight">{project.name}</h3>
           {project.domain && <p className="mt-4 text-sm font-semibold">Domain / function: <span style={{ color: accent }}>{project.domain}</span></p>}
           <div className={`mt-5 space-y-3 text-sm leading-7 ${muted}`}>
@@ -180,6 +181,7 @@ export default function PortfolioPreview({ project, assetUrls = {}, resumeUrl })
   const { profile, portfolio } = project;
   const info = profile.personalInfo;
   const accent = portfolio.accentColor || "#d97706";
+  const accentText = contrastTextColor(accent);
   const isLight = portfolio.theme === "light";
   const surface = isLight ? "bg-stone-50 text-stone-950" : "bg-[#0d0c0b] text-stone-100";
   const card = isLight ? "border-stone-200 bg-white" : "border-white/10 bg-white/[0.035]";
@@ -251,7 +253,7 @@ export default function PortfolioPreview({ project, assetUrls = {}, resumeUrl })
       <header className={`sticky top-0 z-10 border-b backdrop-blur-xl ${isLight ? "border-stone-200 bg-stone-50/85" : "border-white/10 bg-[#0d0c0b]/85"}`}>
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
           <a href="#portfolio-home" className="flex items-center gap-3 text-sm font-semibold">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl text-xs font-bold text-white" style={{ backgroundColor: accent }}>{initials(info.fullName)}</span>
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl text-xs font-bold" style={{ backgroundColor: accent, color: accentText }}>{initials(info.fullName)}</span>
             <span>{nonEmpty(info.fullName) || "Your Portfolio"}</span>
           </a>
           <nav className={`hidden items-center gap-5 text-xs font-medium sm:flex ${muted}`} aria-label="Portfolio sections">
@@ -273,7 +275,7 @@ export default function PortfolioPreview({ project, assetUrls = {}, resumeUrl })
               <p className="mt-5 text-xl font-medium sm:text-2xl" style={{ color: accent }}>{nonEmpty(info.title) || "Your professional title"}</p>
               {visible.about && <p className={`mt-6 max-w-2xl text-base leading-7 ${muted}`}>{about}</p>}
               <div className="mt-8 flex flex-wrap items-center gap-3">
-                {portfolio.resume.enabled && resumeUrl && <a href={resumeUrl} download={resumeName} className="flex h-11 items-center gap-2 rounded-xl px-4 text-xs font-semibold text-white" style={{ backgroundColor: accent }}><Download size={15} /> Download résumé</a>}
+                {portfolio.resume.enabled && resumeUrl && <a href={resumeUrl} download={resumeName} className="flex h-11 items-center gap-2 rounded-xl px-4 text-xs font-semibold" style={{ backgroundColor: accent, color: accentText }}><Download size={15} /> Download résumé</a>}
                 {videoEmbed && <button type="button" onClick={() => setShowVideo(true)} className={`flex h-11 items-center gap-2 rounded-xl border px-4 text-xs font-semibold ${card}`}><Play size={15} /> Watch introduction</button>}
                 {visible.contact && <a href="#portfolio-contact" className={`flex h-11 items-center gap-2 rounded-xl border px-4 text-xs font-semibold ${card}`}><Mail size={15} /> Contact me</a>}
                 {visible.about && location && <span className={`flex items-center gap-2 px-2 text-xs ${muted}`}><MapPin size={14} /> {location}</span>}

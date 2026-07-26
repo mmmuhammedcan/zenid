@@ -183,3 +183,53 @@ replacement so historical context remains explainable.
 - Consequence: Multi-tab concurrent editing is explicitly unsupported. A
   single tab may navigate freely among Resume, Portfolio, and ZenPDF while
   retaining the same workspace ownership.
+
+## D-013 — Physical-device import-memory validation is deferred
+
+- Date: 2026-07-26
+- Status: Accepted
+- Decision owner: Creator
+- Context: The 75 MB expanded-project limit has repeatable desktop benchmark
+  evidence, but the team does not currently have the minimum supported
+  low-memory physical device required by T046.
+- Decision: T046 is deferred and does not block the present release-hardening
+  work. Reopen it when real-user telemetry, a support report, or an appropriate
+  physical test device is available. Do not describe the 75 MB limit as
+  physically validated in the meantime.
+- Consequence: Automated archive limits and desktop responsiveness gates stay
+  enforced. Low-memory device behavior remains an explicitly unverified risk,
+  not a hidden claim of acceptance.
+
+## D-014 — New IndexedDB media records store bytes rather than Blob objects
+
+- Date: 2026-07-26
+- Status: Accepted
+- Decision owner: Engineering
+- Context: Cross-engine release testing reproduced WebKit's
+  `Error preparing Blob/File data to be stored in object store` failure. Blob
+  persistence therefore made valid local media transactions engine-dependent.
+- Decision: Persist new media payloads as `Uint8Array` values and reconstruct
+  runtime Blob objects only when the UI needs an object URL. Continue reading
+  legacy Blob-backed records so existing Chromium/Firefox workspaces and the
+  version-1 upgrade remain compatible.
+- Consequence: The canonical transaction format uses structured-clone byte
+  arrays across engines. Blob is a runtime/export representation, not a storage
+  requirement.
+
+## D-015 — React Router RSC advisory is unreachable in the static client
+
+- Date: 2026-07-26
+- Status: Accepted with monitoring
+- Decision owner: Engineering
+- Context: `npm audit` reports GHSA-qwww-vcr4-c8h2 against the current
+  `react-router-dom` 7.18.1 dependency. The advisory concerns RSC Mode action
+  execution and CSRF handling. npm currently offers a downgrade carrying a
+  larger set of older router advisories rather than a patched current release.
+- Decision: Retain and exactly pin 7.18.1. ZenID uses only client-side
+  `BrowserRouter`, `Routes`, `Route`, and constant internal `Link` targets; it
+  has no React Server Components, SSR action endpoint, data-router action, or
+  application backend on which the advisory can execute. Reassess when an
+  upstream patched current release is published.
+- Consequence: `npm audit` remains non-zero and must not be reported as clean.
+  The finding is dispositioned as unreachable in this product architecture,
+  while dependency updates remain a release-maintenance responsibility.

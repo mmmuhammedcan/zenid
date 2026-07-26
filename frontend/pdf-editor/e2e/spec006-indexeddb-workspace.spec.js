@@ -74,14 +74,14 @@ test("keeps legacy project data when its IndexedDB migration fails", async ({ pa
   expect(await readRecord(page, "workspace", "current")).toBeNull();
 });
 
-test("upgrades the existing media database without losing version-one assets", async ({ page }) => {
+test("upgrades the existing media database without losing version-one assets", async ({ page }, testInfo) => {
   await page.route("**/seed-db", (route) => route.fulfill({
     contentType: "text/html",
     body: "<!doctype html><title>seed</title>",
   }));
   await page.goto("/seed-db");
   await page.evaluate(
-    ({ databaseName }) =>
+    ({ databaseName, useByteRecord }) =>
       new Promise((resolve, reject) => {
         const request = indexedDB.open(databaseName, 1);
         request.onerror = () => reject(request.error);
@@ -91,13 +91,16 @@ test("upgrades the existing media database without losing version-one assets", a
         request.onsuccess = () => {
           const database = request.result;
           const transaction = database.transaction("assets", "readwrite");
-          transaction.objectStore("assets").add({
+          const record = {
             id: "legacy-v1-image",
             kind: "profile-image",
             name: "legacy.png",
             mimeType: "image/png",
-            blob: new Blob([new Uint8Array([137, 80, 78, 71])], { type: "image/png" }),
-          });
+          };
+          if (useByteRecord) record.bytes = new Uint8Array([137, 80, 78, 71]);
+          else record.blob = new Blob([new Uint8Array([137, 80, 78, 71])], { type: "image/png" });
+          const addRequest = transaction.objectStore("assets").add(record);
+          addRequest.onerror = () => reject(addRequest.error || new Error("Version-one asset seed failed."));
           transaction.onerror = () => reject(transaction.error);
           transaction.oncomplete = () => {
             database.close();
@@ -105,7 +108,7 @@ test("upgrades the existing media database without losing version-one assets", a
           };
         };
       }),
-    { databaseName: DATABASE_NAME }
+    { databaseName: DATABASE_NAME, useByteRecord: testInfo.project.name === "webkit-release" }
   );
   await page.unroute("**/seed-db");
 
@@ -144,7 +147,7 @@ test("commits portfolio media references and bytes atomically", async ({ page })
         kind: "profile-image",
         name: "atomic.png",
         mimeType: "image/png",
-        blob: new Blob([new Uint8Array([137, 80, 78, 71])], { type: "image/png" }),
+        bytes: new Uint8Array([137, 80, 78, 71]),
       }],
     });
   });
@@ -173,7 +176,7 @@ test("commits portfolio media references and bytes atomically", async ({ page })
           kind: "profile-image",
           name: "rollback.png",
           mimeType: "image/png",
-          blob: new Blob([new Uint8Array([137, 80, 78, 71])], { type: "image/png" }),
+          bytes: new Uint8Array([137, 80, 78, 71]),
         }],
         deleteIds: ["atomic-image"],
       });

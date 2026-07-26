@@ -7,8 +7,9 @@ import PortfolioApp from "./portfolio/PortfolioApp";
 import { WorkspaceProvider } from "./storage/WorkspaceContext";
 
 export default function App() {
+  const basename = import.meta.env.BASE_URL.replace(/\/$/, "") || "/";
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <WorkspaceProvider>
       <div className="min-h-screen text-stone-100" style={{
         backgroundColor: '#0c0a09',

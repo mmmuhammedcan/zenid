@@ -165,7 +165,7 @@ export default function TemplateSelector({
         type="button"
         disabled={!selected}
         onClick={onContinue}
-        className="mt-10 rounded-full bg-amber-600 px-8 py-3 text-sm font-medium text-white transition-all hover:bg-amber-500 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-500"
+        className="mt-10 rounded-full bg-amber-700 px-8 py-3 text-sm font-medium text-white transition-all hover:bg-amber-600 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-500"
       >
         Continue
       </button>

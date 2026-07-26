@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mediaRecordMatchesArchiveAsset } from "./assetStore.js";
+import {
+  mediaRecordMatchesArchiveAsset,
+  mediaRecordsToArchiveAssets,
+} from "./assetStore.js";
 
 function archiveAsset(bytes = [1, 2, 3]) {
   return {
@@ -24,6 +27,13 @@ function storedRecord(bytes = [1, 2, 3]) {
 
 test("identical imported media can safely reuse an existing stable identifier", async () => {
   assert.equal(await mediaRecordMatchesArchiveAsset(storedRecord(), archiveAsset()), true);
+  assert.equal(
+    await mediaRecordMatchesArchiveAsset(
+      { ...storedRecord(), blob: undefined, bytes: new Uint8Array([1, 2, 3]) },
+      archiveAsset()
+    ),
+    true
+  );
 });
 
 test("a stable media identifier cannot be reused for different bytes or metadata", async () => {
@@ -34,5 +44,12 @@ test("a stable media identifier cannot be reused for different bytes or metadata
       archiveAsset()
     ),
     false
+  );
+});
+
+test("an unreadable stored media record fails closed before export", async () => {
+  await assert.rejects(
+    mediaRecordsToArchiveAssets([{ ...storedRecord(), blob: undefined }]),
+    /damaged or unreadable/
   );
 });

@@ -72,11 +72,16 @@ export async function getZenidRecord(storeName, id) {
     return await new Promise((resolve, reject) => {
       const transaction = database.transaction(storeName, "readonly");
       const request = transaction.objectStore(storeName).get(id);
+      let result = null;
       request.onerror = () => reject(request.error || new Error("Local workspace data could not be read."));
-      request.onsuccess = () => resolve(request.result || null);
+      request.onsuccess = () => {
+        result = request.result || null;
+      };
+      transaction.onerror = () => reject(transaction.error || new Error("Local workspace data could not be read."));
+      transaction.onabort = () => reject(transaction.error || new Error("Local workspace data read was interrupted."));
+      transaction.oncomplete = () => resolve(result);
     });
   } finally {
     database.close();
   }
 }
-

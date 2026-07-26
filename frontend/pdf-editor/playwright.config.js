@@ -17,6 +17,21 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
+    {
+      name: "firefox-release",
+      testMatch: /(?:release-hardening|spec006-indexeddb-workspace|zenpdf-regression)\.spec\.js/,
+      use: { ...devices["Desktop Firefox"] },
+    },
+    {
+      name: "webkit-release",
+      testMatch: /(?:release-hardening|spec006-indexeddb-workspace|zenpdf-regression)\.spec\.js/,
+      use: { ...devices["Desktop Safari"] },
+    },
+    {
+      name: "mobile-chromium-release",
+      testMatch: /release-hardening\.spec\.js/,
+      use: { ...devices["Pixel 7"] },
+    },
   ],
   webServer: {
     command: "npm run dev -- --host 127.0.0.1 --port 4173",

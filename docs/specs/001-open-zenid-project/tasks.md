@@ -51,8 +51,10 @@ present; acceptance still depends on `evidence.md`.
 - [x] T044 Complete dated creator acceptance.
 - [x] T045 Move archive extraction and validation to a Web Worker after the
   named-machine near-limit baseline showed user-visible main-thread blocking.
-- [ ] T046 Validate the 75 MB memory budget on the minimum supported physical
-  device and retain or lower the limit before release.
+- [x] T046 Record the disposition of the 75 MB physical-device memory gate.
+  Validation itself is deferred by creator
+  decision D-013 until a suitable physical device or real-user signal exists;
+  the current limit is not claimed as physically validated.
 
 ## Phase 4 recovery guidance
 
@@ -86,6 +88,7 @@ present; acceptance still depends on `evidence.md`.
 - [x] T056 Prevent a rejected import from overwriting current media when an
   incoming archive reuses a stable media identifier with different content.
   Reuse identical stored records and reject conflicting records before commit.
-- [ ] T057 Record commit-scoped evidence for T056 and run a fresh-context
-  Reviewer gate. Working-tree verification is recorded in `evidence.md` but is
-  not immutable commit evidence.
+- [ ] T057 Complete the fresh-context Reviewer gate for T056. Commit-scoped
+  evidence now exists at tested implementation commit
+  `3e73b4b3e3af2a4abca3ac8581f8fb6de1138870`; only independent fresh-context
+  review remains.

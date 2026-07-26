@@ -90,7 +90,9 @@ async function readAsset(page, id) {
               }
               resolve({
                 ...record,
-                bytes: [...new Uint8Array(await record.blob.arrayBuffer())],
+                bytes: record.bytes
+                  ? [...new Uint8Array(record.bytes)]
+                  : [...new Uint8Array(await record.blob.arrayBuffer())],
               });
             };
             transaction.oncomplete = () => database.close();

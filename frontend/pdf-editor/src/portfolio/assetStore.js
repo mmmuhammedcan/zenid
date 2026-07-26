@@ -28,26 +28,41 @@ export async function createMediaRecord(file, kind) {
     kind,
     name: file.name || "image",
     mimeType: file.type,
-    blob: file,
+    bytes: new Uint8Array(await file.arrayBuffer()),
     updatedAt: new Date().toISOString(),
   };
+}
+
+async function storedRecordBytes(record) {
+  if (record?.bytes instanceof Uint8Array) return record.bytes;
+  if (record?.bytes instanceof ArrayBuffer) return new Uint8Array(record.bytes);
+  if (record?.blob?.arrayBuffer) return new Uint8Array(await record.blob.arrayBuffer());
+  return null;
+}
+
+async function requireStoredRecordBytes(record) {
+  const bytes = await storedRecordBytes(record);
+  if (!bytes) {
+    throw userFacingError("A local portfolio file is damaged or unreadable. Replace it before continuing.");
+  }
+  return bytes;
 }
 
 export async function mediaRecordMatchesArchiveAsset(record, asset) {
   if (!record || !asset) return false;
   const kind = asset.kind || "portfolio-media";
   const name = asset.name || "image";
+  const storedBytes = await storedRecordBytes(record);
   if (
     record.id !== asset.id ||
     record.kind !== kind ||
     record.name !== name ||
     record.mimeType !== asset.mimeType ||
-    record.blob?.size !== asset.bytes.byteLength
+    storedBytes?.byteLength !== asset.bytes.byteLength
   ) {
     return false;
   }
 
-  const storedBytes = new Uint8Array(await record.blob.arrayBuffer());
   return storedBytes.every((byte, index) => byte === asset.bytes[index]);
 }
 
@@ -57,7 +72,7 @@ export function archiveAssetToRecord(asset) {
     kind: asset.kind || "portfolio-media",
     name: asset.name || "image",
     mimeType: asset.mimeType,
-    blob: new Blob([asset.bytes], { type: asset.mimeType }),
+    bytes: new Uint8Array(asset.bytes),
     updatedAt: new Date().toISOString(),
   };
 }
@@ -88,8 +103,15 @@ export async function prepareImportedMediaAssets(assets = []) {
 export async function getMediaAssets(ids) {
   const uniqueIds = [...new Set(ids.filter(Boolean))];
   if (!uniqueIds.length) return [];
-  return Promise.all(uniqueIds.map((id) => getZenidRecord(ASSET_STORE_NAME, id)))
-    .then((records) => records.filter(Boolean));
+  const records = await Promise.all(uniqueIds.map((id) => getZenidRecord(ASSET_STORE_NAME, id)));
+  return Promise.all(records.filter(Boolean).map(async (record) => {
+    if (record.blob?.arrayBuffer) return record;
+    const bytes = await requireStoredRecordBytes(record);
+    return {
+      ...record,
+      blob: new Blob([bytes], { type: record.mimeType }),
+    };
+  }));
 }
 
 export function referencedAssetIds(project) {
@@ -114,12 +136,15 @@ export async function getProjectMediaAssets(project) {
 
 export async function mediaRecordsToArchiveAssets(records) {
   return Promise.all(
-    records.map(async (record) => ({
-      id: record.id,
-      kind: record.kind,
-      name: record.name,
-      mimeType: record.mimeType,
-      bytes: new Uint8Array(await record.blob.arrayBuffer()),
-    }))
+    records.map(async (record) => {
+      const bytes = await requireStoredRecordBytes(record);
+      return {
+        id: record.id,
+        kind: record.kind,
+        name: record.name,
+        mimeType: record.mimeType,
+        bytes: new Uint8Array(bytes),
+      };
+    })
   );
 }

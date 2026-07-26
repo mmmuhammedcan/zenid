@@ -19,7 +19,7 @@ export default function MediaField({ label, description, imageUrl, onSelect, onR
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-stone-200">{label}</p>
-          {description && <p className="mt-1 text-xs leading-5 text-stone-500">{description}</p>}
+          {description && <p className="mt-1 text-xs leading-5 text-stone-400">{description}</p>}
           <div className="mt-3 flex flex-wrap gap-2">
             <label className="cursor-pointer rounded-lg border border-stone-700 px-3 py-2 text-xs font-medium text-stone-300 transition-colors hover:border-amber-600 hover:text-amber-400">
               {imageUrl ? "Replace image" : "Choose image"}

@@ -10,7 +10,7 @@ export default function TopNav() {
       <div className="flex items-center justify-between px-6 py-4">
         <Link to="/" className="flex items-center transition-opacity hover:opacity-90" aria-label="ZenID home">
           <img
-            src="/assets/zenid-wordmark.png"
+            src={`${import.meta.env.BASE_URL}assets/zenid-wordmark.png`}
             alt="ZenID"
             width={1244}
             height={332}

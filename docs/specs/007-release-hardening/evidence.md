@@ -23,6 +23,10 @@ Tested implementation commit:
 - AC-006: D-015 records the remaining React Router RSC advisory. Its server
   action path is absent from ZenID's static client architecture; npm audit is
   explicitly not reported as clean.
+- AC-007: follow-up commit
+  `ac912238508c96457bfd5535bbbff3e94ed3a727` fits a newly opened ZenPDF page
+  inside the Pixel 7 viewport while retaining the 100% initial desktop scale.
+  The same regression places text, navigates both pages, and exports locally.
 
 ## Commit-scoped verification
 
@@ -162,3 +166,43 @@ Those review resolutions were committed at
 `2ad6dac65a92cb3a6f491a17fb0dbdd0f14aa906`. Commit-scoped follow-up
 verification passed 70/70 unit tests, lint, and 3/3 targeted ZenPDF cases in
 Chromium, Firefox, and WebKit.
+
+## T012 mobile ZenPDF containment
+
+Physical Android acceptance identified that ZenPDF remained functional but was
+needlessly difficult to navigate because the desktop-size PDF canvas began
+outside the phone viewport. The pre-implementation Pixel 7 regression measured
+the rendered canvas at `x = -240px` and failed.
+
+D-020 keeps ZenPDF desktop-first while requiring a bounded mobile baseline.
+Implementation commit `ac912238508c96457bfd5535bbbff3e94ed3a727`:
+
+- retains the 100% initial scale at the desktop release viewport;
+- calculates an initial narrow-viewport fit without changing PDF/Fabric
+  document coordinates;
+- gives the scaled page a matching layout box, removing invisible transformed
+  overflow;
+- keeps later user zoom and page navigation behavior unchanged.
+
+Commit-scoped verification:
+
+- `npm test` — 13/13 test files passed, including four responsive-zoom cases.
+- `npm run lint` — passed.
+- `npm run build` — passed the production build, root asset, and SPA fallback
+  checks.
+- `npm run test:e2e -- --workers=1` — 55 passed, 6 intentionally scoped skips,
+  0 failures across 61 scheduled cases.
+- Targeted desktop Chromium and Pixel 7 ZenPDF follow-up — 2/2 passed after
+  strengthening both paths to place text before navigation and local export.
+- `git diff --check` — passed.
+
+An independent fresh-context Reviewer found no blocker and passed the T012
+gate. The Reviewer confirmed that the scaled layout box removes ghost width,
+Fabric continues to derive pointer and toolbar coordinates from rendered
+bounds, no focus or accessible-name behavior changed, and the normal desktop
+initial zoom remains 100%. The initial review's Low test-hardening note was
+resolved by asserting the exact 42% Pixel 7 scale and text placement in both
+mobile and desktop paths.
+
+This automated result does not claim desktop-equivalent precision authoring on
+touchscreens. Physical Android TalkBack acceptance under T009 remains open.

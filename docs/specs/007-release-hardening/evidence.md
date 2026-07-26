@@ -93,6 +93,39 @@ This closes T010 for the initial owner-only deployment. It does not close D-016
 Windows/Android accessibility acceptance, public-access acceptance, or the
 deferred Apple-platform matrix.
 
+## Supplemental Ubuntu Orca smoke
+
+On 2026-07-26 the creator exercised the application on Ubuntu with Orca 46.1
+and reported that Orca operated and the exercised behavior appeared correct.
+The browser and version were not captured and are not inferred. Orca announced
+the interface in English, which matches the current English interface and page
+language. The creator stopped Orca after finding its default verbosity
+unnecessary for further personal testing.
+
+This is useful supplemental accessibility evidence only. It does not satisfy
+the D-016 Windows NVDA or Android TalkBack acceptance matrix and does not close
+T009.
+
+## Windows Chrome, Firefox, and NVDA acceptance
+
+On 2026-07-26 the creator used a family member's Windows computer and the
+temporary NVDA copy started by the official downloaded launcher. The creator
+reported that the required Windows behavior passed in Chrome and Firefox and
+that NVDA read the site's content and controls correctly in Chrome. No
+application failure was observed. Windows, Chrome, Firefox, and NVDA versions
+were not captured and are not inferred.
+
+Chrome's built-in page translation displayed the live interface in Turkish,
+but the downloaded resume retained English default section labels. This is
+expected for the current English release: browser translation changes the
+rendered interface and does not select a resume output locale. Native Turkish
+UI and resume defaults remain deferred under the Language and Locale Direction
+in `plan.md`.
+
+The creator accepted the Windows functional matrix. Exact environment versions
+remain uncaptured metadata. Android Chrome and TalkBack acceptance remains open
+under T009.
+
 ## Public route smoke
 
 After the creator authorized temporary public access, anonymous HTTP checks

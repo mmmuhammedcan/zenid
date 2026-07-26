@@ -172,6 +172,7 @@ keeping every old UI implementation or renderer permanently.
 ## Language and Locale Direction
 
 - The product interface and default resume labels remain English for the current release.
+- Turkish localization is not a release gate for the current English release.
 - Users must already be able to enter Unicode content, including Turkish names and resume text.
 - Fonts, validation, sorting, and storage must not assume ASCII-only content.
 - User-facing strings and default section labels should not be spread through the data model in a

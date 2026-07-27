@@ -1,6 +1,6 @@
 # SPEC-010 — Bilingual Search and AI Discovery
 
-Status: Implemented, automatically verified, and deployed; Search Console gate open
+Status: Implemented, automatically verified, deployed, and submitted to Search Console
 Owner: Creator
 Last clarified: 2026-07-27
 

@@ -1,6 +1,6 @@
 # SPEC-010 Evidence — Bilingual Search and AI Discovery
 
-Status: Automatically verified and deployed; Search Console submission pending
+Status: Automatically verified, deployed, and submitted to Search Console
 Implementation commit: `ead3ecaea6dfff05547cc8e7997942bc5c70ea65`
 Deployment source commit: `f2a772eadd815e9179d1ce92bbb7f15dc5922f69`
 Verified: 2026-07-27
@@ -94,3 +94,15 @@ were implemented and the focused browser suite passed afterward.
 - A few edge requests briefly returned 404 immediately after deployment, then
   returned 200 on the completed propagation check. No persistent route failure
   remained.
+
+## Search Console acceptance
+
+Creator-confirmed on 2026-07-27:
+
+- the `getzenid.com` domain property was verified through Cloudflare;
+- `https://getzenid.com/sitemap.xml` was submitted and detected;
+- URL Inspection recognized the Turkish CV page through the submitted sitemap;
+- an indexing request was submitted for
+  `https://getzenid.com/tr/cv-hazirlama/`.
+
+Indexing and ranking remain external Google outcomes and may take time.

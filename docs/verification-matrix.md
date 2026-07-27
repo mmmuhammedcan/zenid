@@ -1,6 +1,6 @@
 # ZenID Verification Matrix
 
-Last verified: 2026-07-26
+Last verified: 2026-07-27
 
 | Capability | Implemented | Automated evidence | Manual acceptance | Main gap |
 |---|---:|---:|---:|---|
@@ -17,6 +17,8 @@ Last verified: 2026-07-26
 | Python legacy backend | Legacy | No | No | Outside active roadmap |
 | Mobile/accessibility | Partial | Yes | No | Dated keyboard/screen-reader/device checklist |
 | Turkish/English interface and output locale | Yes | Yes | Creator-only (local review, 2026-07-26) | Independent copy review |
+| Public brand, canonical domain, and search foundation | Partial | Yes | No | Search Console ownership and sitemap submission |
+| Bilingual workflow and AI-search discovery | Yes | Yes | No | Production smoke and Search Console recrawl request |
 
 ## Repeatable checks
 

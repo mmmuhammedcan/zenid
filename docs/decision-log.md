@@ -347,3 +347,22 @@ replacement so historical context remains explainable.
   metadata must distinguish the local résumé, portfolio, and PDF workspace
   without promising a ranking, introducing analytics, or weakening the
   browser-only privacy boundary.
+
+## D-023 — Search discovery uses paired static-first helpful workflow pages
+
+- Date: 2026-07-27
+- Status: Accepted
+- Decision owner: Creator
+- Context: ZenID's application metadata preserves the selected brand but does
+  not give Turkish or English searchers capability-specific results for CV,
+  portfolio, or PDF workflows. Changing the root into mixed-language keyword
+  copy would weaken the brand and still provide an unclear primary language.
+- Decision: Preserve the canonical root and “Your local identity workspace.”
+  strapline. Add paired Turkish and English static-first pages for Resume,
+  Portfolio, and ZenPDF, each with unique metadata, useful workflow/privacy
+  guidance, reciprocal language alternates, structured product facts, and a
+  direct link to the existing local tool. Permit public search crawlers while
+  retaining the AI-training opt-out.
+- Consequence: Search engines and search-backed assistants receive focused,
+  language- and intent-matched public product facts without a thin doorway-page
+  network or keyword stuffing. Ranking remains an external outcome.

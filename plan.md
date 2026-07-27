@@ -339,6 +339,20 @@ Job listing, matching, fake-listing detection, and application automation are
 not part of this local core. They may be considered later as a separate,
 explicitly opt-in ZenID Jobs product with its own privacy and service boundary.
 
+### Public Discovery Foundation
+
+- Preserve “Your local identity workspace.” as the root brand position.
+- Add helpful language-specific discovery pages only for shipped workflows.
+- Begin with paired Turkish and English pages for CV/resume, portfolio, and
+  local PDF workflows.
+- Give each discovery page a unique language-matched title, description,
+  canonical URL, static pre-JavaScript content, and sitemap entry.
+- Treat Search Console submission as a discovery request rather than a ranking
+  claim. Do not use keyword stuffing, doorway pages, analytics, or tracking.
+- Keep public search and AI-reference crawling distinct from model training:
+  allow public search discovery, retain the AI-training opt-out, and never
+  expose private workspace data.
+
 ## Immediate Implementation Checklist
 
 The next engineering work should be completed in this order:

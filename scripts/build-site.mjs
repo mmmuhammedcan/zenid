@@ -1,6 +1,8 @@
-import { cp, copyFile, mkdir, rm } from "node:fs/promises";
+import { cp, copyFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
+import { SEARCH_PAGES } from "../frontend/pdf-editor/src/searchPageContent.js";
+import { buildSearchPageShell } from "./search-page-shells.mjs";
 
 const frontendDirectory = resolve("frontend/pdf-editor");
 const frontendOutput = resolve(frontendDirectory, "dist");
@@ -33,11 +35,20 @@ for (const route of applicationRoutes) {
   await mkdir(routeDirectory, { recursive: true });
   await copyFile(resolve(clientOutput, "index.html"), resolve(routeDirectory, "index.html"));
 }
+const applicationShell = await readFile(resolve(clientOutput, "index.html"), "utf8");
+for (const page of SEARCH_PAGES) {
+  const routeDirectory = resolve(clientOutput, page.path);
+  await mkdir(routeDirectory, { recursive: true });
+  await writeFile(
+    resolve(routeDirectory, "index.html"),
+    buildSearchPageShell(applicationShell, page)
+  );
+}
 
 console.log(JSON.stringify({
   check: "site-build-adapter",
   source: "frontend/pdf-editor/dist",
   staticOutput: "dist/client",
   workerEntrypoint: "dist/server/index.js",
-  routeShells: applicationRoutes,
+  routeShells: [...applicationRoutes, ...SEARCH_PAGES.map((page) => page.path)],
 }));

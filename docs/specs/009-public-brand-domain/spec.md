@@ -1,6 +1,6 @@
 # SPEC-009 — Public Brand, Domain, and Search Foundation
 
-Status: Clarified and in implementation
+Status: Implemented and automatically verified; Search Console gate open
 Owner: Creator
 Last clarified: 2026-07-26
 

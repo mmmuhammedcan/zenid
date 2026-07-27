@@ -1,0 +1,26 @@
+# ZenID
+
+> Your local identity workspace.
+
+ZenID is a free, privacy-first professional identity workspace. It helps people
+create ATS-friendly resumes, build public portfolios from explicitly selected
+information, and fill or visually sign PDFs locally in a web browser. No ZenID
+account is required for these core workflows. Private workspace data stays in
+the visitor's browser.
+
+## Core workflows
+
+- [Turkish CV preparation](https://getzenid.com/tr/cv-hazirlama/): Create ATS-friendly CV versions and export selectable PDFs.
+- [English resume builder](https://getzenid.com/en/resume-builder/): Build focused resumes from one reusable professional profile.
+- [Turkish portfolio preparation](https://getzenid.com/tr/portfolyo-hazirlama/): Choose what becomes public and export a static portfolio site.
+- [English portfolio builder](https://getzenid.com/en/portfolio-builder/): Build a provider-neutral portfolio with explicit privacy controls.
+- [Turkish PDF editing](https://getzenid.com/tr/pdf-duzenleme/): Fill PDFs and add visual marks locally.
+- [English private PDF editor](https://getzenid.com/en/private-pdf-editor/): Fill and visually sign PDFs in the browser.
+
+## Product boundaries
+
+- Canonical origin: https://getzenid.com/
+- Private `.zenid` project files are user-owned local backups.
+- Public portfolio packages contain only information selected for publication.
+- ZenPDF visual signatures are not certificate-backed digital signatures.
+- ZenID does not promise search ranking and does not expose a project-data backend.

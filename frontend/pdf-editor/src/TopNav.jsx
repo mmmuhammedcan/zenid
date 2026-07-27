@@ -1,11 +1,16 @@
 import { Link, useLocation } from "react-router-dom";
 import { Home } from "lucide-react";
 import { useI18n } from "./I18nContext.jsx";
+import { SEARCH_PAGES } from "./searchPageContent.js";
 
 export default function TopNav() {
   const location = useLocation();
   const isHome = location.pathname === "/";
+  const searchPage = SEARCH_PAGES.find(
+    (page) => location.pathname.replace(/\/$/, "") === `/${page.path}`
+  );
   const { locale, setLocale, t } = useI18n();
+  const selectedLocale = searchPage?.locale || locale;
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-stone-800/50 bg-stone-950/95 backdrop-blur-md">
@@ -27,20 +32,40 @@ export default function TopNav() {
             className="flex rounded-lg border border-stone-700 bg-stone-900 p-0.5 text-xs font-semibold"
           >
             {["tr", "en"].map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setLocale(option)}
-                aria-pressed={locale === option}
-                lang={option}
-                className={`rounded-md px-2.5 py-1.5 transition-colors ${
-                  locale === option
+              searchPage ? (
+                <Link
+                  key={option}
+                  to={
+                    option === searchPage.locale
+                      ? `/${searchPage.path}`
+                      : new URL(searchPage.alternateUrl).pathname
+                  }
+                  aria-current={selectedLocale === option ? "page" : undefined}
+                  lang={option}
+                  className={`rounded-md px-2.5 py-1.5 transition-colors ${
+                    selectedLocale === option
+                      ? "bg-amber-800 text-white"
+                      : "text-stone-400 hover:text-stone-100"
+                  }`}
+                >
+                  {option.toUpperCase()}
+                </Link>
+              ) : (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setLocale(option)}
+                  aria-pressed={selectedLocale === option}
+                  lang={option}
+                  className={`rounded-md px-2.5 py-1.5 transition-colors ${
+                    selectedLocale === option
                     ? "bg-amber-800 text-white"
                     : "text-stone-400 hover:text-stone-100"
-                }`}
-              >
-                {option.toUpperCase()}
-              </button>
+                  }`}
+                >
+                  {option.toUpperCase()}
+                </button>
+              )
             ))}
           </div>
         {!isHome && (

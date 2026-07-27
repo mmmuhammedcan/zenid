@@ -1,6 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://getzenid.com/</loc>
+  </url>
+  <url>
+    <loc>https://getzenid.com/tr/cv-hazirlama/</loc>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://getzenid.com/tr/cv-hazirlama/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://getzenid.com/en/resume-builder/" />
+  </url>
+  <url>
+    <loc>https://getzenid.com/en/resume-builder/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://getzenid.com/en/resume-builder/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://getzenid.com/tr/cv-hazirlama/" />
+  </url>
+  <url>
+    <loc>https://getzenid.com/tr/portfolyo-hazirlama/</loc>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://getzenid.com/tr/portfolyo-hazirlama/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://getzenid.com/en/portfolio-builder/" />
+  </url>
+  <url>
+    <loc>https://getzenid.com/en/portfolio-builder/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://getzenid.com/en/portfolio-builder/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://getzenid.com/tr/portfolyo-hazirlama/" />
+  </url>
+  <url>
+    <loc>https://getzenid.com/tr/pdf-duzenleme/</loc>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://getzenid.com/tr/pdf-duzenleme/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://getzenid.com/en/private-pdf-editor/" />
+  </url>
+  <url>
+    <loc>https://getzenid.com/en/private-pdf-editor/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://getzenid.com/en/private-pdf-editor/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://getzenid.com/tr/pdf-duzenleme/" />
   </url>
 </urlset>

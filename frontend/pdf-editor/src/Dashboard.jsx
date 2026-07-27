@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, FileEdit, PanelsTopLeft, UserRound } from "lucide-react";
 import { useI18n } from "./I18nContext.jsx";
+import { getSearchPagesForLocale } from "./searchPageContent.js";
 
 const TOOLS = [
   {
@@ -27,7 +28,8 @@ const TOOLS = [
 ];
 
 export default function Dashboard() {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
+  const discoveryPages = getSearchPagesForLocale(locale);
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-6 py-16 text-stone-100">
       <div className="mb-14 text-center">
@@ -66,6 +68,21 @@ export default function Dashboard() {
           </Link>
         ))}
       </div>
+
+      <nav
+        aria-label={locale === "tr" ? "ZenID rehberleri" : "ZenID guides"}
+        className="mt-10 flex max-w-5xl flex-wrap justify-center gap-x-6 gap-y-3 text-sm"
+      >
+        {discoveryPages.map((page) => (
+          <Link
+            key={page.path}
+            to={`/${page.path}`}
+            className="text-stone-400 underline decoration-stone-700 underline-offset-4 transition-colors hover:text-amber-400"
+          >
+            {page.heading}
+          </Link>
+        ))}
+      </nav>
     </div>
   );
 }

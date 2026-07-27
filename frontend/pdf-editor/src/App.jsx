@@ -5,6 +5,8 @@ import PdfEditor from "./PdfEditor";
 import ResumeApp from "./resume/ResumeApp";
 import PortfolioApp from "./portfolio/PortfolioApp";
 import { WorkspaceProvider } from "./storage/WorkspaceContext";
+import SearchLandingPage from "./SearchLandingPage";
+import { SEARCH_PAGES } from "./searchPageContent";
 
 export default function App() {
   const basename = import.meta.env.BASE_URL.replace(/\/$/, "") || "/";
@@ -22,6 +24,13 @@ export default function App() {
           <Route path="/editor" element={<PdfEditor />} />
           <Route path="/resume" element={<ResumeApp />} />
           <Route path="/portfolio" element={<PortfolioApp />} />
+          {SEARCH_PAGES.map((page) => (
+            <Route
+              key={page.path}
+              path={`/${page.path}`}
+              element={<SearchLandingPage page={page} />}
+            />
+          ))}
         </Routes>
         </div>
       </div>

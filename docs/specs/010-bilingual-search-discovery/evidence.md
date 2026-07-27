@@ -1,7 +1,8 @@
 # SPEC-010 Evidence — Bilingual Search and AI Discovery
 
-Status: Automatically verified; production smoke and Search Console submission pending
+Status: Automatically verified and deployed; Search Console submission pending
 Implementation commit: `ead3ecaea6dfff05547cc8e7997942bc5c70ea65`
+Deployment source commit: `f2a772eadd815e9179d1ce92bbb7f15dc5922f69`
 Verified: 2026-07-27
 
 ## Acceptance mapping
@@ -13,7 +14,7 @@ Verified: 2026-07-27
 | AC-005 | Regression assertions preserve the root title, strapline, and canonical URL. |
 | AC-006–AC-008 | Build tests verify reciprocal `hreflang`, sitemap entries, `WebApplication` JSON-LD, `llms.txt`, and the OAI-SearchBot/GPTBot distinction. |
 | AC-009 | Unit, lint, build, browser, round-trip, and benchmark commands passed at the implementation commit. |
-| AC-010 | Open: deploy the tested artifact, smoke the public URLs, then submit the sitemap and indexing request in Search Console. |
+| AC-010 | All six canonical URLs, sitemap, robots, and `llms.txt` returned HTTPS 200 in the production smoke. Search Console submission remains open. |
 
 ## Test-first record
 
@@ -76,3 +77,20 @@ were implemented and the focused browser suite passed afterward.
   dispositioned under D-015; this verification does not claim an audit-clean
   dependency tree.
 
+## Production evidence
+
+- The exact pushed source was saved as Sites version 8 and deployed
+  successfully to the existing rollback site.
+- The same `dist/client` artifact was deployed to the `getzenid` Cloudflare
+  Pages production branch; Cloudflare reported deployment
+  `https://c5b8b993.getzenid.pages.dev`.
+- `https://getzenid.com/` remained the durable canonical origin.
+- Each of the six discovery routes returned HTTPS 200 and exposed the expected
+  language, unique title, self-canonical URL, H1, and `WebApplication` JSON-LD.
+- `sitemap.xml`, `robots.txt`, and `llms.txt` returned HTTPS 200. The sitemap
+  contained all six URLs and reciprocal language alternates. The live robots
+  response allowed `OAI-SearchBot`, disallowed `GPTBot`, allowed general search
+  crawling, and linked the sitemap.
+- A few edge requests briefly returned 404 immediately after deployment, then
+  returned 200 on the completed propagation check. No persistent route failure
+  remained.

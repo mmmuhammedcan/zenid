@@ -18,7 +18,7 @@ Last verified: 2026-07-27
 | Mobile/accessibility | Partial | Yes | No | Dated keyboard/screen-reader/device checklist |
 | Turkish/English interface and output locale | Yes | Yes | Creator-only (local review, 2026-07-26) | Independent copy review |
 | Public brand, canonical domain, and search foundation | Partial | Yes | No | Search Console ownership and sitemap submission |
-| Bilingual workflow and AI-search discovery | Yes | Yes | No | Production smoke and Search Console recrawl request |
+| Bilingual workflow and AI-search discovery | Yes | Yes | Production smoke (2026-07-27) | Search Console sitemap and indexing request |
 
 ## Repeatable checks
 

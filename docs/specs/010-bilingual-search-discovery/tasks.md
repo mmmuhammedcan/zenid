@@ -13,5 +13,5 @@
   entries.
 - [x] T007 Add the public product summary and explicit crawler directives.
 - [x] T008 Run the repository verification matrix and record commit evidence.
-- [ ] T009 Deploy the exact tested artifact and run the production smoke.
+- [x] T009 Deploy the exact tested artifact and run the production smoke.
 - [ ] T010 Submit the updated sitemap and request indexing in Search Console.

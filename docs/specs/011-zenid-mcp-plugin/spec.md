@@ -1,6 +1,7 @@
 # SPEC-011 — ZenID MCP Plugin
 
-Status: Clarified; implementation not started
+Status: Implemented and automatically verified (T001-T013, T015, T016);
+not published and not manually accepted. See evidence.md.
 Owner: Creator
 Last clarified: 2026-08-30
 Implements: SPEC-005 deferred decisions (Q-001, Q-002, Q-003)

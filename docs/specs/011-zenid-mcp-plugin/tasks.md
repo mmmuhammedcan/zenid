@@ -54,5 +54,6 @@
       snippets for Claude Desktop and Claude Code are written.
 - [x] T015 State the plugin data boundary in `README.md` and
       `public/llms.txt`.
-- [ ] T016 Run Reviewer and QA gates, write `evidence.md`, and add the
-      capability row to `docs/verification-matrix.md`.
+- [x] T016 Run Reviewer and QA gates, write `evidence.md`, and add the
+      capability row to `docs/verification-matrix.md`. (See `evidence.md` for
+      the AC mapping, the mutation checks, and what remains unverified.)

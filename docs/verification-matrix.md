@@ -20,6 +20,7 @@ Last verified: 2026-07-27
 | Public brand, canonical domain, and search foundation | Yes | Yes | Search Console ownership + sitemap (2026-07-27) | Observe indexing and search performance |
 | Bilingual workflow and AI-search discovery | Yes | Yes | Production smoke + indexing request (2026-07-27) | Observe indexing, AI discovery, and search performance |
 | Sponsor support link (SPEC-012) | Yes | Yes | No | Creator visual check on the deployed dashboard in both locales |
+| Local MCP plugin (SPEC-011) | Yes | Yes | No | npm publication, and creator acceptance from a real agent client |
 
 ## Repeatable checks
 
@@ -32,6 +33,12 @@ npm run build
 npm run benchmark:project-import
 node scripts/zenid-roundtrip-check.mjs save
 node scripts/zenid-roundtrip-check.mjs restore
+```
+
+From the repository root, for the local MCP plugin:
+
+```bash
+npm run test:mcp
 ```
 
 Creator acceptance material is intentionally separate under ignored

@@ -1,7 +1,9 @@
 # SPEC-011 Tasks
 
-- [ ] T001 Record D-024, D-025, and D-026 and update SPEC-005 to point at this
-      spec for its resolved questions.
+- [x] T001 Record D-024, D-025, and D-026 and update SPEC-005 to point at this
+      spec for its resolved questions. (D-024…D-027 are in
+      `docs/decision-log.md`; SPEC-005 "Deferred decisions" now resolves to
+      this spec.)
 - [ ] T002 Add a Node host adapter for font bytes, base64, and file I/O,
       without changing any existing pure function signature.
 - [ ] T003 Add a failing export-parity test comparing an application-produced

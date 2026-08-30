@@ -53,12 +53,21 @@ The future plugin should teach a compatible AI:
 - Job listing, matching, and fake-listing detection belong to a possible
   separate opt-in ZenID Jobs product, not the local ZenID core.
 
-## Deferred decisions
+## Deferred decisions — resolved by SPEC-011
+
+These three questions are answered in
+`docs/specs/011-zenid-mcp-plugin/spec.md` and the decision log:
 
 - Which AI clients and plugin packaging formats are supported first?
+  **D-024** — a locally run stdio MCP server for the user's own agent client.
+  **D-027** — shipped from `packages/zenid-mcp` in this repository.
 - Does the AI return a complete new `.zenid` file or a smaller change proposal?
+  **D-025** — typed per-field edits on a validated in-memory project, with an
+  explicit separate save.
 - Which factual and privacy checks are required before an AI-edited project is
-  accepted?
+  accepted? **D-026** — presentation edits are separated from fact edits,
+  factual changes report old and new values, and no tool may widen the
+  publication scope.
 
-These decisions will be clarified only when this deferred feature reaches its
-implementation phase.
+SPEC-011 owns the implementation of this feature. SPEC-005 remains the record
+of the product direction and its privacy boundary.

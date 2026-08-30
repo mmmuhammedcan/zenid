@@ -32,16 +32,20 @@
       (`frontend/pdf-editor/src/host/projectSession.js`; 11/11 pass. Making
       save overwrite by default fails 2 cases.) `validateProject` reports
       only mechanical findings pending Q-005.
-- [ ] T010 Implement the stdio MCP server and `zenid_describe_format`, with a
+- [x] T010 Implement the stdio MCP server and `zenid_describe_format`, with a
       protocol test asserting the tool list, one applied edit, and one refusal.
-- [ ] T011 Run the protocol test with outbound sockets stubbed to throw and
+      (`packages/zenid-mcp/src/{server,tools}.js`,
+      `packages/zenid-mcp/test/protocol.test.js`; 5/5 pass.)
+- [x] T011 Run the protocol test with outbound sockets stubbed to throw and
       record the result as AC-011 evidence.
+      (`packages/zenid-mcp/test/no-network.js`, loaded with `--import` into the
+      server subprocess. Adding one deliberate outbound call fails all 5.)
 - [ ] T012 Extend `scripts/zenid-roundtrip-check.mjs` with a server-produced
       file.
 - [ ] T013 Add the `packages/zenid-mcp` workspace and its publication bundle,
       with a smoke test that runs the packed tarball.
-- [ ] T014 Publish the package and write its README client-configuration
-      snippet.
+- [ ] T014 Publish the package (creator action) — README client-configuration
+      snippets for Claude Desktop and Claude Code are written.
 - [ ] T015 State the plugin data boundary in `README.md` and
       `public/llms.txt`.
 - [ ] T016 Run Reviewer and QA gates, write `evidence.md`, and add the

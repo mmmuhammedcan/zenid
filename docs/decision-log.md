@@ -366,3 +366,98 @@ replacement so historical context remains explainable.
 - Consequence: Search engines and search-backed assistants receive focused,
   language- and intent-matched public product facts without a thin doorway-page
   network or keyword stuffing. Ranking remains an external outcome.
+
+## D-024 — The ZenID AI plugin is a locally run MCP server
+
+- Date: 2026-08-30
+- Status: Accepted
+- Decision owner: Creator
+- Context: SPEC-005 accepted user-owned AI interoperability but deferred which
+  clients and packaging formats come first. ZenID has no project-data backend:
+  canonical private data lives in the browser under D-012 and in local `.zenid`
+  files. Any ZenID-hosted agent surface, including an in-application assistant
+  or a ZenID-held provider API key, would have to receive a user's professional
+  data and would make ZenID a controller of that data, contradicting D-001 and
+  the stated privacy boundary.
+- Decision: The first ZenID plugin is `zenid-mcp`, a Model Context Protocol
+  server distributed as an npm package and executed by the user's own agent
+  client over local stdio. It operates only on `.zenid` files and export
+  outputs on the user's filesystem. ZenID does not host it, does not proxy
+  model traffic, does not accept a model-provider API key, and does not add an
+  in-application assistant. The web application remains the review and export
+  surface; the plugin is a local editor of the private project file.
+- Consequence: Supported clients are stdio-capable local agents such as Claude
+  Desktop and Claude Code. Clients that connect only to remote MCP servers,
+  including ChatGPT, are out of scope here and would require a separate
+  stateless remote decision with its own data-processing statement. The
+  browser-only privacy boundary is unchanged because no ZenID-operated network
+  hop exists on the plugin path.
+
+## D-025 — AI edits are typed operations on a validated project, not free-form project replacement
+
+- Date: 2026-08-30
+- Status: Accepted
+- Decision owner: Creator
+- Context: SPEC-005 deferred whether an AI returns a complete new `.zenid` file
+  or a smaller change proposal. A whole-file return makes any model formatting
+  error indistinguishable from an intentional edit and gives the user no
+  reviewable summary. A bespoke patch format would add a second data contract
+  to maintain beside the schema.
+- Decision: The plugin loads a project into memory through the existing
+  `normalizeProject` migration path and mutates it only through typed,
+  per-field tools. Each tool returns the concrete before/after values it
+  changed. Persisting is a separate explicit tool call that revalidates the
+  project, writes through the existing `.zenid` writer, and creates a new file
+  unless the caller explicitly requests overwrite of the opened path.
+- Consequence: There is no second interchange format to version. Invalid model
+  output fails at the existing schema boundary instead of reaching a file. The
+  user receives a reviewable change list before a write, and the reopened
+  project passes the same compatibility checks as any manually saved workspace.
+
+## D-026 — The plugin may rewrite presentation but may not widen publication or silently rewrite history
+
+- Date: 2026-08-30
+- Status: Accepted
+- Decision owner: Creator
+- Context: SPEC-005 deferred which factual and privacy checks are required
+  before an AI-edited project is accepted. ZenID cannot verify whether a claim
+  is true, so promising factual verification would be dishonest. It can,
+  however, mechanically constrain which fields an agent is able to change and
+  how visibly it must do so.
+- Decision: Wording tools write only presentation text and, where the schema
+  supports it under D-021, locale overrides keyed to existing profile items.
+  Changing an employer name, institution name, date, or credential identifier
+  requires a distinct fact-edit tool that names the field and reports the old
+  and new value in its result. No tool may set a `contactPrivacy` or
+  `visibleSections` flag to true, remove an entry from `hiddenItems`, add a
+  media asset to the public portfolio, or enable portfolio résumé attachment;
+  publication scope stays a human decision in the application. Export tools refuse to run on a project
+  that fails normalization.
+- Consequence: An agent can prepare and target résumé presentation without
+  being able to invent employment history unnoticed or widen what becomes
+  public. ZenID states that it constrains and reports edits; it does not claim
+  to verify that the user's claims are true.
+
+## D-027 — The MCP plugin ships from this repository as a bundled workspace package
+
+- Date: 2026-08-30
+- Status: Accepted
+- Decision owner: Creator
+- Context: SPEC-011 Q-004 asked whether the plugin lives in this repository or in
+  a separate repository depending on a published ZenID core package. The server
+  reuses `projectSchema.js`, `projectFile.js`, `resumePdfExport.js`, and
+  `portfolioSiteExport.js` directly. A separate repository would hold its own
+  copy or its own pinned version of the project schema, so an application
+  schema change could ship before the plugin's, and the failure mode of that
+  skew is a written `.zenid` file the application refuses to reopen.
+- Decision: The plugin lives at `packages/zenid-mcp` in this repository, added
+  as an npm workspace. It imports the shared modules by relative path so tests
+  run against the same source the application runs. Publication bundles those
+  imports and the required font assets into the package's own `dist/`, because
+  npm packaging does not follow relative paths outside the package directory.
+- Consequence: BR-011 parity is enforceable in one test run, and the schema
+  cannot drift between the two surfaces. The published tarball carries the
+  three NotoSans faces, roughly 1.5 MB, which is accepted as the cost of
+  ATS-safe Unicode output. Extracting a separate repository later remains
+  possible once a published ZenID core package exists; it is not reversible in
+  the other direction at comparable cost.

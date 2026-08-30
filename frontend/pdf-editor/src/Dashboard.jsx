@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, FileEdit, PanelsTopLeft, UserRound } from "lucide-react";
+import { ArrowRight, FileEdit, Heart, PanelsTopLeft, UserRound } from "lucide-react";
 import { useI18n } from "./I18nContext.jsx";
 import { getSearchPagesForLocale } from "./searchPageContent.js";
 
@@ -83,6 +83,15 @@ export default function Dashboard() {
           </Link>
         ))}
       </nav>
+
+      <a
+        href="https://github.com/sponsors/mmmuhammedcan"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-8 inline-flex items-center gap-1.5 text-sm font-medium text-stone-400 transition-colors hover:text-amber-400"
+      >
+        <Heart size={14} /> {t("Support ZenID")}
+      </a>
     </div>
   );
 }

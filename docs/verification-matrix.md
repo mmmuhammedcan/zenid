@@ -19,6 +19,7 @@ Last verified: 2026-07-27
 | Turkish/English interface and output locale | Yes | Yes | Creator-only (local review, 2026-07-26) | Independent copy review |
 | Public brand, canonical domain, and search foundation | Yes | Yes | Search Console ownership + sitemap (2026-07-27) | Observe indexing and search performance |
 | Bilingual workflow and AI-search discovery | Yes | Yes | Production smoke + indexing request (2026-07-27) | Observe indexing, AI discovery, and search performance |
+| Sponsor support link (SPEC-012) | Yes | Yes | No | Creator visual check on the deployed dashboard in both locales |
 
 ## Repeatable checks
 

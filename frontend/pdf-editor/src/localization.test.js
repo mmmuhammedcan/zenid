@@ -29,6 +29,11 @@ test("translates application copy without changing unknown user-authored text", 
   assert.equal(translate("en", "Build Resume"), "Build Resume");
 });
 
+test("translates the sponsor support link label", () => {
+  assert.equal(translate("tr", "Support ZenID"), "Projeyi Destekle");
+  assert.equal(translate("en", "Support ZenID"), "Support ZenID");
+});
+
 test("localizes resume labels and dates independently", () => {
   assert.equal(getResumeCopy("tr").sections.experience, "Profesyonel Deneyim");
   assert.equal(getResumeCopy("tr").present, "Devam ediyor");

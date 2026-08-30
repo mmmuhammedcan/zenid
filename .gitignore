@@ -31,3 +31,6 @@ artifacts/
 # Creator-owned acceptance fixtures and real portfolio/CV review material
 # (may contain personal data; never commit)
 creator_docs/
+
+# Local handoff bundles
+*.zip

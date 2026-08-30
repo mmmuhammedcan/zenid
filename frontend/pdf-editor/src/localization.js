@@ -24,6 +24,7 @@ const TURKISH_UI = {
   "Language": "Dil",
   "English": "İngilizce",
   "Turkish": "Türkçe",
+  "Support ZenID": "Projeyi Destekle",
   "Welcome to ZenID": "ZenID’ye Hoş Geldiniz",
   "Your local identity workspace.": "Yerel kimlik çalışma alanınız.",
   "Pick a tool to get started.": "Başlamak için bir araç seçin.",

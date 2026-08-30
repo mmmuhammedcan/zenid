@@ -14,11 +14,16 @@
       `window`/`fetch`/`btoa`.)
 - [x] T004 Implement the adapter until T003 passes. (5/5 host tests pass;
       confirmed failing when a font face is deliberately mismapped.)
-- [ ] T005 Add failing tests for the presentation-versus-fact boundary
+- [x] T005 Add failing tests for the presentation-versus-fact boundary
       (AC-003, AC-004, AC-005).
-- [ ] T006 Add failing tests for the publication guard (AC-006), one per
-      protected field group.
-- [ ] T007 Implement the guarded operation layer until T005 and T006 pass.
+      (`frontend/pdf-editor/src/host/guardedOperations.test.js`)
+- [x] T006 Add failing tests for the publication guard (AC-006), one per
+      protected field group: contactPrivacy, visibleSections, hiddenItems,
+      media, and portfolio.resume.enabled.
+- [x] T007 Implement the guarded operation layer until T005 and T006 pass.
+      (`frontend/pdf-editor/src/host/guardedOperations.js`; 21/21 pass.
+      Disabling the publication guard fails 6 cases and disabling the
+      fact boundary fails 5, so both rules are load-bearing.)
 - [ ] T008 Add failing tests for open-summary shape (AC-001), migration
       round trip (AC-002), non-overwriting save (AC-007), and refusal on
       failed normalization (AC-010).

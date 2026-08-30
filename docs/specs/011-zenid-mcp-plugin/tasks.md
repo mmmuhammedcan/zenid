@@ -40,13 +40,19 @@
       record the result as AC-011 evidence.
       (`packages/zenid-mcp/test/no-network.js`, loaded with `--import` into the
       server subprocess. Adding one deliberate outbound call fails all 5.)
-- [ ] T012 Extend `scripts/zenid-roundtrip-check.mjs` with a server-produced
-      file.
-- [ ] T013 Add the `packages/zenid-mcp` workspace and its publication bundle,
+- [x] T012 Extend `scripts/zenid-roundtrip-check.mjs` with a server-produced
+      file. (`save` writes `Synthetic_Server_Project.zenid` through the tool
+      layer; `restore` asserts the override survives and the canonical text
+      did not change.)
+- [x] T013 Add the `packages/zenid-mcp` workspace and its publication bundle,
       with a smoke test that runs the packed tarball.
+      (`scripts/build.mjs`, `test/pack.test.js`. The test found two real
+      publication defects: a duplicated shebang, and a bin entry guard that
+      failed under npm's symlink so the published server exited without
+      serving.)
 - [ ] T014 Publish the package (creator action) — README client-configuration
       snippets for Claude Desktop and Claude Code are written.
-- [ ] T015 State the plugin data boundary in `README.md` and
+- [x] T015 State the plugin data boundary in `README.md` and
       `public/llms.txt`.
 - [ ] T016 Run Reviewer and QA gates, write `evidence.md`, and add the
       capability row to `docs/verification-matrix.md`.

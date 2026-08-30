@@ -11,6 +11,8 @@ and keeps the editable project on their own device.
 - `/portfolio` — portfolio editor with explicit publication controls and
   static-site ZIP export.
 - `/editor` — ZenPDF, a supporting local PDF fill-and-sign tool.
+- `packages/zenid-mcp` — an optional local MCP server that lets a user's own
+  agent client read and edit their `.zenid` file on their own machine.
 - The interface, résumé output, and portfolio output support explicit Turkish
   and English language choices without automatically translating user-authored
   professional content.
@@ -25,6 +27,20 @@ The React application is in `frontend/pdf-editor`.
 - Portfolio ZIPs are separate public packages containing only selected data.
 - Real creator acceptance fixtures live in ignored `creator_docs/`; repository
   tests use synthetic identities.
+
+### The `zenid-mcp` plugin boundary
+
+The optional MCP plugin does not change this model. It runs on the user's own
+machine, started by the user's own agent client over stdio, and makes no
+network request; a test drives a full session with every outbound socket
+stubbed to throw. ZenID holds no model-provider key and receives none of the
+user's data. Whatever the user's client sends to its model provider, it sends
+under that provider's terms, as SPEC-005 states.
+
+The plugin can rewrite how a résumé reads, but changing what the user's history
+asserts requires a distinct tool that reports the old and new value. It can
+narrow what a portfolio publishes and never widen it. See
+`docs/specs/011-zenid-mcp-plugin/` and `packages/zenid-mcp/README.md`.
 
 ## Development
 

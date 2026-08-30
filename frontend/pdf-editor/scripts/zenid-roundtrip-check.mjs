@@ -16,6 +16,9 @@ const artifactsDirectory = path.join(repositoryRoot, "artifacts");
 const projectPath = path.join(artifactsDirectory, "Synthetic_ZenID_Project.zenid");
 const originalPdfPath = path.join(artifactsDirectory, "Synthetic_Resume.pdf");
 const restoredPdfPath = path.join(artifactsDirectory, "Synthetic_Restored_Resume.pdf");
+// T012: a file produced by the MCP server rather than by the application, so
+// the round trip covers the path a user's agent client actually writes.
+const serverProjectPath = path.join(artifactsDirectory, "Synthetic_Server_Project.zenid");
 
 function fixtureProject() {
   return normalizeProject({
@@ -147,7 +150,35 @@ async function exportProject() {
     generatedPdfs: [{ resumeId: resume.id, bytes: originalPdf }],
   });
   await writeFile(projectPath, archive);
-  process.stdout.write(`${JSON.stringify({ stage: "saved", projectPath, bytes: archive.byteLength }, null, 2)}\n`);
+  const server = await exportServerProject();
+  process.stdout.write(
+    `${JSON.stringify(
+      { stage: "saved", projectPath, bytes: archive.byteLength, serverProject: server },
+      null,
+      2
+    )}\n`
+  );
+}
+
+// Drives the same tool layer the MCP server exposes, without the protocol, so
+// the round-trip check does not depend on the package's dependencies being
+// installed but still exercises the server's own write path.
+async function exportServerProject() {
+  const { createSession, createTools } = await import("../../../packages/zenid-mcp/src/tools.js");
+  const session = createSession();
+  const tools = Object.fromEntries(createTools(session).map((tool) => [tool.name, tool.handler]));
+
+  await tools.zenid_open_project({ path: projectPath });
+  const edit = await tools.zenid_set_wording({
+    resumeId: fixtureProject().resumes[0].id,
+    field: "experience",
+    itemId: "experience-example",
+    description: "Shipped a local-first document workflow used across the team.",
+  });
+  assert.equal(edit.applied, true, "The server did not apply the wording edit");
+
+  const saved = await tools.zenid_save_project({ path: serverProjectPath, overwrite: true });
+  return { path: saved.path, bytes: saved.bytes, changes: edit.changes.length };
 }
 
 async function restoreProject() {
@@ -163,10 +194,26 @@ async function restoreProject() {
   const pdfBytes = new Uint8Array(pdf.output("arraybuffer"));
   await writeFile(restoredPdfPath, pdfBytes);
 
+  // T012: the server-written file must reopen, carry the agent's wording, and
+  // leave the user's canonical text exactly as they wrote it.
+  const serverRestored = parseProjectFileBytes(new Uint8Array(await readFile(serverProjectPath)));
+  assert.equal(
+    serverRestored.resumes[0].contentOverrides.experience["experience-example"].description,
+    "Shipped a local-first document workflow used across the team.",
+    "The server-produced file lost the wording override"
+  );
+  assert.equal(
+    serverRestored.profile.experience[0].description,
+    expected.profile.experience[0].description,
+    "The server-produced file changed the canonical profile text"
+  );
+
   process.stdout.write(
     `${JSON.stringify(
       {
         stage: "restored-in-fresh-process",
+        serverProjectReopened: true,
+        serverProjectSchemaVersion: serverRestored.schemaVersion,
         schemaVersion: restored.schemaVersion,
         fullName: restored.profile.personalInfo.fullName,
         resumes: restored.resumes.length,

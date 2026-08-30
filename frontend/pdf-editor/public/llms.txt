@@ -24,3 +24,8 @@ the visitor's browser.
 - Public portfolio packages contain only information selected for publication.
 - ZenPDF visual signatures are not certificate-backed digital signatures.
 - ZenID does not promise search ranking and does not expose a project-data backend.
+- `zenid-mcp` is an optional local MCP server run by the user's own agent
+  client over stdio. It makes no network request, ZenID holds no model-provider
+  key, and no user data reaches ZenID. It may rewrite resume wording, must use a
+  separate reported tool to change a factual claim, and can never widen what a
+  portfolio publishes.

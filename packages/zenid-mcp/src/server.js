@@ -6,6 +6,9 @@
 // imports (BR-001). The user's professional data reaches a model only through
 // the client they chose to run, under that client's terms.
 
+import { realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
@@ -50,7 +53,21 @@ async function main() {
 }
 
 // Only run when executed directly, so tests can import the factory.
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+//
+// npm installs the bin as a symlink, so process.argv[1] is the link path while
+// import.meta.url is the resolved one and a naive comparison silently exits
+// without ever serving. Comparing real paths is what makes the published
+// package actually start.
+function isDirectExecution() {
+  if (!process.argv[1]) return false;
+  try {
+    return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+}
+
+if (isDirectExecution()) {
   main().catch((error) => {
     process.stderr.write(`zenid-mcp failed to start: ${error.message}\n`);
     process.exit(1);

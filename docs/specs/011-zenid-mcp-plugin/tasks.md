@@ -24,10 +24,14 @@
       (`frontend/pdf-editor/src/host/guardedOperations.js`; 21/21 pass.
       Disabling the publication guard fails 6 cases and disabling the
       fact boundary fails 5, so both rules are load-bearing.)
-- [ ] T008 Add failing tests for open-summary shape (AC-001), migration
+- [x] T008 Add failing tests for open-summary shape (AC-001), migration
       round trip (AC-002), non-overwriting save (AC-007), and refusal on
       failed normalization (AC-010).
-- [ ] T009 Implement open, validate, and save until T008 passes.
+      (`frontend/pdf-editor/src/host/projectSession.test.js`)
+- [x] T009 Implement open, validate, and save until T008 passes.
+      (`frontend/pdf-editor/src/host/projectSession.js`; 11/11 pass. Making
+      save overwrite by default fails 2 cases.) `validateProject` reports
+      only mechanical findings pending Q-005.
 - [ ] T010 Implement the stdio MCP server and `zenid_describe_format`, with a
       protocol test asserting the tool list, one applied edit, and one refusal.
 - [ ] T011 Run the protocol test with outbound sockets stubbed to throw and

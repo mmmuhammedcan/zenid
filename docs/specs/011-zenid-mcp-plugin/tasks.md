@@ -4,12 +4,16 @@
       spec for its resolved questions. (D-024…D-027 are in
       `docs/decision-log.md`; SPEC-005 "Deferred decisions" now resolves to
       this spec.)
-- [ ] T002 Add a Node host adapter for font bytes, base64, and file I/O,
+- [x] T002 Add a Node host adapter for font bytes, base64, and file I/O,
       without changing any existing pure function signature.
-- [ ] T003 Add a failing export-parity test comparing an application-produced
+      (`frontend/pdf-editor/src/host/nodeHost.js`)
+- [x] T003 Add a failing export-parity test comparing an application-produced
       and adapter-produced résumé PDF and portfolio ZIP for one synthetic
-      project.
-- [ ] T004 Implement the adapter until T003 passes.
+      project. (`frontend/pdf-editor/src/host/exportParity.test.js`; the
+      browser side runs the real `loadFontDataFromAssets` path under stubbed
+      `window`/`fetch`/`btoa`.)
+- [x] T004 Implement the adapter until T003 passes. (5/5 host tests pass;
+      confirmed failing when a font face is deliberately mismapped.)
 - [ ] T005 Add failing tests for the presentation-versus-fact boundary
       (AC-003, AC-004, AC-005).
 - [ ] T006 Add failing tests for the publication guard (AC-006), one per

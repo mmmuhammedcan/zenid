@@ -231,20 +231,18 @@ export function createTools(session) {
       },
       handler: async ({ resumeId, name }) => {
         requireOpen(session);
-        const before = new Set(session.project.resumes.map((resume) => resume.id));
-        let next = duplicateResumeDocument(session.project, resumeId);
-        const created = next.resumes.find((resume) => !before.has(resume.id));
-        if (name && created) {
-          next = {
-            ...next,
-            resumes: next.resumes.map((resume) =>
-              resume.id === created.id ? { ...resume, name } : resume
-            ),
-          };
-        }
+        const { project, resumeId: newId } = duplicateResumeDocument(session.project, resumeId);
+        const next = name
+          ? {
+              ...project,
+              resumes: project.resumes.map((resume) =>
+                resume.id === newId ? { ...resume, name } : resume
+              ),
+            }
+          : project;
         session.project = next;
         session.summary = summarizeProject(next, { migratedFrom: session.summary?.migratedFrom ?? null });
-        const result = next.resumes.find((resume) => !before.has(resume.id));
+        const result = next.resumes.find((resume) => resume.id === newId);
         return { resumeId: result.id, name: result.name };
       },
     },

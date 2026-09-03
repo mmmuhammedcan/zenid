@@ -157,6 +157,19 @@ test("a full local session applies an edit, refuses a violation, and writes file
     assert.equal(worded.applied, true);
     assert.equal(worded.changes[0].after, "Shipped a privacy-first document workflow.");
 
+    // Duplicating a resume variant returns the new variant's id and name.
+    const variant = payload(
+      await client.callTool({
+        name: "zenid_create_resume_variant",
+        arguments: { resumeId: "resume-general", name: "Targeted Resume" },
+      })
+    );
+    assert.notEqual(variant.resumeId, "resume-general");
+    assert.equal(variant.name, "Targeted Resume");
+    const resumes = payload(await client.callTool({ name: "zenid_list_resumes", arguments: {} }));
+    assert.equal(resumes.resumes.length, 2);
+    assert.ok(resumes.resumes.some((resume) => resume.id === variant.resumeId));
+
     // One refusal, reported as a tool error rather than a crashed session.
     const refusal = await client.callTool({
       name: "zenid_set_portfolio_settings",

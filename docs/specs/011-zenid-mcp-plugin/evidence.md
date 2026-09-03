@@ -199,10 +199,13 @@ Verified: 2026-09-03
 - New facts do not silently widen the public portfolio: experience, project,
   and certification additions enter `hiddenItems`, while a newly populated
   skills section is made non-public because the schema has no per-skill list.
-- Browser regression: Chromium 33 passed, 1 intentionally skipped. The full
-  multi-browser command could not launch the local Firefox binary because its
-  Playwright cache `firefox/lock` path was absent; this is an environment setup
-  block rather than an observed application failure.
+- Browser regression: Chromium 33 passed, 1 intentionally skipped. The broken
+  Playwright Firefox cache was repaired by removing only the disposable
+  `firefox-1532` browser directory and reinstalling Firefox 151. The configured
+  `firefox-release` project then completed successfully: 12 passed and 2
+  intentionally skipped. This exercises critical routes, IndexedDB migration
+  and locking, shared workspace hydration, and local synthetic PDF export in a
+  second real browser engine.
 - A fresh-context Reviewer found and the Developer closed four issues before
   commit: uncoded export failure before first save, a user-authored empty skill
   category being mistaken for scaffold data, boolean-only blank entries being

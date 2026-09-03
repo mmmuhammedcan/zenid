@@ -254,6 +254,36 @@ concrete: local `0.1.1` behavior is validated, but users running
 authenticated release. The spec must not report `0.1.1` as publicly delivered
 before that registry response changes.
 
+### Final whole-result acceptance replay
+
+After the Firefox environment repair, the complete result was replayed through
+the registered `zenid` MCP server rather than through source imports or test
+helpers. The client listed 17 tools, created a fresh schema-3 English workspace,
+added one synthetic experience, one skill group, and one education record, and
+set synthetic contact facts. The first validation usefully reported three
+mechanical issues caused by noncanonical location/link aliases and inconsistent
+date formats. After the same public fact-edit tool changed those values to the
+canonical fields and `YYYY-MM` dates, `zenid_validate` reported `valid: true`,
+no findings, and ATS 100% (7/7). This demonstrates that the score reacts to
+actual corrections rather than returning a constant result.
+
+The public save tool then wrote
+`$JCODE_SCRATCH_DIR/zenid-final-acceptance/final-public-interface.zenid`
+(2,332 bytes), the default PDF export wrote a PDF 1.3 document with one page
+(152,898 bytes), and the public open tool reparsed the archive with exactly one
+skill, experience, and education entry. `unzip -t` independently passed all
+four archive members. The reopened publication summary retained the privacy
+defaults: the experience remained hidden and the skills section remained
+non-public.
+
+The direct-paste forum artifact was also checked in its delivery form:
+`docs/marketing/zenid-forum-post.txt` is 352 words, has no Markdown heading or
+code fence, and contains both the ZenID site and npm package links. Opening it
+in the desktop UI was attempted, but the session harness suppressed file/URL
+opening. Posting it to the real forum or WhatsApp remains a creator action, so
+the delivery-format checks are representative rather than a claim of manual
+publication acceptance.
+
 ## Not verified
 
 - **Manual acceptance.** No dated creator checklist exists for using the plugin

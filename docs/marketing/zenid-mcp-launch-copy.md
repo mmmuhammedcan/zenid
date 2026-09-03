@@ -3,85 +3,87 @@
 Working file for the npm/site announcement. Not a spec, not shipped
 anywhere yet — draft copy for the creator to pick from, cut, and combine.
 
+Core angle, locked in: **this makes CV writing easy.** Not privacy,
+not architecture, not "local-first" as a value statement. Privacy is
+a real property of the system and gets one supporting line, not the
+headline — nobody is going to stop scrolling for "no server." They
+will stop scrolling for "my resume writes itself while I talk."
+
 ---
 
 ## 1. Attention-getters (pick one, 3 seconds to land)
 
-The problem with most of these tools: they ask the reader to trust a
-paragraph before they've earned a reason to read it. Lead with the
-outcome or the fear, not the feature.
+**A — the effort hook (strongest, lead with this):**
+> Stop staring at a blank resume. Just talk to it.
 
-**A — the fear hook (privacy angle, strongest differentiator):**
-> Every "AI resume tool" wants your career history on their server.
-> This one doesn't have a server.
+**B — the outcome hook:**
+> Paste a job posting. Say "fix my resume for this." Watch the score
+> go from 57 to 100 while you're still explaining what you actually did.
 
-**B — the outcome hook (what changes for the reader):**
-> Open Claude. Say "check my resume against this job." Get a real
-> answer — not a paragraph of generic advice, a score, a diff, and a
-> file you can actually save.
+**C — the relief hook (against the pain of the old way):**
+> You already told your friend the whole story of that job in two
+> minutes. Tell your resume the same way — it writes the bullet points.
 
-**C — the specificity hook (concrete + surprising):**
-> Your resume just failed ATS parsing on a date format. You'll never
-> see that in the preview. This will.
+**D — the speed hook:**
+> A finished, ATS-ready resume in one conversation. No template
+> fighting, no formatting, no staring at a cursor.
 
-**D — the contrarian hook (against the grain of every other AI resume tool):**
-> Every other AI resume tool reads your career, guesses, and
-> sometimes invents things you never did. This one refuses to.
-
-Recommendation: **A for privacy-first audiences** (HN, r/privacy,
-technical Twitter), **B for job-seeker audiences** (LinkedIn, job
-search subreddits, TikTok/shorts script). Use both — different channel,
-different hook.
+Recommendation: **A or C as the opening line** everywhere — video,
+landing page, npm README. Convenience is the whole sale. Everything
+else (privacy, no invented facts, real scoring) is what makes people
+trust it *after* they're already interested, not what gets them to
+click.
 
 ---
 
-## 2. One-paragraph pitch (for a bio, a submission blurb, a video description)
+## 2. One-paragraph pitch (bio / video description / submission blurb)
 
-> ZenID is a local resume and portfolio builder that never leaves your
-> browser. `zenid-mcp` is its free companion: a Model Context Protocol
-> server you run yourself, that lets Claude (or any MCP client) open
-> your `.zenid` file, score it against real ATS-parsing rules, and
-> tailor it to a job posting — in conversation, with your real
-> experience, never inventing a fact you didn't tell it. No account.
-> No server. `npx zenid-mcp` and you're talking to your own resume.
+> Most people don't write resumes, they fight with them — a blank
+> template, a cursor, an hour gone. zenid-mcp lets you just talk
+> instead. Tell Claude what you did, in your own words, and it builds
+> the resume: it writes strong bullet points from what you say, checks
+> it against real ATS rules, and tells you exactly what's weak for the
+> job you're applying to — all in one conversation. Runs on your own
+> machine, free, `npx zenid-mcp` and you're done setting it up.
 
 ---
 
 ## 3. Landing-page / npm-README-teaser copy (longer, structured)
 
 ### Headline
-**Your resume, reviewed by an AI that can't lie about it — because it
-can't leave your machine.**
+**Talk your resume into existence.**
 
 ### Sub-headline
-zenid-mcp connects your own AI agent to your own ZenID profile.
-Locally. No account, no upload, no model key ZenID holds on your
-behalf.
+zenid-mcp connects Claude (or any AI you already use) straight to your
+ZenID resume. Describe your experience, get a polished, ATS-checked
+resume back — no blank page, no formatting, no second-guessing.
 
-### The three beats
+### The three beats (convenience first, trust second)
 
-**1. It's actually private, provably.**
-The server makes zero network requests — not "we don't log it," not
-"trust our privacy policy." A test literally stubs every socket in the
-process to throw, and the full session (open, edit, validate, export)
-still passes. Your resume never leaves your machine unless *you* paste
-it somewhere.
+**1. You talk, it writes.**
+No staring at a template. Tell it what you did on a project or a job
+— the way you'd explain it to a friend — and it turns that into a
+resume bullet that actually reads well, using the same
+action-context-method-result structure real recruiters look for. Say
+"make this punchier" or "shorten it" and it just does it.
 
-**2. It tells the difference between rewording and lying.**
-Ask it to punch up a bullet point and it will. Ask it to change your
-job title, your dates, or your employer and it refuses — out loud,
-naming the tool you'd need to use instead, because that's not wording
-anymore, that's a fact about your life. Every factual edit reports the
-old value and the new value. Nothing changes silently.
+**2. It checks your work before a robot rejects it.**
+Most resumes get filtered before a human ever sees them. zenid-mcp
+runs a real check — missing dates, inconsistent formatting, missing
+contact info, the stuff that actually breaks ATS parsers — and hands
+you a score and a fix list. Same file, same score, every time, so you
+know exactly what to fix and why.
 
-**3. It gives you a real score, not vibes.**
-`zenid_validate` runs seven mechanical checks straight from actual
-documented ATS parsing failure modes — missing dates, inconsistent
-date formats, missing contact fields — and returns a percentage with a
-concrete fix for each gap. Same file, same score, every time. Then, in
-conversation, it can go further: read your real experience, take the
-job description you're targeting, and tell you honestly what's weak,
-missing, or unsupported — using your own facts, never invented ones.
+**3. It tailors to the actual job, on request.**
+Paste the job posting. Ask "does this match?" It reads your real
+experience and tells you honestly what's missing, what's buried, and
+what to lead with — using only what you actually told it. It won't
+invent a skill or a metric you never had; if the evidence isn't
+there, it asks you a question instead of making something up.
+
+*(Trust line, one sentence, not a section:)* Nothing leaves your
+machine to do any of this — no account, no upload, no server holding
+your resume.
 
 ### The install (make this trivially copyable)
 
@@ -93,59 +95,61 @@ missing, or unsupported — using your own facts, never invented ones.
 }
 ```
 
-Paste that into Claude Desktop's config, restart, and say:
-> "Open ~/Documents/my-resume.zenid and check it against this job
-> posting: [paste]."
+Paste that into Claude Desktop's config, restart, and just start
+talking:
+> "I want to build a resume. I was a backend developer at a startup
+> for two years, mostly working on their checkout system..."
 
 ### Closing line
-Free. Open source. MIT licensed. No waitlist, no signup — it's already
-on npm.
+Free. Open source. Already on npm — nothing to sign up for.
 
 ---
 
 ## 4. Launch-post format (Hacker News / Reddit / X thread opener)
 
-> Show HN: zenid-mcp — an MCP server that reads your resume, scores it
-> against real ATS rules, and refuses to invent facts about your career
+> Show HN: zenid-mcp — talk your resume into existence with Claude
 >
-> I built a local-first resume builder (ZenID) and kept hitting the
-> same wall every time someone asked an AI to "improve my resume": the
-> AI either had no reliable way to read the file, or it happily
-> rewrote a job title because it sounded better.
+> I kept watching people freeze up in front of a blank resume
+> template. The actual bottleneck was never "what template" — it was
+> "how do I turn what I did into a sentence that sounds good and
+> passes the robot filter."
 >
-> zenid-mcp is a stdio MCP server, npm-published, that runs entirely on
-> your machine. It has no model key and makes no network request
-> (there's a test that proves it — every socket is stubbed to throw
-> for the whole session). It draws a hard line between *wording*
-> (which it can rewrite freely, with your original always recoverable)
-> and *facts* (which need an explicit tool, and every change reports
-> old-value/new-value).
+> zenid-mcp is an MCP server (npm, free) that lets you just describe
+> your experience conversationally and get back a resume: it writes
+> the bullet points, checks the file against real ATS parsing rules
+> (dates, formatting, contact fields — a deterministic score, not
+> vibes), and can tailor it to a specific job posting on request,
+> using only what you actually told it.
 >
-> It also runs a deterministic ATS check — seven binary criteria
-> grounded in documented parser failure modes (missing dates,
-> inconsistent date formats, etc.), same file always gets the same
-> score. What it deliberately does *not* do is claim to replicate a
-> real ATS's keyword matching against a specific job posting — that's
-> a live conversation with whichever agent you're using, using your
-> real content, not a black-box number from a script with no model
-> access.
+> It runs entirely on your machine — no account, no upload — which
+> also happens to mean it can't quietly invent a job title or a metric
+> you never had; changing a fact requires an explicit tool that
+> reports the before/after, everything else is just wording it can
+> rewrite freely.
 >
-> npm: `npx zenid-mcp` · repo: github.com/mmmuhammedcan/zenid · MIT.
+> `npx zenid-mcp` · github.com/mmmuhammedcan/zenid · MIT.
 
 ---
 
-## 5. Tone notes for whoever writes the video script next
+## 5. Tone notes for the video script
 
-- Open on the fear/pain, not the feature: someone's resume getting
-  auto-rejected without ever knowing why, before naming the product.
-- Show the refusal moment live — an agent trying to change an employer
-  name and getting told no. That's the single most convincing 10
-  seconds this product has; it's the opposite of every "AI resume
-  writer will invent your job history" fear.
-- Show the score going from a real, low number to a real, higher
-  number, from a real edit — not a mockup. (The Elif walkthrough
-  earlier in this session is a ready-made script: open file, run
-  validate at 57%, add real facts, reword with the evidence formula,
-  re-validate at 100%.)
-- End on the install command on screen, held long enough to screenshot.
-  One line. That's the entire "call to action."
+- **Open on the blank-page pain, not a feature list.** Cold open:
+  someone staring at an empty resume template, cursor blinking, timer
+  ticking. That's the universal, instantly-recognized problem. Cut to
+  them just *talking* instead.
+- **Show the conversation doing the writing**, live: "I built five
+  dashboards that cut reporting time..." → watch the polished bullet
+  point appear. That's the core magic beat, give it the most screen
+  time.
+- **Show the score jump** (57 → 100) as a concrete, fast payoff —
+  people respond to a number visibly going up more than to a
+  paragraph of explanation.
+- **The "it won't lie for you" moment** (agent tries to invent/change
+  a fact, gets refused) goes *after* the writing demo, as the "and
+  here's why you can trust what it wrote" beat — reassurance, not the
+  hook.
+- **End on the install command on screen**, held long enough to
+  screenshot. One line. That's the entire call to action.
+- Keep total runtime tight — this audience scrolls past anything that
+  doesn't pay off in the first 3 seconds and doesn't finish anything
+  over 60-90 seconds unless the hook was strong enough to earn it.

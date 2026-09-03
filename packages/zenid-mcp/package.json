@@ -3,6 +3,16 @@
   "version": "0.1.0",
   "description": "Local MCP server for ZenID: read and edit your own .zenid professional profile from your own agent client, on your own machine.",
   "license": "MIT",
+  "author": "Muhammed Can Ozdemir",
+  "homepage": "https://getzenid.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mmmuhammedcan/zenid.git",
+    "directory": "packages/zenid-mcp"
+  },
+  "bugs": {
+    "url": "https://github.com/mmmuhammedcan/zenid/issues"
+  },
   "type": "module",
   "bin": {
     "zenid-mcp": "./dist/server.js"
@@ -10,7 +20,8 @@
   "main": "./dist/server.js",
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=20"

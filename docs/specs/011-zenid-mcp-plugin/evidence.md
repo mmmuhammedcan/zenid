@@ -213,6 +213,35 @@ Verified: 2026-09-03
   Registry publication remains a creator action because npm requires publisher
   authentication/2FA.
 
+### Live client acceptance observation
+
+The locally registered `zenid` server was exercised through Jcode's real MCP
+client interface after the automated suite, rather than by importing its source
+or calling a test helper:
+
+1. The client listed all 17 live tools, including `zenid_create_project` and
+   `zenid_add_fact`.
+2. `zenid_create_project` created a Turkish résumé named
+   `Gerçek MCP Kabul CV` with schema 3 and zero filled sections.
+3. The client set a synthetic person's header and added one company experience,
+   one skill group, and one education entry. Each call reported its concrete
+   factual change. The experience was also placed in `hiddenItems`, and skills
+   were made non-public, confirming the publication boundary through the public
+   tool result.
+4. `zenid_validate` observed `valid: true`, no findings, and a deterministic
+   ATS result of 100% (7/7 criteria) for the completed synthetic record.
+5. The client saved
+   `$JCODE_SCRATCH_DIR/zenid-d030-acceptance/deniz-kaya.zenid` (2,346 bytes),
+   exported the default PDF beside it (226,094 bytes), and reopened the saved
+   project through `zenid_open_project`. The reopened summary observed exactly
+   one skill, one experience, one education entry, and one hidden experience.
+   Independent file inspection identified a valid ZIP whose four entries pass
+   `unzip -t`, and a PDF 1.3 document containing one page.
+
+This is representative evidence for the installed local MCP workflow and its
+filesystem boundary. It is not a claim that npm `0.1.1` is live: registry
+publication remains externally blocked on the publisher's interactive 2FA.
+
 ## Not verified
 
 - **Manual acceptance.** No dated creator checklist exists for using the plugin

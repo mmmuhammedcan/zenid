@@ -1,6 +1,6 @@
 # SPEC-011 — ZenID MCP Plugin
 
-Status: Implemented and automatically verified (T001-T013, T015-T017);
+Status: Implemented and automatically verified (T001-T013, T015-T018);
 not published and not manually accepted. See evidence.md.
 Owner: Creator
 Last clarified: 2026-09-03
@@ -122,6 +122,10 @@ browser application's storage boundary under D-012.
 - AC-014: The playbook tool returns the evidence formula, the structure
   checklist, and the four AI-collaboration prompts as data, and issues no
   verdict, score, or ranking of the user's content.
+- AC-015: Given the same project, `zenid_validate`'s `atsScore` reports the
+  same percentage and pass/fail breakdown across repeated calls with no
+  intervening edit, is computed from exactly the seven named criteria in
+  D-029, and each failed criterion carries one concrete recommended action.
 
 ## Proposed tool surface
 
@@ -195,6 +199,14 @@ Synthetic identities only, under the existing repository rule.
   deliberately left to the agent conversation, consistent with `plan.md`
   keeping "AI resume analysis and prioritized suggestions" out of what the
   server itself asserts.
+- Q-007: D-029 adds a deterministic `atsScore` to `zenid_validate` (a
+  percentage over the seven D-028 mechanical criteria, with a recommended
+  action per failed one) so the user gets a real, auditable score today.
+  Job-specific content screening — whether a resume would pass a real
+  recruiter's AI screen for a particular posting — stays a live capability of
+  the connected agent using `zenid_read_section` and the playbook's
+  `relevance_review` prompt, because the server has no model-provider access
+  to render that judgment itself (BR-001).
 
 ## Open questions
 

@@ -328,7 +328,11 @@ export function createTools(session) {
       config: {
         title: "Validate the open project",
         description:
-          "Report whether the project is structurally sound, plus mechanical findings such as a missing contact method or an emptied section.",
+          "Report whether the project is structurally sound, mechanical findings such as a missing contact " +
+          "method or an emptied section, and a deterministic atsScore (a percentage over seven binary " +
+          "criteria, each with a recommendation when failed). The score is mechanical, not a judgment of " +
+          "content quality; for job-specific screening, read the sections and apply zenid_resume_playbook's " +
+          "relevance_review prompt directly.",
         inputSchema: {},
       },
       handler: async () => {

@@ -496,3 +496,45 @@ replacement so historical context remains explainable.
   their own real experience, not a hidden scoring function the server runs
   quietly. If the application's checklist content changes, this tool's data
   should be updated alongside it or it will teach a stale framework.
+
+## D-029 — A transparent mechanical score is server-side; job-specific AI screening stays a live agent capability
+
+- Date: 2026-09-03
+- Status: Accepted
+- Decision owner: Creator
+- Context: The creator asked for something closer to a real hiring pipeline
+  experience: a resume is screened, gets a score, some pass and some are
+  filtered, with recommendations. D-028 deliberately kept `zenid_validate`
+  and `zenid_resume_playbook` free of any score, because judging career
+  quality was out of scope. The creator's new request is more specific:
+  they want the pass/fail, scored screening feeling, not necessarily a
+  claim of being a certified ATS product.
+  There is a hard architectural fact this decision must respect, not just a
+  preference: `zenid-mcp` holds no model-provider key and makes no network
+  request (BR-001, D-024), verified by a test that stubs every outbound
+  socket to throw. The server cannot itself run an AI judgment of whether a
+  resume matches a job description, because it has no model to run one with.
+  That capability only exists in the connected agent's own reasoning.
+- Decision: Two capabilities, kept honestly distinct.
+  1. `zenid_validate` gains a deterministic `atsScore`: a fixed set of seven
+     equal-weight, binary, mechanical criteria already computed as findings
+     (name present, a contact method present, a location present, a
+     professional link present, experience and skills both non-empty, every
+     dated entry has a start date, date formatting is consistent), reported
+     as a percentage with a pass/fail breakdown and one concrete recommended
+     action per failed criterion. This is arithmetic over existing findings,
+     not a new judgment.
+  2. Job-specific, content-quality screening — "would this pass a real
+     recruiter's AI screen for this posting" — is not computed by the
+     server. It is a capability of the connected agent, using
+     `zenid_read_section` for the user's real content and
+     `zenid_resume_playbook`'s `relevance_review` prompt as the method,
+     applied live in conversation to whatever job description the user
+     supplies. The plugin's data boundary (SPEC-011 BR-001) is not
+     renegotiable to add this server-side.
+- Consequence: The user gets a real score today, for free, computed the
+  same way every time from their own file, that a support engineer could
+  audit line by line. The "does this pass for this specific job" experience
+  they actually asked for still happens, honestly, as a conversation with
+  their agent rather than a black-box verdict a local script cannot
+  responsibly render.

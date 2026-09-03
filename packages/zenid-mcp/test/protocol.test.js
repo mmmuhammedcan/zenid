@@ -312,6 +312,14 @@ test("zenid_validate reports D-028's mechanical checklist findings", async () =>
     assert.ok(codes.includes("NO_LOCATION"));
     assert.ok(codes.includes("NO_PROFESSIONAL_LINK"));
     assert.ok(codes.includes("UNDATED_ITEM"));
+
+    // AC-015: the score is computed from those same findings and reaches
+    // the caller as a stable, auditable percentage with recommendations.
+    assert.ok(result.atsScore.percent < 100);
+    assert.equal(result.atsScore.criteria.length, 7);
+    const location = result.atsScore.criteria.find((c) => c.key === "location");
+    assert.equal(location.passed, false);
+    assert.ok(location.recommendation);
   } finally {
     await close();
   }

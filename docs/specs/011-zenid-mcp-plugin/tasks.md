@@ -63,3 +63,12 @@
       `frontend/pdf-editor/src/resume/writingGuidance.test.js` — 6/6, new;
       `packages/zenid-mcp/test/protocol.test.js` — 8/8, 2 new; the packed-
       tarball tool count updated to 15. All green.)
+- [x] T018 D-029: add a deterministic `atsScore` to `zenid_validate` (seven
+      equal-weight binary criteria over D-028's findings, percent, and a
+      recommendation per failed criterion), and document that job-specific
+      AI screening stays a live agent capability rather than a server-side
+      claim, because the server has no model-provider access (BR-001). Tests:
+      `frontend/pdf-editor/src/host/projectSession.test.js` — 25/25, 5 new;
+      `packages/zenid-mcp/test/protocol.test.js` — 8/8, extended. Mutation
+      check: hardcoding a fake 100% score drops project-session tests from
+      25/25 to 22/25 passing (3 failed).

@@ -1,7 +1,7 @@
 # SPEC-011 Evidence — ZenID MCP plugin
 
-Status: Automatically verified for T001–T013, T015, and T017. Not manually
-accepted; not published.
+Status: Automatically verified for T001–T013, T015, T017, and T018. Not
+manually accepted; not published.
 Verified: 2026-09-03
 Tested commit: HEAD at commit time (see T017 section for the incremental diff)
 Environment: Node v22.15.1, Linux x86_64
@@ -111,6 +111,43 @@ Verified: 2026-09-03
   root 7/7, `test:mcp` 8/8, lint clean, build clean, roundtrip save+restore
   pass.
 
+## T018 — D-029 deterministic ATS score
+
+Verified: 2026-09-03
+
+- AC-015: `frontend/pdf-editor/src/host/projectSession.test.js` adds 5 cases
+  — a project passing all seven criteria scores 100 with no recommendations,
+  a bare project scores below 100 with a recommendation on every failed
+  criterion, the score is byte-identical across two calls on an unedited
+  project (`assert.deepEqual`), the criteria set is exactly the seven named
+  keys, and the `location` criterion's pass/fail is checked against the
+  `NO_LOCATION` finding it is derived from. 25/25 pass.
+  `packages/zenid-mcp/test/protocol.test.js` extends the existing D-028
+  finding test to also assert `atsScore.percent < 100`, exactly 7 criteria,
+  and a recommendation on the failed `location` criterion, over the live
+  stdio protocol. 8/8 pass.
+- The score is computed as arithmetic over the same `mechanicalFindings`
+  values `zenid_validate` already returns (plus one direct check for
+  non-empty experience and skills), not a second independent judgment. All
+  seven criteria are equal-weight by design; weighting them would itself be
+  an unstated opinion about which gap matters more, which the decision
+  record (D-029) states directly.
+- Mutation check: replacing the real `computeAtsScore` call with a
+  hardcoded `{ percent: 100, passed: 7, total: 7, criteria: [] }` drops
+  project-session tests from 25/25 to 22/25, confirming the score
+  computation is load-bearing rather than a pass-through constant.
+- Scope boundary made explicit in code, README, and the spec: job-specific
+  screening ("would this pass a real recruiter's AI filter for this
+  posting") is not computed by `zenid_validate`. The server has no
+  model-provider access (BR-001, verified by the no-network test), so it
+  cannot render that judgment; the tool description and README both point
+  the caller at `zenid_read_section` plus `zenid_resume_playbook`'s
+  `relevance_review` prompt for that conversation instead.
+- Full re-run after these changes: frontend 140/140 (stable across 3
+  consecutive runs after one transient failure attributable to a
+  concurrent build), zenid-mcp package 8/8, root 7/7, `test:mcp` 8/8, lint
+  clean, build clean, roundtrip save+restore pass.
+
 ## Not verified
 
 - **T014 publication.** The package is not published to npm. That is a creator
@@ -128,5 +165,11 @@ Verified: 2026-09-03
   reference data, verified for shape and for the absence of a scoring field
   (T017). Whether the checklist's own guidance is good career advice is not,
   and cannot be, something an automated test establishes.
+- **What the atsScore correlates with.** T018 verifies the score is
+  correctly computed, stable, and auditable arithmetic over the D-028
+  criteria. It does not verify, and cannot verify, that a 100% score
+  predicts a real ATS product's parse success or a recruiter's decision;
+  that claim is deliberately not made anywhere in the tool description,
+  README, or spec.
 
 Synthetic identities only, per the repository rule.

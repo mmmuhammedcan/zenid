@@ -80,14 +80,24 @@ overwritten only if you ask for it directly.
 `zenid_validate` reports mechanical findings straight from ZenID's own
 [resume checklist](https://getzenid.com): a missing header location, no
 professional link present, an entry with no start date, or dates written in
-more than one format. These are binary, checkable properties of the
-document, not a judgment of your career.
+more than one format. It also computes an `atsScore`: a percentage over
+seven binary, mechanical criteria (name, contact method, location,
+professional link, filled experience and skills, dated entries, consistent
+date format), with a concrete recommendation for each one that failed. The
+same project scores the same way every time; it is arithmetic over the
+findings above, not a judgment of your career.
 
-`zenid_resume_playbook` returns that checklist's evidence formula, structure
+Whether your resume would actually pass a real recruiter's screen for a
+specific job is a different question, and this server does not answer it —
+it holds no model-provider access to render that judgment (see "The data
+boundary" above). That's a conversation to have directly with whichever
+agent you're using: point it at `zenid_read_section` for your real content
+and the job posting, and ask it to apply `zenid_resume_playbook`'s
+`relevance_review` prompt.
+
+`zenid_resume_playbook` returns the checklist's evidence formula, structure
 rules, and four prompts for working with an AI editor honestly, as data your
-agent can apply to your real, open project in conversation. Neither tool
-scores or ranks your content; deciding whether a bullet is convincing stays
-between you and whichever agent you're talking to.
+agent can apply to your real, open project in conversation.
 
 ## Tools
 
@@ -103,7 +113,7 @@ between you and whichever agent you're talking to.
 | `zenid_reset_wording` | Restore your original wording |
 | `zenid_edit_fact` | Change a factual field, with old and new reported |
 | `zenid_set_portfolio_settings` | Narrow publication, edit portfolio copy |
-| `zenid_validate` | Structural soundness plus mechanical findings (missing contact fields, empty sections, undated entries, inconsistent date formats) |
+| `zenid_validate` | Structural soundness, mechanical findings, and a deterministic atsScore |
 | `zenid_resume_playbook` | The evidence formula, structure checklist, and four AI-collaboration prompts, for the agent to apply to your real content |
 | `zenid_save_project` | Write a `.zenid` file |
 | `zenid_export_resume_pdf` | Write an ATS-friendly resume PDF |

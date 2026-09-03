@@ -383,3 +383,82 @@ test("validation does not flag consistent YYYY-MM dates across entries", () => {
   const result = validateProject(consistentDates);
   assert.ok(!result.findings.some((finding) => finding.code === "INCONSISTENT_DATE_FORMAT"));
 });
+
+// --- SPEC-011 D-029: the deterministic ats score --------------------------
+
+test("a project meeting every criterion scores 100 with all seven criteria passed", () => {
+  const project = syntheticProject();
+  const complete = normalizeProject({
+    ...project,
+    profile: {
+      ...project.profile,
+      personalInfo: { ...project.profile.personalInfo, city: "Ankara", github: "https://github.com/ada" },
+    },
+  });
+  const result = validateProject(complete);
+  assert.equal(result.atsScore.percent, 100);
+  assert.equal(result.atsScore.passed, 7);
+  assert.equal(result.atsScore.total, 7);
+  assert.ok(result.atsScore.criteria.every((c) => c.passed === true));
+  assert.ok(result.atsScore.criteria.every((c) => !c.recommendation));
+});
+
+test("a bare project with only a name and email scores well below 100", () => {
+  const project = normalizeProject({
+    schemaVersion: CURRENT_SCHEMA_VERSION,
+    profile: { personalInfo: { fullName: "Deniz Kaya", email: "deniz@example.test" } },
+    resumes: [
+      {
+        id: "resume-general",
+        name: "General Resume",
+        language: "en",
+        template: "minimal",
+        accentColor: "#1F2A44",
+        selectedItems: {},
+        contentOverrides: {},
+      },
+    ],
+  });
+  const result = validateProject(project);
+  assert.ok(result.atsScore.percent < 100);
+  assert.ok(result.atsScore.passed < result.atsScore.total);
+  const failed = result.atsScore.criteria.filter((c) => !c.passed);
+  assert.ok(failed.length > 0);
+  failed.forEach((c) => assert.ok(c.recommendation, `${c.key} failed with no recommendation`));
+});
+
+test("atsScore is stable across repeated calls with no edit (AC-015)", () => {
+  const project = syntheticProject();
+  const first = validateProject(project).atsScore;
+  const second = validateProject(project).atsScore;
+  assert.deepEqual(first, second);
+});
+
+test("atsScore uses exactly the seven D-029 criteria, by key", () => {
+  const result = validateProject(syntheticProject());
+  const keys = result.atsScore.criteria.map((c) => c.key).sort();
+  assert.deepEqual(
+    keys,
+    [
+      "contactMethod",
+      "consistentDates",
+      "datedEntries",
+      "fullName",
+      "location",
+      "professionalLink",
+      "sectionsFilled",
+    ].sort()
+  );
+});
+
+test("the location criterion fails exactly when NO_LOCATION is a finding", () => {
+  const project = syntheticProject();
+  const noLocation = normalizeProject({
+    ...project,
+    profile: { ...project.profile, personalInfo: { ...project.profile.personalInfo, city: "", state: "" } },
+  });
+  const result = validateProject(noLocation);
+  const locationCriterion = result.atsScore.criteria.find((c) => c.key === "location");
+  assert.equal(locationCriterion.passed, false);
+  assert.ok(result.findings.some((f) => f.code === "NO_LOCATION"));
+});

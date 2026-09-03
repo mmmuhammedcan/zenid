@@ -206,16 +206,84 @@ function mechanicalFindings(project) {
   return findings;
 }
 
+// D-029: seven equal-weight, binary criteria computed straight from the
+// mechanical findings above (plus one direct content check), so the score is
+// arithmetic over already-explained facts rather than a second, hidden
+// judgment. Deliberately not weighted or tuned to "feel right" - an unequal
+// weighting would itself be an unstated opinion about which gap matters
+// more, which is exactly the kind of judgment D-028/D-029 keep out of the
+// server.
+function hasRealExperienceAndSkills(project) {
+  const experienceFilled = (project.profile.experience || []).some((e) => e.company || e.role);
+  const skillsFilled = (project.profile.skills || []).some((s) => s.items && String(s.items).trim());
+  return experienceFilled && skillsFilled;
+}
+
+function computeAtsScore(project, findings) {
+  const has = (code) => findings.some((f) => f.code === code);
+
+  const criteria = [
+    {
+      key: "fullName",
+      label: "A full name is present",
+      passed: !has("NO_FULL_NAME"),
+      recommendation: "Add your full name to the profile header.",
+    },
+    {
+      key: "contactMethod",
+      label: "An email address or phone number is present",
+      passed: !has("NO_CONTACT_METHOD"),
+      recommendation: "Add an email address or phone number.",
+    },
+    {
+      key: "location",
+      label: "A city or region is present",
+      passed: !has("NO_LOCATION"),
+      recommendation: "Add a city or region to the header.",
+    },
+    {
+      key: "professionalLink",
+      label: "A LinkedIn, GitHub, or portfolio link is present",
+      passed: !has("NO_PROFESSIONAL_LINK"),
+      recommendation: "Add a LinkedIn, GitHub, or portfolio link.",
+    },
+    {
+      key: "sectionsFilled",
+      label: "At least one real experience entry and a listed skill are present",
+      passed: hasRealExperienceAndSkills(project),
+      recommendation: "Add at least one real experience entry and list your skills.",
+    },
+    {
+      key: "datedEntries",
+      label: "Every experience and education entry has a start date",
+      passed: !has("UNDATED_ITEM"),
+      recommendation: "Add a start date to every experience and education entry.",
+    },
+    {
+      key: "consistentDates",
+      label: "Dates use one consistent format",
+      passed: !has("INCONSISTENT_DATE_FORMAT"),
+      recommendation: "Use one date format (for example YYYY-MM) throughout.",
+    },
+  ].map((c) => (c.passed ? { key: c.key, label: c.label, passed: true } : c));
+
+  const passed = criteria.filter((c) => c.passed).length;
+  const total = criteria.length;
+  return { percent: Math.round((passed / total) * 100), passed, total, criteria };
+}
+
 // Reports rather than throws, because an agent should be able to ask "is this
 // project sound?" without the answer being an exception it has to catch.
 export function validateProject(project) {
   try {
     const normalized = normalizeProject(project);
+    const findings = mechanicalFindings(normalized);
     return {
       valid: true,
       schemaVersion: normalized.schemaVersion,
       errors: [],
-      findings: mechanicalFindings(normalized),
+      findings,
+      atsScore: computeAtsScore(normalized, findings),
     };
   } catch (error) {
     return {

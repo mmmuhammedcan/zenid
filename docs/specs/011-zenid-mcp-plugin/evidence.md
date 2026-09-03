@@ -203,7 +203,9 @@ Verified: 2026-09-03
   Playwright Firefox cache was repaired by removing only the disposable
   `firefox-1532` browser directory and reinstalling Firefox 151. The configured
   `firefox-release` project then completed successfully: 12 passed and 2
-  intentionally skipped. This exercises critical routes, IndexedDB migration
+  intentionally skipped. A second independent run after the final evidence
+  changes produced the same 12 passed and 2 skipped result in 10.0 seconds.
+  This exercises critical routes, IndexedDB migration
   and locking, shared workspace hydration, and local synthetic PDF export in a
   second real browser engine.
 - A fresh-context Reviewer found and the Developer closed four issues before

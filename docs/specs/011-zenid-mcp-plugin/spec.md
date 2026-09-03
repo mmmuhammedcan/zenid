@@ -1,7 +1,8 @@
 # SPEC-011 — ZenID MCP Plugin
 
-Status: Implemented and automatically verified (T001-T013, T015-T018);
-not published and not manually accepted. See evidence.md.
+Status: Implemented, automatically verified, and published to npm as
+`zenid-mcp@0.1.0` (T001-T019). Not yet manually accepted from a real Claude
+Desktop or Claude Code installation. See evidence.md.
 Owner: Creator
 Last clarified: 2026-09-03
 Implements: SPEC-005 deferred decisions (Q-001, Q-002, Q-003)

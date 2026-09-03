@@ -20,7 +20,7 @@ Last verified: 2026-07-27
 | Public brand, canonical domain, and search foundation | Yes | Yes | Search Console ownership + sitemap (2026-07-27) | Observe indexing and search performance |
 | Bilingual workflow and AI-search discovery | Yes | Yes | Production smoke + indexing request (2026-07-27) | Observe indexing, AI discovery, and search performance |
 | Sponsor support link (SPEC-012) | Yes | Yes | No | Creator visual check on the deployed dashboard in both locales |
-| Local MCP plugin (SPEC-011) | Yes | Yes | No | npm publication, and creator acceptance from a real agent client |
+| Local MCP plugin (SPEC-011) | Yes | Yes | No | Published to npm (`zenid-mcp@0.1.0`); creator acceptance from a real agent client still open |
 
 ## Repeatable checks
 

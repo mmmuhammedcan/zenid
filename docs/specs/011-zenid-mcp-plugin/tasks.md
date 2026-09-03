@@ -50,8 +50,15 @@
       publication defects: a duplicated shebang, and a bin entry guard that
       failed under npm's symlink so the published server exited without
       serving.)
-- [ ] T014 Publish the package (creator action) — README client-configuration
-      snippets for Claude Desktop and Claude Code are written.
+- [x] T014 Publish the package (creator action). Published as `zenid-mcp@0.1.0`
+      on 2026-09-03. `npm publish` first failed on the registry's mandatory
+      2FA/granular-token requirement (403); the creator enabled it and
+      republished. Verified post-publish, not just pre-publish: a clean
+      `npm install zenid-mcp` in a scratch directory, then the installed
+      `node_modules/.bin/zenid-mcp` binary driven over real stdio with the
+      MCP SDK client, listing all 15 tools and successfully calling
+      `zenid_resume_playbook`. README client-configuration snippets for
+      Claude Desktop and Claude Code now describe a package that exists.
 - [x] T015 State the plugin data boundary in `README.md` and
       `public/llms.txt`.
 - [x] T016 Run Reviewer and QA gates, write `evidence.md`, and add the
@@ -72,3 +79,9 @@
       `packages/zenid-mcp/test/protocol.test.js` — 8/8, extended. Mutation
       check: hardcoding a fake 100% score drops project-session tests from
       25/25 to 22/25 passing (3 failed).
+- [x] T019 Add the missing `LICENSE` file (package.json already claimed MIT)
+      and publish metadata (`author`, `homepage`, `repository`, `bugs`) ahead
+      of T014. `npm pkg fix` corrected a `bin` path normalization warning
+      (`"./dist/server.js"` -> `"dist/server.js"`); re-verified with a clean
+      `npm pack --dry-run` showing no warnings and the same 8-file, 827.7 kB
+      tarball.

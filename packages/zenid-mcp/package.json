@@ -15,7 +15,7 @@
   },
   "type": "module",
   "bin": {
-    "zenid-mcp": "./dist/server.js"
+    "zenid-mcp": "dist/server.js"
   },
   "main": "./dist/server.js",
   "files": [

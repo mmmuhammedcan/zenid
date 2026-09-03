@@ -1,7 +1,8 @@
 # SPEC-011 Evidence — ZenID MCP plugin
 
-Status: Automatically verified for T001–T013, T015, T017, and T018. Not
-manually accepted; not published.
+Status: Automatically verified for T001–T013 and T015–T019. Published to npm
+as `zenid-mcp@0.1.0`. Not yet manually accepted from a real Claude Desktop or
+Claude Code installation.
 Verified: 2026-09-03
 Tested commit: HEAD at commit time (see T017 section for the incremental diff)
 Environment: Node v22.15.1, Linux x86_64
@@ -148,10 +149,36 @@ Verified: 2026-09-03
   concurrent build), zenid-mcp package 8/8, root 7/7, `test:mcp` 8/8, lint
   clean, build clean, roundtrip save+restore pass.
 
+## T019/T014 — npm publication
+
+Verified: 2026-09-03
+
+- Added `packages/zenid-mcp/LICENSE` (MIT text; the package already declared
+  `"license": "MIT"` but shipped no license file) and publish metadata:
+  `author`, `homepage`, `repository`, `bugs`.
+- `npm publish` first failed with `403 Two-factor authentication or granular
+  access token with bypass 2fa enabled is required`, the registry's mandatory
+  publisher-security policy. The creator enabled 2FA on their npm account and
+  republished.
+- `npm publish` also warned `"bin[zenid-mcp]" script name was cleaned`
+  because the `bin` path was written as `"./dist/server.js"`; modern npm
+  normalizes bin paths without a leading `./`. Fixed with `npm pkg fix`, then
+  re-verified with a clean `npm pack --dry-run`: no warnings, same 8 files,
+  827.7 kB, LICENSE present in the tarball contents.
+- Published as `zenid-mcp@0.1.0`. `npm view zenid-mcp` against the live
+  registry confirms the package, matching shasum, and "published a minute
+  ago by mmmuhammedcan."
+- Verified as a real consumer would experience it, not just that the publish
+  command succeeded: `npm init` in a scratch directory, `npm install
+  zenid-mcp` from the real registry (118 packages installed), then the
+  installed `node_modules/.bin/zenid-mcp` binary driven over real stdio with
+  the MCP SDK client — `listTools` returns all 15 tools including
+  `zenid_resume_playbook` and the D-029 `atsScore`-bearing `zenid_validate`,
+  and a live call to `zenid_resume_playbook` returns the expected payload.
+  This closes T014.
+
 ## Not verified
 
-- **T014 publication.** The package is not published to npm. That is a creator
-  action; `npm run build` and the pack test show the tarball is sound.
 - **Manual acceptance.** No dated creator checklist exists for using the plugin
   from a real Claude Desktop or Claude Code installation. The protocol tests use
   the official MCP client over real stdio, which is strong evidence that a

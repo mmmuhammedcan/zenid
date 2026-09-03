@@ -278,11 +278,11 @@ non-public.
 
 The direct-paste forum artifact was also checked in its delivery form:
 `docs/marketing/zenid-forum-post.txt` is 352 words, has no Markdown heading or
-code fence, and contains both the ZenID site and npm package links. Opening it
-in the desktop UI was attempted, but the session harness suppressed file/URL
-opening. Posting it to the real forum or WhatsApp remains a creator action, so
-the delivery-format checks are representative rather than a claim of manual
-publication acceptance.
+code fence, and contains both the ZenID site and npm package links. Direct
+file opening was suppressed by the session harness, so the same verified text
+was loaded into and focused in Jcode's managed side panel as a directly copyable
+page. Posting it to the real forum or WhatsApp remains a creator action and is
+not claimed as manual publication acceptance.
 
 ## Not verified
 

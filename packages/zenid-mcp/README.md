@@ -75,6 +75,20 @@ public is yours to do in ZenID.
 Saving is explicit and, by default, writes a new file. Your opened file is
 overwritten only if you ask for it directly.
 
+## ATS-friendliness and writing help
+
+`zenid_validate` reports mechanical findings straight from ZenID's own
+[resume checklist](https://getzenid.com): a missing header location, no
+professional link present, an entry with no start date, or dates written in
+more than one format. These are binary, checkable properties of the
+document, not a judgment of your career.
+
+`zenid_resume_playbook` returns that checklist's evidence formula, structure
+rules, and four prompts for working with an AI editor honestly, as data your
+agent can apply to your real, open project in conversation. Neither tool
+scores or ranks your content; deciding whether a bullet is convincing stays
+between you and whichever agent you're talking to.
+
 ## Tools
 
 | Tool | Purpose |
@@ -89,7 +103,8 @@ overwritten only if you ask for it directly.
 | `zenid_reset_wording` | Restore your original wording |
 | `zenid_edit_fact` | Change a factual field, with old and new reported |
 | `zenid_set_portfolio_settings` | Narrow publication, edit portfolio copy |
-| `zenid_validate` | Structural soundness plus mechanical findings |
+| `zenid_validate` | Structural soundness plus mechanical findings (missing contact fields, empty sections, undated entries, inconsistent date formats) |
+| `zenid_resume_playbook` | The evidence formula, structure checklist, and four AI-collaboration prompts, for the agent to apply to your real content |
 | `zenid_save_project` | Write a `.zenid` file |
 | `zenid_export_resume_pdf` | Write an ATS-friendly resume PDF |
 | `zenid_export_portfolio_zip` | Write the public portfolio package |

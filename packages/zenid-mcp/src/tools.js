@@ -34,6 +34,7 @@ import {
   buildResumePdf,
   getResumeFileName,
 } from "../../../frontend/pdf-editor/src/resume/resumePdfExport.js";
+import { RESUME_PLAYBOOK } from "../../../frontend/pdf-editor/src/resume/writingGuidance.js";
 import {
   getPortfolioZipFileName,
   serializePortfolioSite,
@@ -334,6 +335,19 @@ export function createTools(session) {
         requireOpen(session);
         return validateProject(session.project);
       },
+    },
+    {
+      name: "zenid_resume_playbook",
+      config: {
+        title: "Resume writing playbook",
+        description:
+          "Return the evidence formula, structure checklist, and AI-collaboration prompts from ZenID's " +
+          "resume checklist, so the calling agent can coach the user through their own real experience. " +
+          "This is reference material for the conversation, not a score: it does not rank, grade, or " +
+          "judge the open project's content, and does not require a project to be open.",
+        inputSchema: {},
+      },
+      handler: async () => RESUME_PLAYBOOK,
     },
     {
       name: "zenid_save_project",

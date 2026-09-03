@@ -79,7 +79,7 @@ test("the packed tarball runs a full session on its own", { timeout: 300000 }, a
 
   try {
     const { tools } = await client.listTools();
-    assert.equal(tools.length, 14, "the packed server does not expose the full tool surface");
+    assert.equal(tools.length, 15, "the packed server does not expose the full tool surface");
 
     const opened = JSON.parse(
       (await client.callTool({ name: "zenid_open_project", arguments: { path: projectPath } }))

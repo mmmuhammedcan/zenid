@@ -244,3 +244,142 @@ test("validation reports mechanical findings without judging the user's content"
     "expected a mechanical finding about the missing contact email"
   );
 });
+
+// --- SPEC-011 D-028: ATS-mechanical findings from the checklist's binary rules ---
+
+test("validation flags a missing header location", () => {
+  const project = syntheticProject();
+  const noLocation = normalizeProject({
+    ...project,
+    profile: {
+      ...project.profile,
+      personalInfo: { ...project.profile.personalInfo, city: "", state: "" },
+    },
+  });
+  const result = validateProject(noLocation);
+  assert.ok(result.findings.some((finding) => finding.code === "NO_LOCATION"));
+});
+
+test("validation does not flag a header location when city is present", () => {
+  const project = syntheticProject();
+  const withLocation = normalizeProject({
+    ...project,
+    profile: {
+      ...project.profile,
+      personalInfo: { ...project.profile.personalInfo, city: "Ankara" },
+    },
+  });
+  const result = validateProject(withLocation);
+  assert.ok(!result.findings.some((finding) => finding.code === "NO_LOCATION"));
+});
+
+test("validation flags no professional link present", () => {
+  const project = syntheticProject();
+  const noLinks = normalizeProject({
+    ...project,
+    profile: {
+      ...project.profile,
+      personalInfo: { ...project.profile.personalInfo, linkedin: "", github: "", portfolio: "" },
+    },
+  });
+  const result = validateProject(noLinks);
+  assert.ok(result.findings.some((finding) => finding.code === "NO_PROFESSIONAL_LINK"));
+});
+
+test("validation does not flag professional links when github is present", () => {
+  const project = syntheticProject();
+  const withLink = normalizeProject({
+    ...project,
+    profile: {
+      ...project.profile,
+      personalInfo: { ...project.profile.personalInfo, github: "https://github.com/ada" },
+    },
+  });
+  const result = validateProject(withLink);
+  assert.ok(!result.findings.some((finding) => finding.code === "NO_PROFESSIONAL_LINK"));
+});
+
+test("validation flags an experience entry with no start date", () => {
+  const project = syntheticProject();
+  const undated = normalizeProject({
+    ...project,
+    profile: {
+      ...project.profile,
+      experience: [{ ...project.profile.experience[0], startDate: "" }],
+    },
+  });
+  const result = validateProject(undated);
+  const finding = result.findings.find((f) => f.code === "UNDATED_ITEM");
+  assert.ok(finding, "expected an UNDATED_ITEM finding");
+  assert.equal(finding.field, "experience");
+  assert.equal(finding.itemId, "experience-labs");
+});
+
+test("validation flags an education entry with no start date", () => {
+  const project = syntheticProject();
+  const withEducation = normalizeProject({
+    ...project,
+    profile: {
+      ...project.profile,
+      education: [
+        { id: "edu-1", institution: "Metu", degree: "BSc", field: "CS", startDate: "", endDate: "2024-06" },
+      ],
+    },
+  });
+  const result = validateProject(withEducation);
+  const finding = result.findings.find((f) => f.code === "UNDATED_ITEM" && f.field === "education");
+  assert.ok(finding, "expected an UNDATED_ITEM finding for education");
+});
+
+test("validation does not flag a dated experience entry", () => {
+  const result = validateProject(syntheticProject());
+  assert.ok(!result.findings.some((finding) => finding.code === "UNDATED_ITEM"));
+});
+
+test("validation flags inconsistent date formatting across entries", () => {
+  const project = syntheticProject();
+  const mixedDates = normalizeProject({
+    ...project,
+    profile: {
+      ...project.profile,
+      experience: [
+        { ...project.profile.experience[0], startDate: "2025-06", endDate: "2025-08" },
+        {
+          id: "experience-second",
+          company: "Second Co",
+          role: "Engineer",
+          startDate: "June 2023",
+          endDate: "Present",
+          description: "Worked.",
+          isCurrentlyWorking: true,
+        },
+      ],
+    },
+  });
+  const result = validateProject(mixedDates);
+  assert.ok(result.findings.some((finding) => finding.code === "INCONSISTENT_DATE_FORMAT"));
+});
+
+test("validation does not flag consistent YYYY-MM dates across entries", () => {
+  const project = syntheticProject();
+  const consistentDates = normalizeProject({
+    ...project,
+    profile: {
+      ...project.profile,
+      experience: [
+        { ...project.profile.experience[0], startDate: "2025-06", endDate: "2025-08" },
+        {
+          id: "experience-second",
+          company: "Second Co",
+          role: "Engineer",
+          startDate: "2023-06",
+          endDate: "2024-01",
+          description: "Worked.",
+          isCurrentlyWorking: false,
+        },
+      ],
+    },
+  });
+  const result = validateProject(consistentDates);
+  assert.ok(!result.findings.some((finding) => finding.code === "INCONSISTENT_DATE_FORMAT"));
+});

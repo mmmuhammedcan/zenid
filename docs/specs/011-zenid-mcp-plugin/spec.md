@@ -1,9 +1,9 @@
 # SPEC-011 — ZenID MCP Plugin
 
-Status: Implemented and automatically verified (T001-T013, T015, T016);
+Status: Implemented and automatically verified (T001-T013, T015-T017);
 not published and not manually accepted. See evidence.md.
 Owner: Creator
-Last clarified: 2026-08-30
+Last clarified: 2026-09-03
 Implements: SPEC-005 deferred decisions (Q-001, Q-002, Q-003)
 
 ## Problem and user
@@ -113,6 +113,15 @@ browser application's storage boundary under D-012.
 - AC-012: The format-description tool returns the current schema version, the
   section model, the presentation-versus-fact distinction, and the publication
   rules in BR-007.
+- AC-013: Given a project missing a header location or every professional
+  link (LinkedIn, GitHub, and portfolio all empty), containing an experience
+  or education entry with no start date, or mixing `YYYY-MM` and free-text
+  dates across entries, the validate tool reports one finding per issue naming
+  the concrete field or item, and reports none of these findings when the
+  corresponding document property is present and consistent.
+- AC-014: The playbook tool returns the evidence formula, the structure
+  checklist, and the four AI-collaboration prompts as data, and issues no
+  verdict, score, or ranking of the user's content.
 
 ## Proposed tool surface
 
@@ -130,6 +139,7 @@ Names are indicative; the contract that matters is BR-003 through BR-008.
 | `zenid_reset_wording` | Restore canonical wording | `resetResumeContentOverride` |
 | `zenid_edit_fact` | Explicit, reported factual change | `updateProjectProfile` |
 | `zenid_validate` | Report normalization result and ATS-mechanical findings | `normalizeProject` |
+| `zenid_resume_playbook` | Return the evidence formula, structure rules, and AI-collaboration prompts for the agent to apply | `zenid-resume-checklist.pdf` |
 | `zenid_save_project` | Write a validated `.zenid` | `serializeProjectArchive` |
 | `zenid_export_resume_pdf` | Write a résumé PDF | `buildResumePdf` |
 | `zenid_export_portfolio_zip` | Write a portfolio package | `serializePortfolioSite` |
@@ -170,8 +180,22 @@ Synthetic identities only, under the existing repository rule.
   asset. If the application later exposes a letterhead option, enabling it in
   server exports becomes part of that feature's spec, together with the
   branding question of whether a ZenID wordmark belongs on a user's résumé.
+- Q-005: D-028 expands `zenid_validate`'s mechanical findings to the
+  binary-checkable rules from `zenid-resume-checklist.pdf`'s structure section
+  (a missing header location, no professional link present, an undated
+  experience or education entry, inconsistent date formatting across
+  entries), and adds `zenid_resume_playbook`, a read-only data tool exposing
+  the checklist's evidence formula, structure rules, and four
+  AI-collaboration prompts so the connected agent can coach the user through
+  their own real content. Neither tool scores, ranks, or judges the user's
+  career; every finding names a concrete, checkable property of the document,
+  and the playbook data is reference material for the agent to apply, not a
+  verdict the server renders itself. The checklist's own subjective judgment
+  calls (bullet strength, keyword relevance, evidence quality) are
+  deliberately left to the agent conversation, consistent with `plan.md`
+  keeping "AI resume analysis and prioritized suggestions" out of what the
+  server itself asserts.
 
 ## Open questions
 
-- Q-005: Should `zenid_validate` expose the ATS-mechanical findings that the
-  application already computes, or a narrower set stated as mechanical-only?
+None open.

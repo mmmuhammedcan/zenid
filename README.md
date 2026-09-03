@@ -39,8 +39,11 @@ under that provider's terms, as SPEC-005 states.
 
 The plugin can rewrite how a résumé reads, but changing what the user's history
 asserts requires a distinct tool that reports the old and new value. It can
-narrow what a portfolio publishes and never widen it. See
-`docs/specs/011-zenid-mcp-plugin/` and `packages/zenid-mcp/README.md`.
+narrow what a portfolio publishes and never widen it. It can also report
+mechanical ATS findings and the resume checklist's evidence formula and
+coaching prompts as data, but it does not itself score or rank the user's
+content. See `docs/specs/011-zenid-mcp-plugin/` and
+`packages/zenid-mcp/README.md`.
 
 ## Development
 

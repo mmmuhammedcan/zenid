@@ -57,3 +57,9 @@
 - [x] T016 Run Reviewer and QA gates, write `evidence.md`, and add the
       capability row to `docs/verification-matrix.md`. (See `evidence.md` for
       the AC mapping, the mutation checks, and what remains unverified.)
+- [x] T017 D-028: expand `zenid_validate`'s mechanical findings with four
+      checklist-grounded checks and add `zenid_resume_playbook`. (Tests:
+      `frontend/pdf-editor/src/host/projectSession.test.js` — 20/20, 9 new;
+      `frontend/pdf-editor/src/resume/writingGuidance.test.js` — 6/6, new;
+      `packages/zenid-mcp/test/protocol.test.js` — 8/8, 2 new; the packed-
+      tarball tool count updated to 15. All green.)

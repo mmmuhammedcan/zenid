@@ -93,9 +93,67 @@ export async function openProject(filePath) {
 
 // Mechanical checks only. These are properties of the document that can be
 // decided without judging the quality of someone's career, which is not a
-// promise ZenID should make. SPEC-011 Q-005 leaves the wider question of how
-// much ATS analysis to claim to the creator; this set is intentionally the
-// narrow, defensible one.
+// promise ZenID should make. D-028 grounds the checks below in the binary,
+// structural rules from `zenid-resume-checklist.pdf` (a location the reader
+// can place you by, at least one working professional link, a dated entry so
+// reverse chronology is legible, and one date convention throughout) rather
+// than any judgment of whether the content itself is compelling.
+const YYYY_MM = /^\d{4}-\d{2}$/;
+
+function dateShape(value) {
+  if (!value) return null;
+  const text = String(value).trim();
+  if (!text) return null;
+  if (text.toLowerCase() === "present") return null; // "present" carries no format of its own.
+  return YYYY_MM.test(text) ? "yyyy-mm" : "free-text";
+}
+
+// Matches getFilledSections's definition of a filled row (resumeSections.js),
+// so "started writing this entry" means the same thing here as it does when
+// the application itself decides whether to render a section.
+function hasContent(field, item) {
+  if (field === "education") return Boolean(item.institution || item.degree);
+  return Boolean(item.company || item.role);
+}
+
+function findUndatedAndInconsistentDates(project, findings) {
+  const shapesSeen = new Set();
+
+  [
+    { field: "experience", items: project.profile.experience || [] },
+    { field: "education", items: project.profile.education || [] },
+  ].forEach(({ field, items }) => {
+    items.forEach((item) => {
+      // An unfilled scaffold row (normalizeProject's default placeholder) is
+      // not a real entry with a missing date; only flag entries the user has
+      // actually started writing.
+      if (!hasContent(field, item)) return;
+      if (!item.startDate) {
+        findings.push({
+          code: "UNDATED_ITEM",
+          message: `A ${field} entry has no start date, so reverse-chronological order cannot be inferred.`,
+          field,
+          itemId: item.id,
+        });
+        return;
+      }
+      const shape = dateShape(item.startDate);
+      if (shape) shapesSeen.add(shape);
+      const endShape = dateShape(item.endDate);
+      if (endShape) shapesSeen.add(endShape);
+    });
+  });
+
+  if (shapesSeen.size > 1) {
+    findings.push({
+      code: "INCONSISTENT_DATE_FORMAT",
+      message:
+        "Dates are written in more than one format across entries (for example \"2025-06\" and " +
+        "\"June 2023\"). Use one convention throughout.",
+    });
+  }
+}
+
 function mechanicalFindings(project) {
   const findings = [];
   const info = project.profile.personalInfo || {};
@@ -107,6 +165,18 @@ function mechanicalFindings(project) {
   if (!info.email && !info.phone) {
     findings.push({ code: "NO_CONTACT_METHOD", message: "The profile has no email address and no phone number." });
   }
+  if (!info.city && !info.state) {
+    findings.push({
+      code: "NO_LOCATION",
+      message: "The header has no city or region, so a reader cannot place where you're based.",
+    });
+  }
+  if (!info.linkedin && !info.github && !info.portfolio) {
+    findings.push({
+      code: "NO_PROFESSIONAL_LINK",
+      message: "The header has no LinkedIn, GitHub, or portfolio link.",
+    });
+  }
 
   const emptySections = PROFILE_SECTIONS.filter((section) => (project.profile[section] || []).length === 0);
   if (emptySections.length > 0) {
@@ -116,6 +186,8 @@ function mechanicalFindings(project) {
       sections: emptySections,
     });
   }
+
+  findUndatedAndInconsistentDates(project, findings);
 
   project.resumes.forEach((resume) => {
     const selections = resume.selectedItems || {};

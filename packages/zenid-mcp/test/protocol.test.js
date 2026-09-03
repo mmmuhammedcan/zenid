@@ -104,6 +104,7 @@ test("the server advertises the documented tool surface over stdio", async () =>
       "zenid_open_project",
       "zenid_read_section",
       "zenid_reset_wording",
+      "zenid_resume_playbook",
       "zenid_save_project",
       "zenid_set_item_selection",
       "zenid_set_portfolio_settings",
@@ -256,3 +257,63 @@ test("tools refuse cleanly when no project is open", async () => {
     await close();
   }
 });
+
+// D-028: the playbook is reference material for the conversation, so it must
+// work before any file is open, and it must carry no scoring of content.
+test("zenid_resume_playbook returns the checklist framework without a project open", async () => {
+  const { client, close } = await startClient();
+  try {
+    const result = payload(await client.callTool({ name: "zenid_resume_playbook", arguments: {} }));
+    assert.equal(result.source, "zenid-resume-checklist.pdf");
+    assert.equal(result.aiCollaborationPrompts.length, 4);
+    assert.ok(result.evidenceFormula.weakVsBetter.length >= 2);
+    const serialized = JSON.stringify(result).toLowerCase();
+    assert.ok(!serialized.includes("\"score\""), "the playbook must not carry a scoring rubric");
+  } finally {
+    await close();
+  }
+});
+
+// SPEC-011 AC-013: the mechanical findings from D-028's checklist rules are
+// reachable over the protocol, on a project the fixture deliberately leaves
+// with no location, no professional link, and one undated entry.
+test("zenid_validate reports D-028's mechanical checklist findings", async () => {
+  const { client, directory, close } = await startClient();
+  try {
+    const projectPath = path.join(directory, "sparse-header.zenid");
+    const sparseProject = normalizeProject({
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      profile: {
+        personalInfo: { fullName: "Deniz Kaya", email: "deniz@example.test" },
+        experience: [
+          { id: "exp-undated", company: "Sparse Co", role: "Engineer", startDate: "", description: "Worked." },
+        ],
+        projects: [{ id: "project-docs", name: "Local Document Workspace", description: "Local-first." }],
+        skills: [{ id: "skill-programming", category: "Programming", items: "JavaScript" }],
+      },
+      resumes: [
+        {
+          id: "resume-general",
+          name: "General Resume",
+          language: "en",
+          template: "minimal",
+          accentColor: "#1F2A44",
+          selectedItems: {},
+          contentOverrides: {},
+        },
+      ],
+    });
+    await writeFile(projectPath, Buffer.from(serializeProjectArchive(sparseProject)));
+
+    await client.callTool({ name: "zenid_open_project", arguments: { path: projectPath } });
+    const result = payload(await client.callTool({ name: "zenid_validate", arguments: {} }));
+
+    const codes = result.findings.map((f) => f.code);
+    assert.ok(codes.includes("NO_LOCATION"));
+    assert.ok(codes.includes("NO_PROFESSIONAL_LINK"));
+    assert.ok(codes.includes("UNDATED_ITEM"));
+  } finally {
+    await close();
+  }
+});
+

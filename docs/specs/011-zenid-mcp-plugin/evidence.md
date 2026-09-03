@@ -1,9 +1,9 @@
 # SPEC-011 Evidence — ZenID MCP plugin
 
-Status: Automatically verified for T001–T013 and T015. Not manually accepted;
-not published.
-Verified: 2026-08-30
-Tested commit: parent `b54f172` (this file is the only later change)
+Status: Automatically verified for T001–T013, T015, and T017. Not manually
+accepted; not published.
+Verified: 2026-09-03
+Tested commit: HEAD at commit time (see T017 section for the incremental diff)
 Environment: Node v22.15.1, Linux x86_64
 
 ## Verification commands
@@ -61,6 +61,7 @@ broken and the suite re-run:
 | Presentation/fact boundary disabled | guarded ops 16/21, 5 failed |
 | Save made to overwrite by default | project session 9/11, 2 failed |
 | One deliberate `fetch` added to the server | protocol 0/5, 5 failed |
+| D-028 date checks disabled (`findUndatedAndInconsistentDates` call removed) | project session 17/20, 3 failed |
 
 ## Defects found by the tests during implementation
 
@@ -77,6 +78,39 @@ broken and the suite re-run:
    and the published server exited immediately without serving. Both were found
    only by the packed-tarball test, not by any source test.
 
+## T017 — D-028 mechanical findings and the resume playbook
+
+Verified: 2026-09-03
+
+- AC-013: `frontend/pdf-editor/src/host/projectSession.test.js` adds 9 cases
+  for `NO_LOCATION`, `NO_PROFESSIONAL_LINK`, `UNDATED_ITEM` (experience and
+  education), and `INCONSISTENT_DATE_FORMAT`, each with a positive and a
+  negative case; 20/20 pass. `packages/zenid-mcp/test/protocol.test.js` adds a
+  case driving the same findings over the live protocol; 8/8 pass.
+- AC-014: `frontend/pdf-editor/src/resume/writingGuidance.test.js` (6/6)
+  asserts the playbook's shape — the evidence formula, weak/better pairs, the
+  structure checklist, and exactly the four named AI-collaboration prompts —
+  and asserts the serialized data contains no `"score"` key or
+  `"interpretation"` text, so the checklist's 0-16 scoring rubric cannot
+  silently reappear. `protocol.test.js` confirms the tool answers with no
+  project open and returns the same shape over stdio.
+- Mutation check: removing the call to `findUndatedAndInconsistentDates`
+  drops project-session tests from 20/20 to 17/20, confirming the new checks
+  are load-bearing rather than vacuous.
+- A real defect found while writing the tests: the first `UNDATED_ITEM`
+  implementation flagged `normalizeProject`'s default placeholder row (an
+  entirely empty scaffold entry every new section starts with) as an undated
+  item. Fixed by only evaluating entries the user has actually started
+  writing, using the same "filled" definition `getFilledSections` already
+  uses in the browser application, so the two surfaces agree on what counts
+  as a real entry.
+- The packed-tarball tool count in `test/pack.test.js` was updated from 14 to
+  15 tools; the pack test (`npm test` in `packages/zenid-mcp`, full run) still
+  passes, so the new tool travels through publication packaging correctly.
+- Full re-run after these changes: frontend 135/135, zenid-mcp package 8/8,
+  root 7/7, `test:mcp` 8/8, lint clean, build clean, roundtrip save+restore
+  pass.
+
 ## Not verified
 
 - **T014 publication.** The package is not published to npm. That is a creator
@@ -86,13 +120,13 @@ broken and the suite re-run:
   the official MCP client over real stdio, which is strong evidence that a
   client can drive it, but it is not the same as a person completing the
   workflow.
-- **Q-005 remains open.** `zenid_validate` currently reports a deliberately
-  narrow mechanical set (missing name, missing contact method, empty sections,
-  a resume variant that excludes every entry in a section). Whether ZenID should
-  claim more ATS analysis is a product promise left to the creator.
 - **Export parity under a real browser.** Parity is asserted between the Node
   host and the browser code path executed under Node with `window`, `fetch`, and
   `btoa` stubbed. The Playwright-based comparison named in the spec's
   verification mapping is not implemented.
+- **The playbook's advice quality.** `zenid_resume_playbook` is transcribed
+  reference data, verified for shape and for the absence of a scoring field
+  (T017). Whether the checklist's own guidance is good career advice is not,
+  and cannot be, something an automated test establishes.
 
 Synthetic identities only, per the repository rule.

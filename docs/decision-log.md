@@ -461,3 +461,38 @@ replacement so historical context remains explainable.
   ATS-safe Unicode output. Extracting a separate repository later remains
   possible once a published ZenID core package exists; it is not reversible in
   the other direction at comparable cost.
+
+## D-028 — Mechanical ATS findings are grounded in the checklist's own binary rules, and subjective coaching stays a data tool
+
+- Date: 2026-09-03
+- Status: Accepted
+- Decision owner: Creator
+- Context: SPEC-011 Q-005 left open whether `zenid_validate` should expose
+  ATS-mechanical findings, and the creator asked for the free plugin to help
+  with ATS-friendliness and interactive resume advice, grounded in the
+  existing `zenid-resume-checklist.pdf` the application already ships and
+  links from the builder. That checklist itself distinguishes mechanical,
+  binary-checkable rules (a single-column layout, a professional link present,
+  consistent dates) from judgment calls (is a bullet's evidence convincing,
+  is a keyword actually relevant). `plan.md`'s Free Local Product list already
+  commits to "ATS-friendly PDF export" and the checklist itself; "AI resume
+  analysis and prioritized suggestions" is listed separately as an optional
+  future service specifically because judging career quality is not a promise
+  this project makes.
+- Decision: `mechanicalFindings` gains four checks taken directly from the
+  checklist's "Structure and visual integrity" and header sections: a missing
+  header location, no professional link present (LinkedIn, GitHub, and
+  portfolio all empty), an experience or education entry with no start date,
+  and inconsistent date formatting across entries. Each finding names the
+  concrete field or item. A new tool, `zenid_resume_playbook`, returns the
+  checklist's evidence formula, structure checklist, and four
+  AI-collaboration prompts as plain data. It is a reference the connected
+  agent applies to the user's real, already-open content in conversation; the
+  server does not itself score, rank, or rewrite anything through it.
+- Consequence: The plugin can materially help with ATS-friendliness and
+  interactive coaching today, for free, without moving the goalposts on what
+  ZenID promises to verify. The checklist's subjective judgment calls remain
+  exactly what they are: something the user's own chosen agent applies to
+  their own real experience, not a hidden scoring function the server runs
+  quietly. If the application's checklist content changes, this tool's data
+  should be updated alongside it or it will teach a stale framework.

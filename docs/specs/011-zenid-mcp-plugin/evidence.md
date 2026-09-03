@@ -242,6 +242,15 @@ This is representative evidence for the installed local MCP workflow and its
 filesystem boundary. It is not a claim that npm `0.1.1` is live: registry
 publication remains externally blocked on the publisher's interactive 2FA.
 
+The npm registry's public `zenid-mcp/latest` endpoint was fetched directly on
+2026-09-03 after this observation. It returned `version: 0.1.0`, tarball
+`zenid-mcp-0.1.0.tgz`, and the previously recorded eight-file distribution.
+Therefore the public installation boundary was exercised and the limitation is
+concrete: local `0.1.1` behavior is validated, but users running
+`npx -y zenid-mcp` still receive `0.1.0` until the publisher completes the
+authenticated release. The spec must not report `0.1.1` as publicly delivered
+before that registry response changes.
+
 ## Not verified
 
 - **Manual acceptance.** No dated creator checklist exists for using the plugin

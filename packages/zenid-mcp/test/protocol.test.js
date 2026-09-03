@@ -95,6 +95,8 @@ test("the server advertises the documented tool surface over stdio", async () =>
     const { tools } = await client.listTools();
     const names = tools.map((tool) => tool.name).sort();
     assert.deepEqual(names, [
+      "zenid_add_fact",
+      "zenid_create_project",
       "zenid_create_resume_variant",
       "zenid_describe_format",
       "zenid_edit_fact",
@@ -113,6 +115,115 @@ test("the server advertises the documented tool surface over stdio", async () =>
     ]);
     for (const tool of tools) {
       assert.ok(tool.description, `${tool.name} has no description for the agent to read`);
+    }
+    const addFactTool = tools.find((tool) => tool.name === "zenid_add_fact");
+    assert.equal(addFactTool.inputSchema.properties.values.properties.company.type, "string");
+    assert.equal(
+      addFactTool.inputSchema.properties.values.properties.isCurrentlyWorking.type,
+      "boolean"
+    );
+  } finally {
+    await close();
+  }
+});
+
+test("a resume can be created from scratch, saved, reopened, and exported over MCP", async () => {
+  const { client, directory, close } = await startClient();
+  try {
+    const created = payload(
+      await client.callTool({
+        name: "zenid_create_project",
+        arguments: { resumeName: "Graduate CV", language: "en" },
+      })
+    );
+    assert.equal(created.created, true);
+    assert.equal(created.summary.sections.experience, 0);
+
+    const personal = payload(
+      await client.callTool({
+        name: "zenid_edit_fact",
+        arguments: {
+          field: "personalInfo",
+          changes: {
+            fullName: "Elif Demir",
+            title: "Computer Engineering Student",
+            email: "elif@example.test",
+            city: "Ankara",
+            github: "https://github.com/example-student",
+          },
+        },
+      })
+    );
+    assert.equal(personal.applied, true);
+
+    const experience = payload(
+      await client.callTool({
+        name: "zenid_add_fact",
+        arguments: {
+          field: "experience",
+          values: {
+            company: "Example Labs",
+            role: "Software Engineering Intern",
+            startDate: "2025-06",
+            endDate: "2025-08",
+            description: "Built and tested a local document workflow.",
+          },
+        },
+      })
+    );
+    assert.equal(experience.applied, true);
+    assert.ok(experience.changes[0].itemId);
+
+    await client.callTool({
+      name: "zenid_add_fact",
+      arguments: { field: "skills", values: { category: "Programming", items: "JavaScript, Python" } },
+    });
+    await client.callTool({
+      name: "zenid_add_fact",
+      arguments: {
+        field: "education",
+        values: { institution: "Example University", degree: "BSc Computer Engineering", startDate: "2022-09" },
+      },
+    });
+
+    const section = payload(
+      await client.callTool({ name: "zenid_read_section", arguments: { section: "experience" } })
+    );
+    assert.equal(section.items.length, 1);
+    assert.equal(section.items[0].company, "Example Labs");
+
+    const validation = payload(await client.callTool({ name: "zenid_validate", arguments: {} }));
+    assert.equal(validation.valid, true);
+    assert.equal(typeof validation.atsScore.percent, "number");
+
+    const projectPath = path.join(directory, "elif-cv.zenid");
+    const saved = payload(
+      await client.callTool({ name: "zenid_save_project", arguments: { path: projectPath } })
+    );
+    const reopened = parseProjectFileBytes(new Uint8Array(await readFile(saved.path)));
+    assert.equal(reopened.profile.personalInfo.fullName, "Elif Demir");
+    assert.equal(reopened.profile.experience[0].company, "Example Labs");
+
+    const exported = payload(
+      await client.callTool({ name: "zenid_export_resume_pdf", arguments: {} })
+    );
+    assert.equal(path.dirname(exported.path), directory);
+    const pdf = await readFile(exported.path);
+    assert.equal(pdf.subarray(0, 4).toString("latin1"), "%PDF");
+  } finally {
+    await close();
+  }
+});
+
+test("an unsaved new project requires explicit export paths", async () => {
+  const { client, close } = await startClient();
+  try {
+    await client.callTool({ name: "zenid_create_project", arguments: {} });
+
+    for (const name of ["zenid_export_resume_pdf", "zenid_export_portfolio_zip"]) {
+      const refusal = await client.callTool({ name, arguments: {} });
+      assert.equal(refusal.isError, true);
+      assert.equal(payload(refusal).error, "NO_TARGET_PATH");
     }
   } finally {
     await close();
@@ -324,4 +435,3 @@ test("zenid_validate reports D-028's mechanical checklist findings", async () =>
     await close();
   }
 });
-

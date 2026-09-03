@@ -85,3 +85,8 @@
       (`"./dist/server.js"` -> `"dist/server.js"`); re-verified with a clean
       `npm pack --dry-run` showing no warnings and the same 8-file, 827.7 kB
       tarball.
+- [x] T020 D-030: add `zenid_create_project` and `zenid_add_fact`, require an
+      explicit first-save path, replace browser scaffold rows rather than
+      duplicating them, and cover the full no-file-to-`.zenid`-and-PDF workflow
+      over real MCP stdio. Prepare the package as `0.1.1`; creator publication
+      remains a separate registry action.

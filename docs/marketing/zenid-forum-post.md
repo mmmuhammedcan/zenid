@@ -22,20 +22,20 @@ hem de kişisel bir portfolyo sitesi çıkarabiliyorsun. Tamamen tarayıcıda
 **AI ile konuşarak CV yazma (asıl eğlenceli kısım)**
 Geçen hafta buna bir de MCP sunucusu ekledim (`zenid-mcp`, npm'de
 yayında, ücretsiz). Claude Desktop veya Claude Code kullanıyorsanız,
-CV'nizi açık bırakıp direkt konuşarak düzenleyebiliyorsunuz:
+CV'nizi sıfırdan oluşturabiliyor veya mevcut `.zenid` dosyanızı konuşarak
+düzenleyebiliyorsunuz:
 
 > "Şu şirkette şunu yaptım, şöyle bir sonuç aldık, bunu bullet point'e
 > çevir" diyorsunuz, o da düzgün bir cümleye çeviriyor.
 
-> "Şu iş ilanına göre CV'mi kontrol et" diyorsunuz, gerçek ATS parsing
-> kurallarına göre (eksik tarih, tutarsız format, eksik iletişim bilgisi
-> gibi) bir skor veriyor ve ne eksik söylüyor.
+> "Şu iş ilanına göre CV'mi kontrol et" diyorsunuz; mekanik ATS kontrollerinden
+> (eksik tarih, tutarsız format, eksik iletişim bilgisi gibi) tekrarlanabilir
+> bir skor çıkarıyor, ardından ajan ilanla içerik uyumunu değerlendiriyor.
 
-Önemli olan şu: hiçbir şeyi uydurmuyor. Bir şirket adını, tarihi ya da
-unvanını değiştirmesini istediğinizde bunu reddediyor ve "bu bir olgu
-değişikliği, ayrı bir onay gerektirir" diyor — sadece ifadeyi
-(wording'i) değiştirebiliyor, gerçekleri değil. Yani sizin adınıza
-uydurma bir şey yazmıyor.
+Önemli olan şu: şirket, tarih ve unvan gibi gerçek bilgiler ayrı araçlarla
+ekleniyor veya değiştiriliyor ve yapılan değişiklik açıkça raporlanıyor.
+İfade düzenlemesi gerçekleri sessizce değiştiremiyor; ajan sizin adınıza
+deneyim uydurmadan verdiğiniz bilgilerle çalışıyor.
 
 **Kurulumu (2 dakika):**
 ```
@@ -64,11 +64,11 @@ CV + portfolyo hazırlama aracı, tamamen tarayıcıda çalışıyor, hesap yok,
 verilerin çıkmıyor.
 
 Asıl güzel kısmı: `npx zenid-mcp` ile Claude'a bağlayıp CV'nizi
-**konuşarak** düzenleyebiliyorsunuz — "şunu yaptım, bullet'a çevir" ya
-da "şu iş ilanına göre kontrol et" diyorsunuz, gerçek ATS kurallarına
-göre skor + öneri alıyorsunuz. Ve önemlisi: şirket adı/tarih gibi
-gerçekleri asla uydurmuyor, sadece izin verdiğiniz kısmı (ifadeyi)
-düzenliyor.
+**konuşarak** sıfırdan oluşturabiliyor veya düzenleyebiliyorsunuz — "şunu
+yaptım, deneyimlerime ekle ve bullet'a çevir" ya da "şu iş ilanına göre
+kontrol et" diyorsunuz; mekanik ATS skoru ve ilana özel öneriler alıyorsunuz.
+Şirket adı/tarih gibi gerçekler ayrı ve görünür işlemlerle değişiyor, ajan
+vermediğiniz bir deneyimi uydurmuyor.
 
 Ücretsiz, açık kaynak. Bi bakın derim: getzenid.com
 
@@ -79,6 +79,8 @@ Repo: github.com/mmmuhammedcan/zenid
 
 ## Notlar
 
+- Doğrudan yapıştırılabilir güncel forum sürümü `zenid-forum-post.txt`
+  dosyasındadır. Versiyon 1 önceki biçimlendirilmiş taslaktır.
 - Versiyon 1 forum için (daha fazla bağlam okuyabilecekleri yer),
   Versiyon 2 WhatsApp için (kaydırıp geçmeden önce okuyabilecekleri
   uzunluk).

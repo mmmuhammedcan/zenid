@@ -64,6 +64,14 @@ case, run the protocol test with outbound sockets stubbed to throw, and state
 the plugin's data boundary in `README.md` and `public/llms.txt` in the same
 terms SPEC-005 uses.
 
+## Phase 5 — Conversational creation
+
+Expose the application's empty-project constructor through the Node session,
+add a guarded operation for new factual entries, and register both as MCP tools.
+The acceptance test starts with no file, creates a synthetic student's profile,
+saves and reparses the `.zenid` archive, and exports a PDF over real stdio with
+network access disabled.
+
 ## Packaging
 
 D-027 places the package at `packages/zenid-mcp` as an npm workspace. Tests

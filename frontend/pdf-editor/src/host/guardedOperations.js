@@ -18,6 +18,15 @@
 // the caller can always tell the user exactly what happened (BR-003).
 
 import {
+  emptyAchievement,
+  emptyCertification,
+  emptyDomain,
+  emptyEducation,
+  emptyExperience,
+  emptyProject,
+  emptySkill,
+} from "../resume/data.js";
+import {
   getResumeDocument,
   materializeResumeData,
   ProjectCompatibilityError,
@@ -233,6 +242,118 @@ export function editFact(project, { field, itemId, changes }) {
   });
 
   return { project: assertPublicationNotWidened(project, next), changes: reported };
+}
+
+// D-030: a resume built entirely through conversation needs a way to add a
+// brand-new entry, not just edit one that already exists. This is a fact
+// operation, not presentation - a new employer, institution, or skill line is
+// a claim about the user's history exactly like editFact's changes are, so it
+// gets the same reporting (BR-003) and the same field-name allowlist that
+// keeps an agent from writing an unrecognized key onto the item silently.
+const ADDABLE_SECTIONS = {
+  domains: emptyDomain,
+  skills: emptySkill,
+  experience: emptyExperience,
+  projects: emptyProject,
+  achievements: emptyAchievement,
+  certifications: emptyCertification,
+  education: emptyEducation,
+};
+
+function isEmptyScaffold(field, item) {
+  if (field === "skills") {
+    return !item?.items && (!item?.category || item.category === "Programming Languages");
+  }
+  return Object.entries(item).every(([key, value]) => key === "id" || value === "" || value === false);
+}
+
+export function addFact(project, { field, values }) {
+  const factory = ADDABLE_SECTIONS[field];
+  if (!factory) {
+    throw new ProjectCompatibilityError(
+      `Unknown or non-addable section: ${field}.`,
+      "UNKNOWN_SECTION"
+    );
+  }
+  if (!values || typeof values !== "object" || Array.isArray(values)) {
+    throw new ProjectCompatibilityError("Adding an entry needs a values object.", "INVALID_FACT_EDIT");
+  }
+
+  const template = factory();
+  const allowedKeys = new Set(Object.keys(template));
+  allowedKeys.delete("id"); // the caller never gets to choose the new id.
+
+  // Silently drop a caller-supplied "id" rather than erroring on it: the
+  // caller has no way to know the id doesn't exist yet, so treating it as a
+  // typo to reject would be a worse experience than just ignoring it. Every
+  // other unrecognized key still fails loudly, per BR-003.
+  const { id: _ignoredId, ...suppliedValues } = values;
+  const unknownKeys = Object.keys(suppliedValues).filter((key) => !allowedKeys.has(key));
+  if (unknownKeys.length > 0) {
+    throw new ProjectCompatibilityError(
+      `Unknown field(s) for ${field}: ${unknownKeys.join(", ")}.`,
+      "UNKNOWN_ITEM_FIELD"
+    );
+  }
+  const wrongTypeKeys = Object.keys(suppliedValues).filter(
+    (key) => typeof suppliedValues[key] !== typeof template[key]
+  );
+  if (wrongTypeKeys.length > 0) {
+    throw new ProjectCompatibilityError(
+      `Invalid value type for ${field}: ${wrongTypeKeys.join(", ")}.`,
+      "INVALID_FACT_EDIT"
+    );
+  }
+  const hasStatedContent = Object.values(suppliedValues).some(
+    (value) => typeof value === "string" && Boolean(value.trim())
+  );
+  if (!hasStatedContent) {
+    throw new ProjectCompatibilityError(
+      `Adding an entry to ${field} needs at least one non-empty value.`,
+      "INVALID_FACT_EDIT"
+    );
+  }
+
+  const item = { ...template, ...suppliedValues };
+  const existingItems = project.profile[field] || [];
+  // A browser-created empty project starts each section with one blank editor
+  // row. Replace that scaffold instead of leaving an invisible blank item next
+  // to every entry added through conversation.
+  const items =
+    existingItems.length === 1 && isEmptyScaffold(field, existingItems[0])
+      ? [item]
+      : [...existingItems, item];
+  const next = updateProjectProfile(project, {
+    [field]: items,
+  });
+  const added = next.profile[field][next.profile[field].length - 1];
+  const changes = [
+    { path: `profile.${field}.${added.id}`, field, itemId: added.id, before: null, after: suppliedValues },
+  ];
+
+  // A newly stated fact has not been explicitly selected for publication. Keep
+  // it private even when the empty project's default portfolio section is
+  // visible. Sections with per-item privacy use hiddenItems; skills are hidden
+  // as a whole because the portfolio schema has no per-skill visibility list.
+  let protectedProject = next;
+  if (Object.prototype.hasOwnProperty.call(next.portfolio.hiddenItems, field)) {
+    const before = next.portfolio.hiddenItems[field] || [];
+    const after = [...new Set([...before, added.id])];
+    protectedProject = updatePortfolio(next, {
+      hiddenItems: { ...next.portfolio.hiddenItems, [field]: after },
+    });
+    changes.push({ path: `portfolio.hiddenItems.${field}`, before, after });
+  } else if (next.portfolio.visibleSections[field] === true) {
+    protectedProject = updatePortfolio(next, {
+      visibleSections: { ...next.portfolio.visibleSections, [field]: false },
+    });
+    changes.push({ path: `portfolio.visibleSections.${field}`, before: true, after: false });
+  }
+
+  return {
+    project: assertPublicationNotWidened(project, protectedProject),
+    changes,
+  };
 }
 
 // --- Portfolio settings ------------------------------------------------------

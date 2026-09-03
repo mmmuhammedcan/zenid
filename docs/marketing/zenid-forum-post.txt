@@ -1,0 +1,49 @@
+Selam arkadaşlar,
+
+Bir süredir geliştirdiğim ZenID’i paylaşmak istedim: https://getzenid.com
+
+ZenID, CV ve portfolyo hazırlamayı kolaylaştıran ücretsiz ve açık kaynaklı bir araç. Bilgilerini bir kez girerek başvuru sistemlerinin rahat okuyabildiği sade bir PDF CV oluşturabiliyor, aynı bilgilerden kişisel bir portfolyo sitesi hazırlayıp ZIP olarak indirebiliyorsun. Hesap açmak gerekmiyor ve doğrudan tarayıcıda çalışıyor.
+
+Bence en kullanışlı tarafı, Claude Desktop veya Claude Code gibi MCP destekleyen bir ajanla CV’yi konuşarak hazırlayabilmek.
+
+Elinde henüz bir CV olmasa bile eğitimini, projelerini, becerilerini ve deneyimlerini sırayla anlatabiliyorsun. Ajan eksik ayrıntıları soruyor, verdiğin bilgileri ZenID profiline ekliyor, CV metinlerini düzenliyor ve sonunda hem .zenid proje dosyasını hem PDF CV’yi oluşturabiliyor.
+
+Örneğin şöyle istekler verebilirsin:
+
+“Bilgisayar mühendisliği öğrencisiyim. Projelerimi ve staj deneyimimi anlatarak sıfırdan İngilizce bir CV hazırlayalım.”
+
+“Example Labs şirketinde yazılım stajı yaptım. Haziran-Ağustos 2025 arasında test otomasyonu geliştirdim. Bunu deneyimlerime ekle.”
+
+“Bu iş ilanını ve CV’mi karşılaştır. Eksik anahtar kelimeleri göster ama sahip olmadığım bir deneyimi ekleme.”
+
+“CV’mi ATS açısından denetle, puanımı açıkla ve düzeltmem gerekenleri sırala.”
+
+ZenID MCP; ad, iletişim yöntemi, konum, profesyonel bağlantı, deneyim ve beceri içeriği, tarihler ve tarih biçimi gibi mekanik kontrollerden tekrarlanabilir bir ATS skoru çıkarıyor. İş ilanına özel içerik değerlendirmesini ise kullandığın ajan, gerçek CV içeriğin ve verdiğin ilan üzerinden yapıyor. Yani mekanik kontrol ile yapay zekânın yorumu birbirine karıştırılmıyor.
+
+Şirket, unvan, okul veya tarih gibi gerçek bilgiler ayrı işlemlerle ekleniyor ya da değiştiriliyor ve yapılan değişiklik açıkça gösteriliyor. Sistem kendi kendine deneyim uydurmak yerine yalnızca verdiğin bilgilerle çalışacak şekilde tasarlandı.
+
+Kurulum için Node.js 20 veya üzeri yeterli:
+
+npx -y zenid-mcp
+
+Claude Code kullanıyorsan:
+
+claude mcp add zenid -- npx -y zenid-mcp
+
+Claude Desktop ayarı ve diğer kullanım örnekleri npm sayfasında bulunuyor:
+https://www.npmjs.com/package/zenid-mcp
+
+Diğer özellikler:
+
+- Aynı profilden farklı şirket veya pozisyonlara özel CV varyantları oluşturma
+- ATS uyumlu, seçilebilir metin içeren PDF CV dışa aktarma
+- Projeleri ve deneyimleri gösterebileceğin responsive portfolyo oluşturma
+- Portfolyoyu ZIP indirip GitHub Pages veya istediğin hostinge yükleme
+- PDF form doldurma ve imzalama için ZenPDF aracı
+- .zenid dosyasını kaydedip daha sonra yeniden açma
+
+Proje açık kaynak ve MIT lisanslı. Denerseniz geri bildiriminiz benim için çok değerli olur.
+
+Site: https://getzenid.com
+MCP: https://www.npmjs.com/package/zenid-mcp
+Kaynak kod: https://github.com/mmmuhammedcan/zenid

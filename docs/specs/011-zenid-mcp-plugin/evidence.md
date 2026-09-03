@@ -1,8 +1,8 @@
 # SPEC-011 Evidence — ZenID MCP plugin
 
-Status: Automatically verified for T001–T013 and T015–T019. Published to npm
-as `zenid-mcp@0.1.0`. Not yet manually accepted from a real Claude Desktop or
-Claude Code installation.
+Status: Automatically verified for T001–T013 and T015–T020. Published to npm
+as `zenid-mcp@0.1.0`; D-030 is prepared as `0.1.1` but is not yet published.
+Not yet manually accepted from a real Claude Desktop or Claude Code installation.
 Verified: 2026-09-03
 Tested commit: HEAD at commit time (see T017 section for the incremental diff)
 Environment: Node v22.15.1, Linux x86_64
@@ -49,6 +49,7 @@ npm run test:mcp  # 6 passed, 0 failed
 | AC-010 refuse on failed normalization | `src/host/projectSession.test.js` — save rejects with `MISSING_RESUME` and the target path does not exist afterwards | Automatically verified |
 | AC-011 no outbound network | `packages/zenid-mcp/test/no-network.js` stubs `net`, `tls`, `dns`, `http`, `https`, `fetch`, and `WebSocket` to throw, loaded with `--import` into the server subprocess; a full session covering open, edit, validate, save, and both exports passes | Automatically verified |
 | AC-012 format description | `packages/zenid-mcp/test/protocol.test.js` — asserts the live `CURRENT_SCHEMA_VERSION`, the fact-tool reference, the never-widen rule, and the save default | Automatically verified |
+| AC-016 conversational creation | `packages/zenid-mcp/test/protocol.test.js` — with no project open, creates a named project, sets synthetic personal information, adds experience/skills/education, reads and validates it, saves to an explicit path, reparses the archive, then exports and verifies a `%PDF` file over real stdio with outbound sockets disabled | Automatically verified |
 
 ## Mutation checks
 
@@ -176,6 +177,41 @@ Verified: 2026-09-03
   `zenid_resume_playbook` and the D-029 `atsScore`-bearing `zenid_validate`,
   and a live call to `zenid_resume_playbook` returns the expected payload.
   This closes T014.
+
+## T020 — D-030 conversational project creation
+
+Verified: 2026-09-03
+
+- `frontend/pdf-editor/src/host/guardedOperations.test.js` covers addition in
+  every canonical array section, generated identifiers, unknown-section and
+  unknown-field refusal, and replacement of the browser's blank scaffold row.
+- `frontend/pdf-editor/src/host/projectSession.test.js` covers a named empty
+  project, refusal to save it without a target, and an explicit save that
+  reparses through `parseProjectFileBytes`.
+- `packages/zenid-mcp/test/protocol.test.js` drives AC-016 over real stdio with
+  outbound networking disabled: create, personal facts, three new entries,
+  section read, validation, explicit first save, shared-parser reopen, and PDF
+  export. The package advertises 17 tools.
+- Exact rerun: frontend `npm test` 152/152; `npm run lint` 0 warnings/errors;
+  `npm run build` passed its deploy-output check; MCP package `npm test` 10/10,
+  including the clean packed-tarball session; root `npm test` 7/7 and
+  `npm run test:mcp` 10/10; roundtrip save and restore both passed.
+- New facts do not silently widen the public portfolio: experience, project,
+  and certification additions enter `hiddenItems`, while a newly populated
+  skills section is made non-public because the schema has no per-skill list.
+- Browser regression: Chromium 33 passed, 1 intentionally skipped. The full
+  multi-browser command could not launch the local Firefox binary because its
+  Playwright cache `firefox/lock` path was absent; this is an environment setup
+  block rather than an observed application failure.
+- A fresh-context Reviewer found and the Developer closed four issues before
+  commit: uncoded export failure before first save, a user-authored empty skill
+  category being mistaken for scaffold data, boolean-only blank entries being
+  accepted as content, and an underspecified add-fact MCP input schema. Tests
+  now cover the three behavioral cases and the advertised string/boolean types.
+- `npm pack --dry-run --json` produced the warning-free 8-file
+  `zenid-mcp@0.1.1` tarball (829,689 bytes) with the server and all three fonts.
+  Registry publication remains a creator action because npm requires publisher
+  authentication/2FA.
 
 ## Not verified
 

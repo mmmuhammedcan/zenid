@@ -11,12 +11,14 @@
 import { z } from "zod";
 
 import {
+  createProject,
   openProject,
   saveProject,
   summarizeProject,
   validateProject,
 } from "../../../frontend/pdf-editor/src/host/projectSession.js";
 import {
+  addFact,
   applyPortfolioSettings,
   editFact,
   resetWording,
@@ -49,7 +51,7 @@ export function createSession() {
 function requireOpen(session) {
   if (!session.project) {
     throw new ProjectCompatibilityError(
-      "No project is open. Call zenid_open_project with the path to a .zenid file first.",
+      "No project is open. Call zenid_open_project with a .zenid path or zenid_create_project to start from scratch.",
       "NO_OPEN_PROJECT"
     );
   }
@@ -86,8 +88,8 @@ export function describeFormat() {
         "Edit with zenid_set_wording, undo with zenid_reset_wording.",
       fact:
         "What an item asserts: employer name, role title, institution, dates, credential identifiers, and " +
-        "personal information. Edit only with zenid_edit_fact, which reports the old and new value so the " +
-        "user can review every claim that changed.",
+        "personal information. Add a stated item with zenid_add_fact or edit one with zenid_edit_fact. Both " +
+        "report the factual claim they created or changed so the user can review it.",
       rule:
         "Rewording is presentation. If a change would alter what the user's history says happened, it is a " +
         "fact edit, and inventing one is never acceptable.",
@@ -103,7 +105,8 @@ export function describeFormat() {
     },
     saving:
       "Edits are held in memory until zenid_save_project is called. Saving writes a new file by default; " +
-      "the opened file is overwritten only when the caller explicitly asks for it.",
+      "the opened file is overwritten only when the caller explicitly asks for it. A project created with " +
+      "zenid_create_project needs an explicit path on its first save.",
   };
 }
 
@@ -142,6 +145,41 @@ const declaredFactualKeys = Object.fromEntries(
   ])
 );
 
+// Keep unknown keys visible to addFact so it can reject them loudly, while
+// advertising the canonical field names and types to MCP clients instead of an
+// unhelpful free-form object.
+const addFactValues = z
+  .object({
+    text: z.string().optional(),
+    category: z.string().optional(),
+    items: z.string().optional(),
+    company: z.string().optional(),
+    role: z.string().optional(),
+    name: z.string().optional(),
+    title: z.string().optional(),
+    institution: z.string().optional(),
+    degree: z.string().optional(),
+    field: z.string().optional(),
+    issuer: z.string().optional(),
+    credentialId: z.string().optional(),
+    domain: z.string().optional(),
+    techStack: z.string().optional(),
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
+    date: z.string().optional(),
+    description: z.string().optional(),
+    tools: z.string().optional(),
+    location: z.string().optional(),
+    gpa: z.string().optional(),
+    link: z.string().optional(),
+    githubUrl: z.string().optional(),
+    liveUrl: z.string().optional(),
+    isCurrentlyWorking: z.boolean().optional(),
+    isCurrentProject: z.boolean().optional(),
+    isCurrentlyStudying: z.boolean().optional(),
+  })
+  .passthrough();
+
 // Each entry is { name, config, handler }. The handler returns plain data; the
 // protocol layer is responsible only for encoding it.
 export function createTools(session) {
@@ -155,6 +193,26 @@ export function createTools(session) {
         inputSchema: {},
       },
       handler: async () => describeFormat(),
+    },
+    {
+      name: "zenid_create_project",
+      config: {
+        title: "Create a new ZenID project",
+        description:
+          "Start an empty, valid ZenID workspace in memory so a resume can be built through conversation. " +
+          "Nothing is written until zenid_save_project is called with an explicit path.",
+        inputSchema: {
+          resumeName: z.string().optional().describe("Name of the first resume, for example Graduate CV."),
+          language: z.enum(["en", "tr"]).optional().describe("Language of the first resume."),
+        },
+      },
+      handler: async (args) => {
+        const created = createProject(args);
+        session.path = created.path;
+        session.project = created.project;
+        session.summary = created.summary;
+        return { created: true, summary: created.summary };
+      },
     },
     {
       name: "zenid_open_project",
@@ -294,6 +352,27 @@ export function createTools(session) {
       },
     },
     {
+      name: "zenid_add_fact",
+      config: {
+        title: "Add a factual profile entry",
+        description:
+          "Add a company, role, education, project, skill, achievement, certification, or domain the user " +
+          "has explicitly stated. Generates the item id and reports the new factual entry. Never invent facts.",
+        inputSchema: {
+          field: z
+            .enum(["domains", "skills", "experience", "projects", "achievements", "certifications", "education"])
+            .describe("Profile section to append to."),
+          values: addFactValues.describe(
+            "Canonical field values for the selected section. Unknown fields are refused."
+          ),
+        },
+      },
+      handler: async (args) => {
+        requireOpen(session);
+        return applyResult(session, addFact(session.project, args));
+      },
+    },
+    {
       name: "zenid_edit_fact",
       config: {
         title: "Change a factual field",
@@ -358,7 +437,8 @@ export function createTools(session) {
       config: {
         title: "Save the project",
         description:
-          "Write the edited project to disk. Writes a new file unless overwrite is explicitly true.",
+          "Write the edited project to disk. Writes a new file unless overwrite is explicitly true. A newly " +
+          "created project requires an explicit target path on its first save.",
         inputSchema: {
           path: z.string().optional().describe("Target path; defaults to a new sibling file."),
           overwrite: z.boolean().optional().describe("Overwrite the opened file. Defaults to false."),
@@ -366,7 +446,12 @@ export function createTools(session) {
       },
       handler: async ({ path: targetPath, overwrite }) => {
         requireOpen(session);
-        return saveProject(session, { path: targetPath, overwrite: Boolean(overwrite) });
+        const saved = await saveProject(session, { path: targetPath, overwrite: Boolean(overwrite) });
+        // A newly created workspace gains its source path only after its first,
+        // explicitly targeted save. Existing opened projects keep their source
+        // path so the non-overwriting default remains stable.
+        if (!session.path) session.path = saved.path;
+        return saved;
       },
     },
     {
@@ -381,6 +466,12 @@ export function createTools(session) {
       },
       handler: async ({ resumeId, path: targetPath }) => {
         requireOpen(session);
+        if (!targetPath && !session.path) {
+          throw new ProjectCompatibilityError(
+            "A newly created project has no file path. Pass an explicit PDF export path or save the project first.",
+            "NO_TARGET_PATH"
+          );
+        }
         const resume =
           session.project.resumes.find((entry) => entry.id === resumeId) || session.project.resumes[0];
         const resumeData = materializeResumeData(session.project, resume.id);
@@ -411,6 +502,12 @@ export function createTools(session) {
       },
       handler: async ({ path: targetPath }) => {
         requireOpen(session);
+        if (!targetPath && !session.path) {
+          throw new ProjectCompatibilityError(
+            "A newly created project has no file path. Pass an explicit portfolio export path or save the project first.",
+            "NO_TARGET_PATH"
+          );
+        }
         const bytes = serializePortfolioSite(session.project);
         const outputPath =
           targetPath ||

@@ -11,7 +11,7 @@ import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { openProject, saveProject, validateProject } from "./projectSession.js";
+import { createProject, openProject, saveProject, validateProject } from "./projectSession.js";
 import {
   CURRENT_SCHEMA_VERSION,
   normalizeProject,
@@ -61,6 +61,44 @@ async function writeFixture(directory, project, fileName = "project.zenid") {
   await writeFile(filePath, Buffer.from(serializeProjectArchive(project)));
   return filePath;
 }
+
+// --- D-030: a project can begin entirely through conversation ----------------
+
+test("creating a project returns an unsaved, empty current-schema workspace", () => {
+  const session = createProject({ resumeName: "Graduate CV", language: "tr" });
+
+  assert.equal(session.path, null);
+  assert.equal(session.project.schemaVersion, CURRENT_SCHEMA_VERSION);
+  assert.equal(session.summary.schemaVersion, CURRENT_SCHEMA_VERSION);
+  assert.equal(session.summary.resumes.length, 1);
+  assert.equal(session.summary.resumes[0].name, "Graduate CV");
+  assert.equal(session.summary.resumes[0].language, "tr");
+  assert.equal(session.summary.sections.experience, 0);
+  assert.equal(session.summary.sections.skills, 0);
+});
+
+test("a newly created project requires an explicit save path", async () => {
+  const session = createProject();
+
+  await assert.rejects(() => saveProject(session), (error) => {
+    assert.equal(error.code, "NO_TARGET_PATH");
+    assert.match(error.message, /explicit path/i);
+    return true;
+  });
+});
+
+test("a newly created project saves and reopens when given an explicit path", async () => {
+  const directory = await workspace();
+  const targetPath = path.join(directory, "new-profile.zenid");
+  const session = createProject({ resumeName: "First CV" });
+
+  const saved = await saveProject(session, { path: targetPath });
+  const reopened = parseProjectFileBytes(new Uint8Array(await readFile(saved.path)));
+
+  assert.equal(saved.path, targetPath);
+  assert.equal(reopened.schemaVersion, CURRENT_SCHEMA_VERSION);
+  assert.equal(reopened.resumes[0].name, "First CV");
+});
 
 // --- AC-001: the open summary is structural, not the whole history ----------
 

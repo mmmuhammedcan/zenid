@@ -1,7 +1,8 @@
 # SPEC-011 — ZenID MCP Plugin
 
-Status: Implemented, automatically verified, and published to npm as
-`zenid-mcp@0.1.0` (T001-T019). Not yet manually accepted from a real Claude
+Status: Implemented and automatically verified through T020. The existing-file
+tool set is published as `zenid-mcp@0.1.0`; the D-030 from-scratch tools are
+prepared for `0.1.1` publication. Not yet manually accepted from a real Claude
 Desktop or Claude Code installation. See evidence.md.
 Owner: Creator
 Last clarified: 2026-09-03
@@ -32,6 +33,8 @@ In scope:
   client over local stdio;
 - read, typed edit, validate, save, and export tools operating on `.zenid`
   files and export outputs on the local filesystem;
+- creation of a new in-memory project and reported addition of user-stated
+  profile entries, allowing a résumé to be built conversationally from scratch;
 - a format-description tool that teaches a compatible agent the project model
   and ZenID's editing rules;
 - a Node-side adapter for font bytes, base64 encoding, and file reading and
@@ -80,6 +83,12 @@ browser application's storage boundary under D-012.
   host-specific inputs those functions already accept — font bytes, base64
   encoding, and file reading and writing. A behavioral difference between
   application export and server export is a defect, not a supported variation.
+- BR-012: `zenid_create_project` writes nothing and starts from the application's
+  current empty-project schema. `zenid_add_fact` accepts only canonical fields
+  in the seven array profile sections, generates the identifier, reports the
+  addition, and never treats an invented fact as acceptable input. New entries
+  remain outside portfolio publication until explicitly selected in ZenID. A
+  newly created project requires an explicit path on its first save.
 
 ## Acceptance criteria
 
@@ -127,6 +136,10 @@ browser application's storage boundary under D-012.
   same percentage and pass/fail breakdown across repeated calls with no
   intervening edit, is computed from exactly the seven named criteria in
   D-029, and each failed criterion carries one concrete recommended action.
+- AC-016: With no file open, a client can create a project, set personal
+  information, add an experience, skill, and education entry, validate it, save
+  it to an explicit `.zenid` path, reopen the result through the shared parser,
+  and export a PDF containing the resulting résumé.
 
 ## Proposed tool surface
 
@@ -135,6 +148,7 @@ Names are indicative; the contract that matters is BR-003 through BR-008.
 | Tool | Purpose | Backed by |
 |---|---|---|
 | `zenid_describe_format` | Teach the agent the project model and editing rules | SPEC-005 plugin purpose |
+| `zenid_create_project` | Start a current-schema project in memory | `createEmptyProject`, `normalizeProject` |
 | `zenid_open_project` | Load a `.zenid` path, return the structural summary | `parseProjectFileBytes`, `migrateProject` |
 | `zenid_read_section` | Return one section's items on request | `materializeResumeData` |
 | `zenid_list_resumes` | List résumé variants and their selections | `project.resumes` |
@@ -142,6 +156,7 @@ Names are indicative; the contract that matters is BR-003 through BR-008.
 | `zenid_set_item_selection` | Include or exclude an item from a variant | `updateResumeItemSelection` |
 | `zenid_set_wording` | Write a presentation override | `setResumeContentOverride` |
 | `zenid_reset_wording` | Restore canonical wording | `resetResumeContentOverride` |
+| `zenid_add_fact` | Add and report one user-stated profile entry | `updateProjectProfile` |
 | `zenid_edit_fact` | Explicit, reported factual change | `updateProjectProfile` |
 | `zenid_validate` | Report normalization result and ATS-mechanical findings | `normalizeProject` |
 | `zenid_resume_playbook` | Return the evidence formula, structure rules, and AI-collaboration prompts for the agent to apply | `zenid-resume-checklist.pdf` |
@@ -208,6 +223,9 @@ Synthetic identities only, under the existing repository rule.
   the connected agent using `zenid_read_section` and the playbook's
   `relevance_review` prompt, because the server has no model-provider access
   to render that judgment itself (BR-001).
+- Q-008: D-030 adds an in-memory project creation tool and a guarded factual
+  addition tool, so an agent can construct a browser-compatible CV from scratch
+  without weakening explicit save or no-invention rules.
 
 ## Open questions
 

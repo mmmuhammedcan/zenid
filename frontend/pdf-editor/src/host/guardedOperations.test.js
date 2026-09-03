@@ -10,6 +10,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  addFact,
   applyPortfolioSettings,
   assertPublicationNotWidened,
   editFact,
@@ -21,6 +22,7 @@ import {
 } from "./guardedOperations.js";
 import {
   CURRENT_SCHEMA_VERSION,
+  createEmptyProject,
   materializeResumeData,
   normalizeProject,
 } from "../resume/projectSchema.js";
@@ -233,6 +235,124 @@ test("a fact edit refuses an unknown item", () => {
     () => editFact(project, { field: "experience", itemId: "missing", changes: { company: "X" } }),
     /not found/i
   );
+});
+
+// --- SPEC-011 D-030: adding a brand-new profile entry -----------------------
+
+test("addFact appends a new experience entry and reports it as added", () => {
+  const project = syntheticProject();
+  const result = addFact(project, {
+    field: "experience",
+    values: { company: "Google", role: "SWE", startDate: "2024-01" },
+  });
+  assert.equal(result.project.profile.experience.length, 2);
+  const added = result.project.profile.experience[1];
+  assert.equal(added.company, "Google");
+  assert.equal(added.role, "SWE");
+  assert.ok(added.id, "a new entry must get an id the caller did not have to invent");
+  const factualChange = result.changes.find((change) => change.field === "experience");
+  assert.equal(factualChange.itemId, added.id);
+  assert.deepEqual(factualChange.after, { company: "Google", role: "SWE", startDate: "2024-01" });
+  assert.ok(result.project.portfolio.hiddenItems.experience.includes(added.id));
+});
+
+test("addFact supports every array section in the canonical profile", () => {
+  const cases = [
+    ["domains", { text: "Backend systems" }, "text", "Backend systems"],
+    ["skills", { category: "Cloud", items: "AWS, GCP" }, "category", "Cloud"],
+    ["projects", { name: "Campus App", techStack: "React" }, "name", "Campus App"],
+    ["achievements", { title: "Hackathon finalist" }, "title", "Hackathon finalist"],
+    ["certifications", { title: "Cloud Practitioner", issuer: "Example Cloud" }, "issuer", "Example Cloud"],
+    ["education", { institution: "METU", degree: "BSc" }, "institution", "METU"],
+  ];
+
+  for (const [field, values, assertedKey, assertedValue] of cases) {
+    const result = addFact(syntheticProject(), { field, values });
+    assert.ok(result.project.profile[field].some((item) => item[assertedKey] === assertedValue));
+  }
+});
+
+test("addFact replaces the blank scaffold row in a newly created project", () => {
+  const project = createEmptyProject();
+  assert.equal(project.profile.experience.length, 1);
+
+  const result = addFact(project, {
+    field: "experience",
+    values: { company: "Example Labs", role: "Intern" },
+  });
+
+  assert.equal(result.project.profile.experience.length, 1);
+  assert.equal(result.project.profile.experience[0].company, "Example Labs");
+});
+
+test("addFact preserves a sole skill row whose category was user-authored", () => {
+  const project = createEmptyProject();
+  project.profile.skills[0].category = "Databases";
+
+  const result = addFact(project, {
+    field: "skills",
+    values: { category: "Programming", items: "JavaScript" },
+  });
+
+  assert.equal(result.project.profile.skills.length, 2);
+  assert.equal(result.project.profile.skills[0].category, "Databases");
+});
+
+test("addFact keeps a newly added skill private until the user publishes it", () => {
+  const result = addFact(createEmptyProject(), {
+    field: "skills",
+    values: { category: "Programming", items: "JavaScript" },
+  });
+
+  assert.equal(result.project.portfolio.visibleSections.skills, false);
+  assert.ok(
+    result.changes.some(
+      (change) => change.path === "portfolio.visibleSections.skills" && change.after === false
+    )
+  );
+});
+
+test("addFact refuses an unknown section", () => {
+  const project = syntheticProject();
+  assert.throws(() => addFact(project, { field: "notASection", values: {} }), /unknown/i);
+});
+
+test("addFact refuses a key that is not part of the item shape", () => {
+  const project = syntheticProject();
+  assert.throws(
+    () => addFact(project, { field: "experience", values: { company: "Google", notARealField: "x" } }),
+    /notARealField/
+  );
+});
+
+test("addFact refuses empty and incorrectly typed entries", () => {
+  const project = syntheticProject();
+  assert.throws(
+    () => addFact(project, { field: "experience", values: {} }),
+    /non-empty/i
+  );
+  assert.throws(
+    () => addFact(project, { field: "experience", values: { company: 42 } }),
+    /value type/i
+  );
+  assert.throws(
+    () => addFact(project, { field: "experience", values: [] }),
+    /values object/i
+  );
+  assert.throws(
+    () => addFact(project, { field: "experience", values: { isCurrentlyWorking: true } }),
+    /non-empty/i
+  );
+});
+
+test("addFact never lets the caller pick the new item's id", () => {
+  const project = syntheticProject();
+  const result = addFact(project, {
+    field: "experience",
+    values: { company: "Google", id: "attacker-chosen-id" },
+  });
+  const added = result.project.profile.experience[1];
+  assert.notEqual(added.id, "attacker-chosen-id");
 });
 
 // --- AC-006: the publication scope cannot be widened -------------------------

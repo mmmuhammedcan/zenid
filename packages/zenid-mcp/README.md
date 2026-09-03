@@ -53,6 +53,12 @@ Then point it at a file you exported from ZenID:
 
 > Open ~/Documents/my-profile.zenid and target my resume at this job posting.
 
+Or start without an existing file:
+
+> Create a new Turkish CV called Graduate CV. I will tell you my education,
+> projects, skills, and experience one by one. Ask for missing details, do not
+> invent anything, then save it as ~/Documents/graduate-cv.zenid and export a PDF.
+
 ## What it can and cannot do
 
 The server draws a line between **how your history reads** and **what your
@@ -62,10 +68,11 @@ Rewording a bullet on one resume variant is presentation. It is stored as an
 override on that variant, and your canonical profile text is left exactly as
 you wrote it, so you can always get back to it.
 
-Changing an employer name, an institution, a date, or a credential identifier
-is a factual claim about your life. That needs a separate tool, and it reports
-the old and the new value so you can review every claim that changed. A wording
-tool asked to change a fact refuses and says which tool to use instead.
+Adding or changing an employer name, an institution, a date, or a credential
+identifier is a factual claim about your life. Dedicated tools add or edit it
+and report exactly what was created or changed, so you can review every claim.
+A wording tool asked to change a fact refuses and says which tool to use instead.
+New entries are kept out of the public portfolio until you select them in ZenID.
 
 Publication settings can be narrowed but never widened. The server cannot make
 a contact field public, un-hide a section or an item you hid, attach media to
@@ -104,6 +111,7 @@ agent can apply to your real, open project in conversation.
 | Tool | Purpose |
 |---|---|
 | `zenid_describe_format` | The project model and the rules above, as data |
+| `zenid_create_project` | Start a valid empty workspace in memory |
 | `zenid_open_project` | Open a `.zenid` file, return a structural summary |
 | `zenid_read_section` | Read one section's items |
 | `zenid_list_resumes` | List resume variants |
@@ -111,6 +119,7 @@ agent can apply to your real, open project in conversation.
 | `zenid_set_item_selection` | Include or exclude an item from a variant |
 | `zenid_set_wording` | Rewrite an item's wording (presentation only) |
 | `zenid_reset_wording` | Restore your original wording |
+| `zenid_add_fact` | Add a stated company, education, project, skill, or other profile entry |
 | `zenid_edit_fact` | Change a factual field, with old and new reported |
 | `zenid_set_portfolio_settings` | Narrow publication, edit portfolio copy |
 | `zenid_validate` | Structural soundness, mechanical findings, and a deterministic atsScore |

@@ -17,6 +17,7 @@ import path from "node:path";
 import { parseProjectFileBytes, serializeProjectArchive } from "../resume/projectFile.js";
 import {
   CURRENT_SCHEMA_VERSION,
+  createEmptyProject,
   normalizeProject,
   ProjectCompatibilityError,
 } from "../resume/projectSchema.js";
@@ -30,6 +31,13 @@ const PROFILE_SECTIONS = [
   "certifications",
   "education",
 ];
+
+function hasProfileItemContent(section, item) {
+  if (section === "skills") return Boolean(item?.items);
+  return Object.entries(item || {}).some(
+    ([key, value]) => key !== "id" && typeof value === "string" && Boolean(value.trim())
+  );
+}
 
 // A structural summary, deliberately without section prose. An agent asked to
 // improve one bullet should not have to ingest an entire career to find it
@@ -45,7 +53,10 @@ export function summarizeProject(project, { migratedFrom = null } = {}) {
       template: resume.template,
     })),
     sections: Object.fromEntries(
-      PROFILE_SECTIONS.map((section) => [section, (project.profile[section] || []).length])
+      PROFILE_SECTIONS.map((section) => [
+        section,
+        (project.profile[section] || []).filter((item) => hasProfileItemContent(section, item)).length,
+      ])
     ),
     portfolio: {
       language: project.portfolio.language,
@@ -61,6 +72,20 @@ export function summarizeProject(project, { migratedFrom = null } = {}) {
       ),
     },
   };
+}
+
+// D-030: start a valid workspace without requiring a pre-existing file. The
+// project remains memory-only until saveProject receives an explicit path.
+export function createProject({ resumeName = "General Resume", language = "en" } = {}) {
+  const empty = createEmptyProject();
+  const project = normalizeProject({
+    ...empty,
+    resumes: empty.resumes.map((resume, index) =>
+      index === 0 ? { ...resume, name: resumeName, language } : resume
+    ),
+  });
+
+  return { path: null, project, summary: summarizeProject(project) };
 }
 
 export async function openProject(filePath) {
@@ -310,6 +335,13 @@ export async function saveProject(session, { path: requestedPath, overwrite = fa
 
   if (overwrite && !requestedPath && !session.path) {
     throw new ProjectCompatibilityError("There is no opened path to overwrite.", "NO_TARGET_PATH");
+  }
+
+  if (!requestedPath && !session.path) {
+    throw new ProjectCompatibilityError(
+      "A newly created project has no file path. Pass an explicit path to save it.",
+      "NO_TARGET_PATH"
+    );
   }
 
   let targetPath = requestedPath || (overwrite ? session.path : null);

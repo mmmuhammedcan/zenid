@@ -4,6 +4,7 @@ import { DEFAULT_SECTION_ORDER } from "./data.js";
 import { getFilledSections } from "./resumeSections.js";
 import { loadLetterheadLogo, drawLetterhead, LETTERHEAD_HEIGHT_PT } from "../pdfLetterhead.js";
 import { formatDocumentDate, getResumeCopy, normalizeLocale, uppercaseDocumentLabel } from "../localization.js";
+import { saveJsPdf } from "../pdfSave.js";
 
 // Deliberately renders real, selectable jsPDF text (not a rasterized image of
 // the on-screen preview) — a resume exported as a flattened picture would
@@ -458,5 +459,5 @@ export function getResumeFileName(fullName, language = "en") {
 
 export async function exportResumeToPdf(options) {
   const doc = await buildResumePdf(options);
-  doc.save(getResumeFileName(options.resumeData?.personalInfo?.fullName, options.language));
+  saveJsPdf(doc, getResumeFileName(options.resumeData?.personalInfo?.fullName, options.language));
 }

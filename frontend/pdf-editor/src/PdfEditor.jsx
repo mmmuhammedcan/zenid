@@ -31,6 +31,7 @@ import {
   renderSavedOverlayToPngDataUrl,
   renderSavedPageToDataUrl,
 } from "./pdfExport";
+import { saveJsPdf } from "./pdfSave.js";
 import { useI18n } from "./I18nContext.jsx";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
@@ -426,7 +427,7 @@ export default function PdfEditor() {
             );
           }
         }
-        buildPdfFromPages(pageDataUrls).save(outputName);
+        saveJsPdf(buildPdfFromPages(pageDataUrls), outputName);
       }
       setStatus("Document ready.");
     } catch (err) {

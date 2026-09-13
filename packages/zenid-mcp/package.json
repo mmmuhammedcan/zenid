@@ -1,6 +1,6 @@
 {
   "name": "zenid-mcp",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Local MCP server for ZenID: read and edit your own .zenid professional profile from your own agent client, on your own machine.",
   "license": "MIT",
   "author": "Muhammed Can Ozdemir",

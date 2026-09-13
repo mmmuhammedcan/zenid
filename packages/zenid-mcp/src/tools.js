@@ -36,6 +36,7 @@ import {
   buildResumePdf,
   getResumeFileName,
 } from "../../../frontend/pdf-editor/src/resume/resumePdfExport.js";
+import { patchPdfVersion } from "../../../frontend/pdf-editor/src/pdfSave.js";
 import { RESUME_PLAYBOOK } from "../../../frontend/pdf-editor/src/resume/writingGuidance.js";
 import {
   getPortfolioZipFileName,
@@ -481,7 +482,7 @@ export function createTools(session) {
           language: resume.language,
           fontData: await loadResumeFontData(),
         });
-        const bytes = new Uint8Array(doc.output("arraybuffer"));
+        const bytes = patchPdfVersion(new Uint8Array(doc.output("arraybuffer")));
         const outputPath =
           targetPath ||
           `${session.path.replace(/\.zenid$/i, "")}.${getResumeFileName(

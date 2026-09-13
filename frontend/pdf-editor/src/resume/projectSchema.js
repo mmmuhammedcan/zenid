@@ -23,7 +23,7 @@ export const DEFAULT_PORTFOLIO_CONFIG = {
   theme: "dark",
   accentColor: "#d97706",
   about: "",
-  availability: "Open to opportunities",
+  availability: "",
   contactMessage: "I’m always open to discussing new projects, ideas, and opportunities.",
   introVideoUrl: "",
   resume: {
@@ -120,8 +120,17 @@ function normalizeContentOverrides(source) {
   return normalized;
 }
 
+// Prior schema versions baked this literal English sentence in as the
+// availability default, so untouched projects saved before the badge
+// started following portfolio.language carry it verbatim. Clearing it here
+// lets the localized fallback (copy.availabilityDefault) take over again.
+const LEGACY_AVAILABILITY_DEFAULT = "Open to opportunities";
+
 export function normalizePortfolio(source = {}) {
   const portfolio = isRecord(source) ? clone(source) : {};
+  if (portfolio.availability === LEGACY_AVAILABILITY_DEFAULT) {
+    portfolio.availability = "";
+  }
   const suppliedSectionOrder = Array.isArray(portfolio.sectionOrder)
     ? portfolio.sectionOrder.filter((section, index, order) =>
         typeof section === "string" && section.trim() && order.indexOf(section) === index

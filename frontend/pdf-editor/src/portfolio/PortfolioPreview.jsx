@@ -272,7 +272,7 @@ export default function PortfolioPreview({ project, assetUrls = {}, resumeUrl })
           <div className="absolute -right-24 -top-32 h-80 w-80 rounded-full opacity-20 blur-3xl" style={{ backgroundColor: accent }} />
           <div className="relative mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1.25fr_0.75fr] lg:items-center">
             <div>
-              <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs ${card}`}><span className="h-2 w-2 rounded-full" style={{ backgroundColor: accent }} />{nonEmpty(portfolio.availability) || "Portfolio"}</div>
+              <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs ${card}`}><span className="h-2 w-2 rounded-full" style={{ backgroundColor: accent }} />{nonEmpty(portfolio.availability) || copy.availabilityDefault}</div>
               <p className={`mt-7 text-sm font-medium ${muted}`}>{copy.greeting}</p>
               <h1 className="mt-2 max-w-3xl text-5xl font-semibold leading-[0.98] tracking-[-0.05em] sm:text-7xl">{nonEmpty(info.fullName) || "Your name"}</h1>
               <p className="mt-5 text-xl font-medium sm:text-2xl" style={{ color: accent }}>{nonEmpty(info.title) || "Your professional title"}</p>

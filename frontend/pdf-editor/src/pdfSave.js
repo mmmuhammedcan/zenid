@@ -8,7 +8,7 @@
 const OLD_HEADER = "%PDF-1.3";
 const NEW_HEADER = "%PDF-1.7";
 
-function patchPdfVersion(bytes) {
+export function patchPdfVersion(bytes) {
   const header = String.fromCharCode(...bytes.subarray(0, OLD_HEADER.length));
   if (header !== OLD_HEADER) return bytes;
   for (let i = 0; i < NEW_HEADER.length; i++) {
